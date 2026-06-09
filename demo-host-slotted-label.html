@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Host-role textfield — slotted label and help</title>
+        <link rel="stylesheet" href="./page.css" />
+    </head>
+    <body>
+        <main class="page">
+            <p>
+                <a href="./index.html">← All demos</a> ·
+                <a href="https://github.com/nikkimk/web-component-form-strategy-demos/blob/main/README.md"
+                    >Q2 & Q3 recommendations</a
+                >
+            </p>
+
+            <h1>Host role — slotted label and help</h1>
+            <p class="lead">
+                Label and help are authored in Light DOM and projected into shadow slots. They remain
+                light-tree nodes, so <code>host.ariaLabelledByElements</code> and
+                <code>host.ariaDescribedByElements</code> work without cross-root shadow wiring.
+                Prefer this pattern when consumers supply label and help markup.
+            </p>
+
+            <div id="support-status" class="status" aria-live="polite"></div>
+
+            <section class="demo-card" aria-labelledby="textfield-slotted-heading">
+                <h2 id="textfield-slotted-heading">Textfield with slotted label</h2>
+                <textfield-slotted-refs data-aria-log="textfield-slotted">
+                    <label slot="label" class="field-label" for="slotted-field">Email address</label>
+                    <span slot="help-text" class="field-help" data-help>
+                        Slotted help: label and description stay in the light tree.
+                    </span>
+                </textfield-slotted-refs>
+                <h3>Resolved ARIA references</h3>
+                <pre class="log" data-aria-log="textfield-slotted" aria-live="polite"></pre>
+            </section>
+        </main>
+
+        <script type="module">
+            import { renderSupportStatus } from './form-field-base.js';
+            import './textfield-slotted-refs.js';
+
+            renderSupportStatus(document.getElementById('support-status'));
+        </script>
+    </body>
+</html>

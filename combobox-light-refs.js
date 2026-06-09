@@ -5,6 +5,7 @@ import {
     syncAriaElementRefs,
     watchSlottedOptions,
 } from './combobox-base.js';
+import { watchRefTargets } from './form-field-base.js';
 
 /**
  * Combobox with label and help text provided in Light DOM.
@@ -16,6 +17,9 @@ export class ComboboxLightRefs extends HTMLElement {
     #listbox = null;
     #options = [];
     #unwatchSlot = null;
+    #unwatchLabels = () => {};
+    #labelElements = [];
+    #descriptionElements = [];
 
     constructor() {
         super();
@@ -56,16 +60,8 @@ export class ComboboxLightRefs extends HTMLElement {
               ? this.nextElementSibling
               : null;
 
-        const labelElements = [labelEl].filter(Boolean);
-        const descriptionElements = [helpEl].filter(Boolean);
-
-        syncAriaElementRefs(
-            this,
-            this.#internals,
-            this.#listbox,
-            labelElements,
-            descriptionElements
-        );
+        this.#labelElements = [labelEl].filter(Boolean);
+        this.#descriptionElements = [helpEl].filter(Boolean);
 
         const refreshLog = createLogRefresher('light', (logEl) => {
             logAriaRefs(
@@ -73,11 +69,27 @@ export class ComboboxLightRefs extends HTMLElement {
                 this,
                 this.#internals,
                 this.#listbox,
-                labelElements,
-                descriptionElements,
+                this.#labelElements,
+                this.#descriptionElements,
                 this.#options
             );
         });
+
+        const resyncAria = syncAriaElementRefs(
+            this,
+            this.#internals,
+            this.#listbox,
+            this.#labelElements,
+            this.#descriptionElements
+        );
+
+        this.#unwatchLabels = watchRefTargets(
+            [...this.#labelElements, ...this.#descriptionElements],
+            () => {
+                resyncAria();
+                refreshLog();
+            }
+        );
 
         this.#unwatchSlot = watchSlottedOptions(this, (options) => {
             if (!options.length) {
@@ -100,6 +112,7 @@ export class ComboboxLightRefs extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.#unwatchLabels();
         this.#unwatchSlot?.();
         this.#controller?.disconnect();
     }

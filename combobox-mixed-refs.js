@@ -5,6 +5,7 @@ import {
     syncAriaElementRefs,
     watchSlottedOptions,
 } from './combobox-base.js';
+import { watchRefTargets } from './form-field-base.js';
 
 /**
  * Combobox that associates both Light DOM and Shadow DOM elements
@@ -19,6 +20,9 @@ export class ComboboxMixedRefs extends HTMLElement {
     #listbox = null;
     #options = [];
     #unwatchSlot = null;
+    #unwatchLabels = () => {};
+    #labelElements = [];
+    #descriptionElements = [];
 
     constructor() {
         super();
@@ -51,16 +55,8 @@ export class ComboboxMixedRefs extends HTMLElement {
         const lightLabel = document.getElementById(this.getAttribute('label-target') ?? '');
         const lightHelp = document.getElementById(this.getAttribute('help-target') ?? '');
 
-        const labelElements = [lightLabel, this.#shadowLabelEl].filter(Boolean);
-        const descriptionElements = [lightHelp, this.#shadowHelpEl].filter(Boolean);
-
-        syncAriaElementRefs(
-            this,
-            this.#internals,
-            this.#listbox,
-            labelElements,
-            descriptionElements
-        );
+        this.#labelElements = [lightLabel, this.#shadowLabelEl].filter(Boolean);
+        this.#descriptionElements = [lightHelp, this.#shadowHelpEl].filter(Boolean);
 
         const refreshLog = createLogRefresher('mixed', (logEl) => {
             logAriaRefs(
@@ -68,11 +64,27 @@ export class ComboboxMixedRefs extends HTMLElement {
                 this,
                 this.#internals,
                 this.#listbox,
-                labelElements,
-                descriptionElements,
+                this.#labelElements,
+                this.#descriptionElements,
                 this.#options
             );
         });
+
+        const resyncAria = syncAriaElementRefs(
+            this,
+            this.#internals,
+            this.#listbox,
+            this.#labelElements,
+            this.#descriptionElements
+        );
+
+        this.#unwatchLabels = watchRefTargets(
+            [...this.#labelElements, ...this.#descriptionElements],
+            () => {
+                resyncAria();
+                refreshLog();
+            }
+        );
 
         this.#unwatchSlot = watchSlottedOptions(this, (options) => {
             if (!options.length) {
@@ -95,6 +107,7 @@ export class ComboboxMixedRefs extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.#unwatchLabels();
         this.#unwatchSlot?.();
         this.#controller?.disconnect();
     }

@@ -35,6 +35,16 @@ function prepareRefTargets(elements) {
 }
 
 /**
+ * @param {HTMLElement[]} elements
+ */
+function collectElementText(elements) {
+    return elements
+        .map((element) => element.textContent?.trim())
+        .filter(Boolean)
+        .join(' ');
+}
+
+/**
  * @param {string} logKey
  * @returns {HTMLElement | null}
  */
@@ -79,12 +89,35 @@ function partitionByRoot(elements) {
 }
 
 /**
+ * Always mirror shadow label/help text on internals alongside element refs.
+ * @param {ElementInternals} internals
+ * @param {HTMLElement[]} shadowLabels
+ * @param {HTMLElement[]} shadowDescriptions
+ */
+export function mirrorShadowAccessibleName(internals, shadowLabels, shadowDescriptions) {
+    const labelText = collectElementText(shadowLabels);
+
+    if (labelText) {
+        internals.ariaLabel = labelText;
+    } else {
+        internals.ariaLabel = null;
+    }
+
+    const descriptionText = collectElementText(shadowDescriptions);
+
+    if ('ariaDescription' in internals) {
+        internals.ariaDescription = descriptionText || null;
+    }
+}
+
+/**
  * @param {HTMLElement} host
  * @param {ElementInternals} internals
  * @param {string} role
  * @param {HTMLElement[]} labelElements
  * @param {HTMLElement[]} descriptionElements
- * @param {{ focusable?: boolean }} [options]
+ * @param {{ focusable?: boolean, resolveRefs?: () => { labelElements: HTMLElement[], descriptionElements: HTMLElement[] } }} [options]
+ * @returns {() => void} resync — call when label/help text or slotted nodes change
  */
 export function syncHostFieldAriaRefs(
     host,
@@ -94,76 +127,143 @@ export function syncHostFieldAriaRefs(
     descriptionElements = [],
     options = {}
 ) {
-    const { focusable = true } = options;
+    const { focusable = true, resolveRefs } = options;
 
-    host.setAttribute('role', role);
-
-    if (focusable) {
-        host.setAttribute('tabindex', '0');
-    } else {
-        host.removeAttribute('tabindex');
-    }
-
-    const { light: lightLabels, shadow: shadowLabels } = partitionByRoot(labelElements);
-    const { light: lightDescriptions, shadow: shadowDescriptions } =
-        partitionByRoot(descriptionElements);
-
-    const preparedLightLabels = prepareRefTargets(lightLabels);
-    const preparedShadowLabels = prepareRefTargets(shadowLabels);
-    const preparedLightDescriptions = prepareRefTargets(lightDescriptions);
-    const preparedShadowDescriptions = prepareRefTargets(shadowDescriptions);
-
-    if (!SUPPORTS_ELEMENT_REFS) {
-        if (preparedLightLabels.length) {
-            host.setAttribute(
-                'aria-labelledby',
-                preparedLightLabels.map((el) => el.id).join(' ')
-            );
+    const resync = () => {
+        const refs = resolveRefs?.() ?? { labelElements, descriptionElements };
+        const activeLabels = refs.labelElements ?? labelElements;
+        const activeDescriptions = refs.descriptionElements ?? descriptionElements;
+        if (focusable) {
+            host.setAttribute('tabindex', '0');
+        } else {
+            host.removeAttribute('tabindex');
         }
 
-        if (preparedLightDescriptions.length) {
-            host.setAttribute(
-                'aria-describedby',
-                preparedLightDescriptions.map((el) => el.id).join(' ')
-            );
+        const { light: lightLabels, shadow: shadowLabels } = partitionByRoot(activeLabels);
+        const { light: lightDescriptions, shadow: shadowDescriptions } =
+            partitionByRoot(activeDescriptions);
+
+        const preparedLightLabels = prepareRefTargets(lightLabels);
+        const preparedShadowLabels = prepareRefTargets(shadowLabels);
+        const preparedLightDescriptions = prepareRefTargets(lightDescriptions);
+        const preparedShadowDescriptions = prepareRefTargets(shadowDescriptions);
+
+        if (!SUPPORTS_ELEMENT_REFS) {
+            host.setAttribute('role', role);
+            host.removeAttribute('aria-label');
+            host.removeAttribute('aria-description');
+
+            if (preparedLightLabels.length) {
+                host.setAttribute(
+                    'aria-labelledby',
+                    preparedLightLabels.map((el) => el.id).join(' ')
+                );
+            } else {
+                host.removeAttribute('aria-labelledby');
+            }
+
+            if (preparedLightDescriptions.length) {
+                host.setAttribute(
+                    'aria-describedby',
+                    preparedLightDescriptions.map((el) => el.id).join(' ')
+                );
+            } else {
+                host.removeAttribute('aria-describedby');
+            }
+
+            return;
         }
 
-        return;
-    }
+        host.removeAttribute('role');
+        host.removeAttribute('aria-labelledby');
+        host.removeAttribute('aria-describedby');
 
-    internals.role = role;
-    internals.ariaLabelledByElements = preparedShadowLabels;
-    internals.ariaDescribedByElements = preparedShadowDescriptions;
-    host.ariaLabelledByElements = preparedLightLabels;
-    host.ariaDescribedByElements = preparedLightDescriptions;
+        internals.role = role;
+        internals.ariaLabelledByElements = preparedShadowLabels;
+        internals.ariaDescribedByElements = preparedShadowDescriptions;
+        host.ariaLabelledByElements = preparedLightLabels;
+        host.ariaDescribedByElements = preparedLightDescriptions;
 
-    applyShadowNameFallback(internals, preparedShadowLabels, preparedShadowDescriptions);
+        if (preparedShadowLabels.length || preparedShadowDescriptions.length) {
+            mirrorShadowAccessibleName(
+                internals,
+                preparedShadowLabels,
+                preparedShadowDescriptions
+            );
+        } else {
+            internals.ariaLabel = null;
+            if ('ariaDescription' in internals) {
+                internals.ariaDescription = null;
+            }
+        }
+    };
+
+    resync();
+    return resync;
 }
 
 /**
- * When element refs do not read back, mirror shadow label/help text on internals.
- * @param {ElementInternals} internals
- * @param {HTMLElement[]} shadowLabels
- * @param {HTMLElement[]} shadowDescriptions
+ * @param {HTMLElement} host
+ * @param {{ labelSlot?: string, helpSlot?: string }} [options]
  */
-function applyShadowNameFallback(internals, shadowLabels, shadowDescriptions) {
-    if (shadowLabels.length && !internals.ariaLabelledByElements?.length) {
-        internals.ariaLabel = shadowLabels
-            .map((element) => element.textContent?.trim())
-            .filter(Boolean)
-            .join(' ');
+export function collectSlottedFieldRefs(host, options = {}) {
+    const { labelSlot = 'label', helpSlot = 'help-text' } = options;
+
+    const labelSlotEl = host.shadowRoot?.querySelector(`slot[name="${labelSlot}"]`);
+    const helpSlotEl = host.shadowRoot?.querySelector(`slot[name="${helpSlot}"]`);
+
+    const labelElements = (
+        labelSlotEl?.assignedElements({ flatten: true }) ?? []
+    ).filter((element) => element instanceof HTMLElement);
+
+    const descriptionElements = (
+        helpSlotEl?.assignedElements({ flatten: true }) ?? []
+    ).filter((element) => element instanceof HTMLElement);
+
+    return { labelElements, descriptionElements };
+}
+
+/**
+ * @param {HTMLElement[]} elements
+ * @param {() => void} resync
+ */
+export function watchRefTargets(elements, resync) {
+    const targets = elements.filter(Boolean);
+
+    if (!targets.length) {
+        return () => {};
     }
 
-    if (shadowDescriptions.length && !internals.ariaDescribedByElements?.length) {
-        const description = shadowDescriptions
-            .map((element) => element.textContent?.trim())
-            .filter(Boolean)
-            .join(' ');
+    const observer = new MutationObserver(resync);
 
-        if ('ariaDescription' in internals) {
-            internals.ariaDescription = description;
-        }
-    }
+    targets.forEach((target) => {
+        observer.observe(target, {
+            childList: true,
+            characterData: true,
+            subtree: true,
+        });
+    });
+
+    return () => observer.disconnect();
+}
+
+/**
+ * @param {HTMLElement} host
+ * @param {() => void} resync
+ * @param {{ labelSlot?: string, helpSlot?: string }} [options]
+ */
+export function watchSlottedFieldRefs(host, resync, options = {}) {
+    const { labelSlot = 'label', helpSlot = 'help-text' } = options;
+
+    const slots = [labelSlot, helpSlot]
+        .map((name) => host.shadowRoot?.querySelector(`slot[name="${name}"]`))
+        .filter(Boolean);
+
+    slots.forEach((slot) => slot.addEventListener('slotchange', resync));
+
+    return () => {
+        slots.forEach((slot) => slot.removeEventListener('slotchange', resync));
+    };
 }
 
 /**
@@ -171,7 +271,7 @@ function applyShadowNameFallback(internals, shadowLabels, shadowDescriptions) {
  */
 export function renderSupportStatus(statusEl) {
     statusEl.innerHTML = SUPPORTS_ELEMENT_REFS
-        ? '<strong>Supported:</strong> Shadow label/help use <code>ElementInternals</code> element refs; light label/help use the host. Widget <code>role</code> is on the host.'
+        ? '<strong>Supported:</strong> Shadow label/help use <code>ElementInternals</code> element refs plus mirrored <code>ariaLabel</code> / <code>ariaDescription</code>. Light or slotted label/help use the host. Widget <code>role</code> is on <code>internals</code>.'
         : '<strong>Fallback:</strong> Light DOM label/help use <code>aria-labelledby</code> / <code>aria-describedby</code> on the host. Shadow-only label/help cannot be linked without element refs.';
 }
 
@@ -184,11 +284,11 @@ export function renderSupportStatus(statusEl) {
  */
 export function logHostFieldAriaRefs(logEl, host, internals, labels, descriptions) {
     const lines = [];
+    const role = SUPPORTS_ELEMENT_REFS ? internals.role : host.getAttribute('role');
 
-    lines.push(`host.role="${host.getAttribute('role') ?? ''}"`);
+    lines.push(`role="${role ?? ''}" (via ${SUPPORTS_ELEMENT_REFS ? 'internals' : 'host'})`);
 
     if (SUPPORTS_ELEMENT_REFS) {
-        lines.push(`internals.role="${internals.role ?? ''}"`);
         lines.push(
             `internals.ariaLabelledByElements → ${formatElements(internals.ariaLabelledByElements)}`
         );
@@ -214,19 +314,34 @@ export function logHostFieldAriaRefs(logEl, host, internals, labels, description
         lines.push(`aria-describedby="${host.getAttribute('aria-describedby') ?? ''}"`);
     }
 
-    if (host.getAttribute('role') === 'checkbox') {
-        lines.push(`aria-checked="${host.getAttribute('aria-checked') ?? ''}"`);
+    if (role === 'checkbox') {
+        const checked = SUPPORTS_ELEMENT_REFS
+            ? internals.ariaChecked
+            : host.getAttribute('aria-checked');
+        lines.push(`aria-checked="${checked ?? ''}"`);
     }
 
-    if (host.getAttribute('role') === 'textbox') {
+    if (role === 'textbox') {
         lines.push(`value="${host.getAttribute('value') ?? ''}"`);
     }
 
-    if (host.getAttribute('role') === 'progressbar') {
-        lines.push(`aria-valuenow="${host.getAttribute('aria-valuenow') ?? ''}"`);
-        lines.push(`aria-valuemin="${host.getAttribute('aria-valuemin') ?? ''}"`);
-        lines.push(`aria-valuemax="${host.getAttribute('aria-valuemax') ?? ''}"`);
-        const valueText = host.getAttribute('aria-valuetext');
+    if (role === 'progressbar') {
+        const valueNow = SUPPORTS_ELEMENT_REFS
+            ? internals.ariaValueNow
+            : host.getAttribute('aria-valuenow');
+        const valueMin = SUPPORTS_ELEMENT_REFS
+            ? internals.ariaValueMin
+            : host.getAttribute('aria-valuemin');
+        const valueMax = SUPPORTS_ELEMENT_REFS
+            ? internals.ariaValueMax
+            : host.getAttribute('aria-valuemax');
+        const valueText = SUPPORTS_ELEMENT_REFS
+            ? internals.ariaValueText
+            : host.getAttribute('aria-valuetext');
+
+        lines.push(`aria-valuenow="${valueNow ?? ''}"`);
+        lines.push(`aria-valuemin="${valueMin ?? ''}"`);
+        lines.push(`aria-valuemax="${valueMax ?? ''}"`);
         if (valueText) {
             lines.push(`aria-valuetext="${valueText}"`);
         }

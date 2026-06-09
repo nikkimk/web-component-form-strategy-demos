@@ -1,3 +1,4 @@
+import { watchRefTargets } from './form-field-base.js';
 import {
     ComboboxController,
     createLogRefresher,
@@ -18,6 +19,7 @@ export class ComboboxShadowRefs extends HTMLElement {
     #listbox = null;
     #options = [];
     #unwatchSlot = null;
+    #unwatchLabels = () => {};
 
     constructor() {
         super();
@@ -47,14 +49,6 @@ export class ComboboxShadowRefs extends HTMLElement {
         const valueEl = this.shadowRoot.querySelector('.combobox-value');
         this.#listbox = this.shadowRoot.querySelector('.combobox-listbox');
 
-        syncAriaElementRefs(
-            this,
-            this.#internals,
-            this.#listbox,
-            [this.#labelEl],
-            [this.#helpEl]
-        );
-
         const refreshLog = createLogRefresher('shadow', (logEl) => {
             logAriaRefs(
                 logEl,
@@ -65,6 +59,19 @@ export class ComboboxShadowRefs extends HTMLElement {
                 [this.#helpEl],
                 this.#options
             );
+        });
+
+        const resyncAria = syncAriaElementRefs(
+            this,
+            this.#internals,
+            this.#listbox,
+            [this.#labelEl],
+            [this.#helpEl]
+        );
+
+        this.#unwatchLabels = watchRefTargets([this.#labelEl, this.#helpEl], () => {
+            resyncAria();
+            refreshLog();
         });
 
         this.#unwatchSlot = watchSlottedOptions(this, (options) => {
@@ -88,6 +95,7 @@ export class ComboboxShadowRefs extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.#unwatchLabels();
         this.#unwatchSlot?.();
         this.#controller?.disconnect();
     }

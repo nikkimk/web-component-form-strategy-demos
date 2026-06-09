@@ -1,4 +1,10 @@
-import { createLogRefresher, logHostFieldAriaRefs, syncHostFieldAriaRefs } from './form-field-base.js';
+import {
+    SUPPORTS_ELEMENT_REFS,
+    createLogRefresher,
+    logHostFieldAriaRefs,
+    syncHostFieldAriaRefs,
+    watchRefTargets,
+} from './form-field-base.js';
 
 /**
  * Progress bar with role="progressbar" on the host.
@@ -13,6 +19,9 @@ export class ProgressbarHostRefs extends HTMLElement {
     #value = 0;
     #max = 100;
     #intervalId = null;
+    #labelElements = [];
+    #descriptionElements = [];
+    #unwatchLabels = () => {};
     #refreshLog = () => {};
 
     constructor() {
@@ -29,7 +38,7 @@ export class ProgressbarHostRefs extends HTMLElement {
             <div class="field-host" part="host">
                 <span class="field-label" part="label">Upload progress</span>
                 <span class="field-help" part="help">
-                    Label and description are in shadow; role and value live on the host.
+                    Label and description are in shadow; role and value live on internals.
                 </span>
                 <div class="control-surface progressbar-surface" part="control" aria-hidden="true">
                     <div class="progressbar-track" part="track">
@@ -45,20 +54,25 @@ export class ProgressbarHostRefs extends HTMLElement {
         this.#fillEl = this.shadowRoot.querySelector('.progressbar-fill');
         this.#valueEl = this.shadowRoot.querySelector('.progressbar-value');
 
-        const labelElements = [this.#labelEl];
-        const descriptionElements = [this.#helpEl];
+        this.#labelElements = [this.#labelEl];
+        this.#descriptionElements = [this.#helpEl];
 
-        syncHostFieldAriaRefs(
+        const resyncAria = syncHostFieldAriaRefs(
             this,
             this.#internals,
             'progressbar',
-            labelElements,
-            descriptionElements,
+            this.#labelElements,
+            this.#descriptionElements,
             { focusable: false }
         );
 
-        this.setAttribute('aria-valuemin', '0');
-        this.setAttribute('aria-valuemax', String(this.#max));
+        this.#unwatchLabels = watchRefTargets(
+            [this.#labelEl, this.#helpEl],
+            () => {
+                resyncAria();
+                this.#refreshLog();
+            }
+        );
 
         const logKey = this.getAttribute('data-aria-log') ?? 'progressbar';
         this.#refreshLog = createLogRefresher(logKey, (logEl) => {
@@ -66,8 +80,8 @@ export class ProgressbarHostRefs extends HTMLElement {
                 logEl,
                 this,
                 this.#internals,
-                labelElements,
-                descriptionElements
+                this.#labelElements,
+                this.#descriptionElements
             );
         });
 
@@ -79,6 +93,7 @@ export class ProgressbarHostRefs extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.#unwatchLabels();
         this.#stopDemoAnimation();
     }
 
@@ -103,12 +118,24 @@ export class ProgressbarHostRefs extends HTMLElement {
     #setValue(nextValue) {
         this.#value = Math.min(this.#max, Math.max(0, nextValue));
         const percent = (this.#value / this.#max) * 100;
+        const valueText = `${Math.round(percent)} percent complete`;
 
-        this.setAttribute('aria-valuenow', String(this.#value));
-        this.setAttribute(
-            'aria-valuetext',
-            `${Math.round(percent)} percent complete`
-        );
+        if (SUPPORTS_ELEMENT_REFS) {
+            this.#internals.ariaValueNow = this.#value;
+            this.#internals.ariaValueMin = 0;
+            this.#internals.ariaValueMax = this.#max;
+            this.#internals.ariaValueText = valueText;
+            this.removeAttribute('aria-valuenow');
+            this.removeAttribute('aria-valuemin');
+            this.removeAttribute('aria-valuemax');
+            this.removeAttribute('aria-valuetext');
+        } else {
+            this.setAttribute('aria-valuenow', String(this.#value));
+            this.setAttribute('aria-valuemin', '0');
+            this.setAttribute('aria-valuemax', String(this.#max));
+            this.setAttribute('aria-valuetext', valueText);
+        }
+
         this.#fillEl.style.width = `${percent}%`;
         this.#valueEl.textContent = `${Math.round(percent)}%`;
         this.#refreshLog();

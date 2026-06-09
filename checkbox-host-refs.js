@@ -1,8 +1,10 @@
 import {
+    SUPPORTS_ELEMENT_REFS,
     createLogRefresher,
     logHostFieldAriaRefs,
     resolveLightFieldRefs,
     syncHostFieldAriaRefs,
+    watchRefTargets,
 } from './form-field-base.js';
 
 /**
@@ -14,6 +16,9 @@ export class CheckboxHostRefs extends HTMLElement {
     #helpEl = null;
     #boxEl = null;
     #checked = false;
+    #labelElements = [];
+    #descriptionElements = [];
+    #unwatchLabels = () => {};
     #refreshLog = () => {};
 
     constructor() {
@@ -48,17 +53,28 @@ export class CheckboxHostRefs extends HTMLElement {
               })
             : { labelElements: [this.#labelEl], descriptionElements: [this.#helpEl] };
 
+        this.#labelElements = labelElements;
+        this.#descriptionElements = descriptionElements;
+
         if (useLightLabel) {
             this.#labelEl.hidden = true;
             this.#helpEl.hidden = true;
         }
 
-        syncHostFieldAriaRefs(
+        const resyncAria = syncHostFieldAriaRefs(
             this,
             this.#internals,
             'checkbox',
-            labelElements,
-            descriptionElements
+            this.#labelElements,
+            this.#descriptionElements
+        );
+
+        this.#unwatchLabels = watchRefTargets(
+            [...this.#labelElements, ...this.#descriptionElements],
+            () => {
+                resyncAria();
+                this.#refreshLog();
+            }
         );
 
         this.#setChecked(false);
@@ -69,8 +85,8 @@ export class CheckboxHostRefs extends HTMLElement {
                 logEl,
                 this,
                 this.#internals,
-                labelElements,
-                descriptionElements
+                this.#labelElements,
+                this.#descriptionElements
             );
         });
 
@@ -79,6 +95,7 @@ export class CheckboxHostRefs extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.#unwatchLabels();
         this.removeEventListener('click', this.#onClick);
         this.removeEventListener('keydown', this.#onKeyDown);
     }
@@ -88,7 +105,14 @@ export class CheckboxHostRefs extends HTMLElement {
      */
     #setChecked(nextChecked) {
         this.#checked = nextChecked;
-        this.setAttribute('aria-checked', String(nextChecked));
+
+        if (SUPPORTS_ELEMENT_REFS) {
+            this.#internals.ariaChecked = nextChecked;
+            this.removeAttribute('aria-checked');
+        } else {
+            this.setAttribute('aria-checked', String(nextChecked));
+        }
+
         this.#boxEl.classList.toggle('is-checked', nextChecked);
         this.#refreshLog();
     }

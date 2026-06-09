@@ -1,24 +1,23 @@
 import {
+    collectSlottedFieldRefs,
     createLogRefresher,
     logHostFieldAriaRefs,
-    resolveLightFieldRefs,
     syncHostFieldAriaRefs,
-    watchRefTargets,
+    watchSlottedFieldRefs,
 } from './form-field-base.js';
 
 /**
- * Text field with role="textbox" on the host.
- * The decorative inner input is aria-hidden; typing is handled on the host.
+ * Text field with label and help slotted from Light DOM.
+ * Slotted nodes stay in the light tree and wire through host element refs — no cross-root shadow link.
  */
-export class TextfieldHostRefs extends HTMLElement {
+export class TextfieldSlottedRefs extends HTMLElement {
     #internals = null;
-    #labelEl = null;
-    #helpEl = null;
     #inputEl = null;
     #value = '';
     #labelElements = [];
     #descriptionElements = [];
-    #unwatchLabels = () => {};
+    #unwatchSlots = () => {};
+    #refreshLog = () => {};
 
     constructor() {
         super();
@@ -30,8 +29,12 @@ export class TextfieldHostRefs extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="field-host" part="host">
-                <span class="field-label" part="label">Email address</span>
-                <span class="field-help" part="help">Role is on the host; the inner input is presentational.</span>
+                <div class="field-label-slot" part="label-slot">
+                    <slot name="label"></slot>
+                </div>
+                <div class="field-help-slot" part="help-slot">
+                    <slot name="help-text"></slot>
+                </div>
                 <div class="control-surface textfield-surface" part="control">
                     <input
                         class="textfield-input"
@@ -45,46 +48,25 @@ export class TextfieldHostRefs extends HTMLElement {
             </div>
         `;
 
-        this.#labelEl = this.shadowRoot.querySelector('.field-label');
-        this.#helpEl = this.shadowRoot.querySelector('.field-help');
         this.#inputEl = this.shadowRoot.querySelector('.textfield-input');
 
-        const useLightLabel = this.hasAttribute('label-target');
+        const resyncAria = syncHostFieldAriaRefs(this, this.#internals, 'textbox', [], [], {
+            resolveRefs: () => {
+                const refs = collectSlottedFieldRefs(this);
+                this.#labelElements = refs.labelElements;
+                this.#descriptionElements = refs.descriptionElements;
+                return refs;
+            },
+        });
 
-        const { labelElements, descriptionElements } = useLightLabel
-            ? resolveLightFieldRefs(this, {
-                  labelTarget: this.getAttribute('label-target') ?? '',
-                  helpTarget: this.getAttribute('help-target') ?? '',
-              })
-            : { labelElements: [this.#labelEl], descriptionElements: [this.#helpEl] };
-
-        this.#labelElements = labelElements;
-        this.#descriptionElements = descriptionElements;
-
-        if (useLightLabel) {
-            this.#labelEl.hidden = true;
-            this.#helpEl.hidden = true;
-        }
-
-        const resyncAria = syncHostFieldAriaRefs(
-            this,
-            this.#internals,
-            'textbox',
-            this.#labelElements,
-            this.#descriptionElements
-        );
-
-        this.#unwatchLabels = watchRefTargets(
-            [...this.#labelElements, ...this.#descriptionElements],
-            () => {
-                resyncAria();
-                this.#refreshLog();
-            }
-        );
+        this.#unwatchSlots = watchSlottedFieldRefs(this, () => {
+            resyncAria();
+            this.#refreshLog();
+        });
 
         this.#syncDisplay();
 
-        const logKey = this.getAttribute('data-aria-log') ?? 'textfield';
+        const logKey = this.getAttribute('data-aria-log') ?? 'textfield-slotted';
         this.#refreshLog = createLogRefresher(logKey, (logEl) => {
             logHostFieldAriaRefs(
                 logEl,
@@ -99,10 +81,8 @@ export class TextfieldHostRefs extends HTMLElement {
         this.addEventListener('click', this.#onClick);
     }
 
-    #refreshLog = () => {};
-
     disconnectedCallback() {
-        this.#unwatchLabels();
+        this.#unwatchSlots();
         this.removeEventListener('keydown', this.#onKeyDown);
         this.removeEventListener('click', this.#onClick);
     }
@@ -138,4 +118,4 @@ export class TextfieldHostRefs extends HTMLElement {
     }
 }
 
-customElements.define('textfield-host-refs', TextfieldHostRefs);
+customElements.define('textfield-slotted-refs', TextfieldSlottedRefs);

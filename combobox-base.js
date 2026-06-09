@@ -5,7 +5,9 @@
  * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/ariaDescribedByElements
  */
 
-export const SUPPORTS_ELEMENT_REFS = 'ariaControlsElements' in Element.prototype;
+import { createLogRefresher, mirrorShadowAccessibleName, resolveLogElement } from './form-field-base.js';
+
+export { createLogRefresher, resolveLogElement };
 
 /**
  * @param {HTMLElement} element
@@ -54,32 +56,7 @@ function prepareRefTargets(elements) {
     });
 }
 
-/**
- * @param {ElementInternals} internals
- * @param {HTMLElement[]} shadowLabels
- * @param {HTMLElement[]} shadowDescriptions
- */
-function applyShadowNameFallback(internals, shadowLabels, shadowDescriptions) {
-    if (shadowLabels.length && !internals.ariaLabelledByElements?.length) {
-        internals.ariaLabel = shadowLabels
-            .map((element) => element.textContent?.trim())
-            .filter(Boolean)
-            .join(' ');
-    }
-
-    if (shadowDescriptions.length && !internals.ariaDescribedByElements?.length) {
-        const description = shadowDescriptions
-            .map((element) => element.textContent?.trim())
-            .filter(Boolean)
-            .join(' ');
-
-        if ('ariaDescription' in internals) {
-            internals.ariaDescription = description;
-        }
-    }
-}
-
-export { createLogRefresher, resolveLogElement } from './form-field-base.js';
+export const SUPPORTS_ELEMENT_REFS = 'ariaControlsElements' in Element.prototype;
 
 /**
  * @param {HTMLElement} host
@@ -95,49 +72,73 @@ export function syncAriaElementRefs(
     labelElements = [],
     descriptionElements = []
 ) {
-    host.setAttribute('role', 'combobox');
-    host.setAttribute('aria-haspopup', 'listbox');
-    host.setAttribute('tabindex', '0');
+    const resync = () => {
+        host.setAttribute('tabindex', '0');
+        host.setAttribute('aria-haspopup', 'listbox');
 
-    const { light: lightLabels, shadow: shadowLabels } = partitionByRoot(labelElements);
-    const { light: lightDescriptions, shadow: shadowDescriptions } =
-        partitionByRoot(descriptionElements);
+        const { light: lightLabels, shadow: shadowLabels } = partitionByRoot(labelElements);
+        const { light: lightDescriptions, shadow: shadowDescriptions } =
+            partitionByRoot(descriptionElements);
 
-    const preparedLightLabels = prepareRefTargets(lightLabels);
-    const preparedShadowLabels = prepareRefTargets(shadowLabels);
-    const preparedLightDescriptions = prepareRefTargets(lightDescriptions);
-    const preparedShadowDescriptions = prepareRefTargets(shadowDescriptions);
+        const preparedLightLabels = prepareRefTargets(lightLabels);
+        const preparedShadowLabels = prepareRefTargets(shadowLabels);
+        const preparedLightDescriptions = prepareRefTargets(lightDescriptions);
+        const preparedShadowDescriptions = prepareRefTargets(shadowDescriptions);
 
-    if (!SUPPORTS_ELEMENT_REFS) {
-        ensureFallbackId(listbox, 'listbox');
-        host.setAttribute('aria-controls', listbox.id);
+        if (!SUPPORTS_ELEMENT_REFS) {
+            host.setAttribute('role', 'combobox');
+            ensureFallbackId(listbox, 'listbox');
+            host.setAttribute('aria-controls', listbox.id);
 
-        if (preparedLightLabels.length) {
-            host.setAttribute(
-                'aria-labelledby',
-                preparedLightLabels.map((el) => el.id).join(' ')
-            );
+            if (preparedLightLabels.length) {
+                host.setAttribute(
+                    'aria-labelledby',
+                    preparedLightLabels.map((el) => el.id).join(' ')
+                );
+            } else {
+                host.removeAttribute('aria-labelledby');
+            }
+
+            if (preparedLightDescriptions.length) {
+                host.setAttribute(
+                    'aria-describedby',
+                    preparedLightDescriptions.map((el) => el.id).join(' ')
+                );
+            } else {
+                host.removeAttribute('aria-describedby');
+            }
+
+            return;
         }
 
-        if (preparedLightDescriptions.length) {
-            host.setAttribute(
-                'aria-describedby',
-                preparedLightDescriptions.map((el) => el.id).join(' ')
+        host.removeAttribute('role');
+        host.removeAttribute('aria-controls');
+        host.removeAttribute('aria-labelledby');
+        host.removeAttribute('aria-describedby');
+
+        internals.role = 'combobox';
+        internals.ariaControlsElements = [listbox];
+        internals.ariaLabelledByElements = preparedShadowLabels;
+        internals.ariaDescribedByElements = preparedShadowDescriptions;
+        host.ariaLabelledByElements = preparedLightLabels;
+        host.ariaDescribedByElements = preparedLightDescriptions;
+
+        if (preparedShadowLabels.length || preparedShadowDescriptions.length) {
+            mirrorShadowAccessibleName(
+                internals,
+                preparedShadowLabels,
+                preparedShadowDescriptions
             );
+        } else {
+            internals.ariaLabel = null;
+            if ('ariaDescription' in internals) {
+                internals.ariaDescription = null;
+            }
         }
+    };
 
-        return;
-    }
-
-    internals.role = 'combobox';
-    internals.ariaControlsElements = [listbox];
-    internals.ariaLabelledByElements = preparedShadowLabels;
-    internals.ariaDescribedByElements = preparedShadowDescriptions;
-
-    host.ariaLabelledByElements = preparedLightLabels;
-    host.ariaDescribedByElements = preparedLightDescriptions;
-
-    applyShadowNameFallback(internals, preparedShadowLabels, preparedShadowDescriptions);
+    resync();
+    return resync;
 }
 
 /**
@@ -391,7 +392,7 @@ export class ComboboxController {
  */
 export function renderSupportStatus(statusEl) {
     statusEl.innerHTML = SUPPORTS_ELEMENT_REFS
-        ? '<strong>Supported:</strong> Shadow listbox and shadow label/help refs use <code>ElementInternals</code> (<code>ariaControlsElements</code>, etc.). Light DOM label/help refs use the host element. Slotted options use <code>aria-activedescendant</code> on the host.'
+        ? '<strong>Supported:</strong> Widget <code>role</code> and shadow listbox use <code>ElementInternals</code>. Shadow label/help use element refs plus mirrored <code>ariaLabel</code> / <code>ariaDescription</code>. Light or slotted label/help use the host. Slotted options use <code>aria-activedescendant</code> on the host.'
         : '<strong>Fallback:</strong> Element reference properties are unavailable. Light DOM label/help fall back to ID attributes on the host. Shadow listbox controls cannot be linked without element refs. Options use <code>aria-activedescendant</code>.';
 }
 
@@ -414,6 +415,9 @@ export function logAriaRefs(
     options = []
 ) {
     const lines = [];
+    const role = SUPPORTS_ELEMENT_REFS ? internals.role : host.getAttribute('role');
+
+    lines.push(`role="${role ?? ''}" (via ${SUPPORTS_ELEMENT_REFS ? 'internals' : 'host'})`);
 
     if (SUPPORTS_ELEMENT_REFS) {
         lines.push(
@@ -431,6 +435,15 @@ export function logAriaRefs(
         lines.push(
             `host.ariaDescribedByElements → ${formatElements(host.ariaDescribedByElements)}`
         );
+
+        if (internals.ariaLabel) {
+            lines.push(`internals.ariaLabel="${internals.ariaLabel}"`);
+        }
+
+        if ('ariaDescription' in internals && internals.ariaDescription) {
+            lines.push(`internals.ariaDescription="${internals.ariaDescription}"`);
+        }
+
         lines.push(`listbox element: ${describeElement(listbox)}`);
         labels.forEach((label, i) => {
             lines.push(`label[${i}]: ${describeElement(label)} (${label.textContent?.trim()})`);
