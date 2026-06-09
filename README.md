@@ -210,13 +210,70 @@ Legacy function wrappers (`syncHostFieldAriaRefs`, `establishSlottedFieldAriaSyn
 
 ## How to wire label and help (Q3)
 
-| Label/help location | What to set |
-| ------------------- | ----------- |
-| On the page (light DOM) | `host.ariaLabelledByElements` or `inner.ariaLabelledByElements` |
-| Slotted from app author | `host.ariaLabelledByElements` (re-sync on `slotchange`) |
-| Inside shadow (component-owned) | `internals.ariaLabelledByElements` + mirror text on `internals.ariaLabel` |
-| Shadow listbox | `internals.ariaControlsElements` |
-| Slotted options | Host `aria-activedescendant="id"` |
+**Rule of thumb:** where the node lives decides where you wire it — not where the role lives. Q2 always places the role on the **host** via `ElementInternals`.
+
+### Label and description by scenario
+
+| Label / help scenario | Label | Description (help text) | Role (Q2 — same for all) | Re-sync when | Controller |
+| --------------------- | ----- | ----------------------- | ------------------------ | ------------ | ---------- |
+| **Light DOM** — label and help on the page, outside the component | `host.ariaLabelledByElements = [labelEl]` | `host.ariaDescribedByElements = [helpEl]` | `internals.role = 'textbox'` (etc.) | Page nodes added/removed or text changes | [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) |
+| **Shadow DOM** — label and help owned inside the component | `internals.ariaLabelledByElements = [labelEl]` | `internals.ariaDescribedByElements = [helpEl]` | Same | Shadow label/help text changes | [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) |
+| **Slotted** — label and help passed in by the app author (`slot="label"`, `slot="description"`) | `host.ariaLabelledByElements = […assigned slot nodes]` | `host.ariaDescribedByElements = […assigned slot nodes]` | Same | `slotchange`, slotted node text changes | [`SlottedFieldAriaController`](./docs/controllers/slotted-field-aria-controller.md) |
+| **Mixed** — some label/help in light DOM, some in shadow (same component) | **Split by tree:** light → `host.ariaLabelledByElements`; shadow → `internals.ariaLabelledByElements` | **Split by tree:** light → `host.ariaDescribedByElements`; shadow → `internals.ariaDescribedByElements` | Same | Any label/help node in either tree changes | [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) |
+
+### Required extras by scenario
+
+| Scenario | Also do this | Do not do this |
+| -------- | ------------ | -------------- |
+| Light DOM | Give label/help stable **IDs** before setting element refs. Resolve page nodes via `getElementById`, attributes, or `resolveRefs`. | `host.ariaLabelledByElements` → shadow label nodes |
+| Shadow DOM | **Mirror text:** copy label/help string to `internals.ariaLabel` and `internals.ariaDescription` (not refs alone). Use `<span class="field-label">`, not `<label>` — focus is on the host. | `host.ariaLabelledByElements` → shadow nodes |
+| Slotted | Collect assigned nodes from named slots; treat them as light DOM (they stay in the light tree). | Assume slotted nodes are shadow-internal |
+| Mixed | Pass **all** label nodes in one array; partition light vs shadow automatically. Mirror **shadow** text on `internals`. Screen reader gets both names (light refs + shadow refs/mirror). | Put everything on host or everything on internals |
+
+### Combobox / picker add-on (any label scenario)
+
+When the popup/listbox lives in shadow, add this regardless of where label/help live:
+
+| Link | Property |
+| ---- | -------- |
+| Host → shadow listbox | `internals.ariaControlsElements = [listboxEl]` |
+| Host → active option | `host.setAttribute('aria-activedescendant', optionId)` |
+| Host popup hint | `host.setAttribute('aria-haspopup', 'listbox')` |
+
+Never set `host.ariaControlsElements` to a shadow listbox — Chromium ignores it.
+
+### Example — mixed light + shadow label/help
+
+```javascript
+// All nodes in one list — controller splits by tree root
+this.#ariaController = new SplitSurfaceAriaController({
+  host: this,
+  internals: this.#internals,
+  role: 'combobox',
+  controls: [this.#listbox],
+  labelElements: [pageLabelEl, shadowLabelEl],
+  descriptionElements: [pageHelpEl, shadowHelpEl],
+});
+this.#ariaController.connect();
+```
+
+Result:
+
+- `pageLabelEl`, `pageHelpEl` → **host** element refs
+- `shadowLabelEl`, `shadowHelpEl` → **internals** element refs + mirrored strings
+- `listboxEl` → **internals** `ariaControlsElements`
+- role → **host** via `internals.role`
+
+### Demos that match each scenario
+
+| Scenario | Demo |
+| -------- | ---- |
+| Light DOM | [Combobox — light label](./demo-combobox-light-label.html) · [Host — light page labels](./demo-host-light-label.html) |
+| Shadow DOM | [Combobox — shadow label](./demo-combobox-shadow-label.html) · [Host — shadow labels](./demo-host-shadow-label.html) |
+| Slotted | [Slotted label](./demo-host-slotted-label.html) · [Dynamic slotted](./demo-host-slotted-dynamic.html) |
+| Mixed | [Combobox — mixed label](./demo-combobox-mixed-label.html) |
+
+**One-line summary:** Q2 is always the host; Q3 splits on **tree location** — light targets wire on `host`, shadow targets wire on `internals` (with text mirroring), and slotted content counts as light.
 
 **Controllers:** [guides](./docs/controllers/README.md) · [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) · [`SlottedFieldAriaController`](./docs/controllers/slotted-field-aria-controller.md) · [`InnerCrossRootAriaController`](./docs/controllers/inner-cross-root-aria-controller.md)
 
