@@ -1,0 +1,10 @@
+{
+  "name": "combobox-aria-element-refs",
+  "private": true,
+  "scripts": {
+    "start": "servor . index.html 8080 --reload"
+  },
+  "devDependencies": {
+    "servor": "^4.0.2"
+  }
+}
