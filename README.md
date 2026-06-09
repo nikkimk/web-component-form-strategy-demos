@@ -12,7 +12,7 @@ Live examples that help the team decide **where ARIA roles go** and **how labels
 
 | Question | Short answer |
 | -------- | ------------ |
-| **Q2 — Where do roles live?** | Depends on the control. Comboboxes and pickers use the **host**. Textfields and checkboxes use a **native inner input**. |
+| **Q2 — Where do roles live?** | Use the **host**. |
 | **Q3 — How do labels and help connect?** | Use **two wiring spots**. Light DOM targets → **host** (or inner input). Shadow DOM targets → **`ElementInternals`**. |
 
 ---
@@ -24,13 +24,13 @@ Live examples that help the team decide **where ARIA roles go** and **how labels
 | Build a combobox with label inside the component | [Combobox — shadow label](./demo-combobox-shadow-label.html) |
 | Build a combobox with label on the page | [Combobox — light label](./demo-combobox-light-label.html) |
 | Mix page label + extra shadow label on one field | [Combobox — mixed label](./demo-combobox-mixed-label.html) |
-| Build a **real** textfield or checkbox with page label | [Cross-root fields](./demo-cross-root-fields.html) ⭐ production pattern |
+| Build a textfield or checkbox with page label (cross-root wiring) | [Cross-root fields](./demo-cross-root-fields.html) |
 | Let the app author pass in label markup (slots) | [Slotted label](./demo-host-slotted-label.html) |
 | Change slotted label/help at runtime (errors, etc.) | [Dynamic slotted refs](./demo-host-slotted-dynamic.html) |
-| Experiment with role on the custom element host | [Host shadow labels](./demo-host-shadow-label.html) |
+| Build a textfield or checkbox with host role + shadow labels | [Host shadow labels](./demo-host-shadow-label.html) ⭐ Q2 default |
 | See the original cross-root CodePen idea on form fields | [CodePen POC](https://codepen.io/spectrum-css/pen/pvNEVda) → [our demo](./demo-cross-root-fields.html) |
 
-⭐ **Best starting point for textfields and checkboxes:** [Cross-root fields](./demo-cross-root-fields.html)
+⭐ **Best starting point for textfields and checkboxes:** [Host shadow labels](./demo-host-shadow-label.html)
 
 ---
 
@@ -71,7 +71,7 @@ Screen readers need to know which label and help text belong to which control. *
 4. **Copy shadow label text** to `internals.ariaLabel` and `internals.ariaDescription` — not just element refs.
 5. **Give nodes IDs** before setting element refs.
 6. **Re-wire when content changes** — use `slotchange` or `MutationObserver`.
-7. **Production textfields/checkboxes:** use a **native inner input**, not role on the host.
+7. **Put the role on the host** (`ElementInternals` when shadow-internal wiring is needed). Use a native inner input for value and focus when the control needs one — not as a separate role surface.
 
 ---
 
@@ -95,11 +95,11 @@ Each page has a **Resolved ARIA references** panel you can read while testing.
 
 ---
 
-### Cross-root inner surface ⭐ production pattern
+### Cross-root label wiring (Q3 pattern)
 
 | Demo | What it shows | Key takeaway |
 | ---- | ------------- | ------------ |
-| [Textfield, checkbox, progress bar](./demo-cross-root-fields.html) | Inner control in shadow; label/help on page | Set refs on the **inner input**, not the host. Same idea as the [CodePen POC](https://codepen.io/spectrum-css/pen/pvNEVda). |
+| [Textfield, checkbox, progress bar](./demo-cross-root-fields.html) | Inner control in shadow; label/help on page | Wire refs on the **inner input** when the label is in light DOM and the control surface is in shadow. Same idea as the [CodePen POC](https://codepen.io/spectrum-css/pen/pvNEVda). Role still lives on the **host** (Q2). |
 
 ```javascript
 const input = host.shadowRoot.querySelector('[data-aria-surface]');
@@ -115,9 +115,9 @@ Helper: [`InnerCrossRootAriaController`](./inner-cross-root-aria-controller.js)
 
 ---
 
-### Host-role demos (experiments — not production default)
+### Host-role demos (Q2 default)
 
-These put the widget role on the custom element host. Use them to **learn** the split-surface model, not to ship simple textfields.
+These put the widget role on the custom element host via `ElementInternals`.
 
 | Demo | What it shows | Key takeaway |
 | ---- | ------------- | ------------ |
@@ -125,7 +125,7 @@ These put the widget role on the custom element host. Use them to **learn** the 
 | [Slotted label](./demo-host-slotted-label.html) | Label passed in via slot | Slotted nodes stay in light tree → wire on **host**. |
 | [Dynamic slotted](./demo-host-slotted-dynamic.html) | Swap label/help with buttons | Re-collect slots and update refs on every change. |
 | [Light page labels](./demo-host-light-label.html) | External `<label>` on page | Host refs for label — compare to [cross-root demo](./demo-cross-root-fields.html). |
-| [Textfield only](./demo-host-textfield-shadow.html) | Host acts as textbox | Inner input is decorative. PoC only. |
+| [Textfield only](./demo-host-textfield-shadow.html) | Host acts as textbox | Inner input is decorative. |
 | [Checkbox only](./demo-host-checkbox-shadow.html) | Host acts as checkbox | State on `internals.ariaChecked`. |
 | [Progress bar only](./demo-host-progressbar-shadow.html) | Host carries progress role | Not in tab order; track is visual only. |
 
@@ -135,11 +135,13 @@ These put the widget role on the custom element host. Use them to **learn** the 
 
 Demos share three controllers. Each handles connect/disconnect, ID assignment, ref wiring, and re-sync when label/help changes.
 
-| Controller | Use when | Module |
-| ---------- | -------- | ------ |
-| **`SplitSurfaceAriaController`** | Label/help split across host + `ElementInternals` (combobox, host-role fields) | [`split-surface-aria-controller.js`](./split-surface-aria-controller.js) |
-| **`SlottedFieldAriaController`** | Label/help slotted from the app author | [`slotted-field-aria-controller.js`](./slotted-field-aria-controller.js) |
-| **`InnerCrossRootAriaController`** | Inner shadow input → page label/help (CodePen pattern) | [`inner-cross-root-aria-controller.js`](./inner-cross-root-aria-controller.js) |
+**Full implementation guides:** [`docs/controllers/`](./docs/controllers/README.md)
+
+| Controller | Guide | Use when |
+| ---------- | ----- | -------- |
+| **`SplitSurfaceAriaController`** | [doc](./docs/controllers/split-surface-aria-controller.md) | Label/help split across host + `ElementInternals` (combobox, host-role fields) |
+| **`SlottedFieldAriaController`** | [doc](./docs/controllers/slotted-field-aria-controller.md) | Label/help slotted from the app author |
+| **`InnerCrossRootAriaController`** | [doc](./docs/controllers/inner-cross-root-aria-controller.md) | Inner shadow input → page label/help (CodePen pattern) |
 
 Shared utilities: [`aria-ref-utils.js`](./aria-ref-utils.js) · [`field-ref-watchers.js`](./field-ref-watchers.js)
 
@@ -197,21 +199,12 @@ Legacy function wrappers (`syncHostFieldAriaRefs`, `establishSlottedFieldAriaSyn
 
 | Control | Where role lives | Where focus goes | Demo |
 | ------- | ---------------- | ---------------- | ---- |
-| Combobox / picker | `ElementInternals` (or host fallback) | Host | [Combobox demos](./demo-combobox-shadow-label.html) |
-| Textfield (ship this) | Native inner `<input>` | Inner input (`delegatesFocus`) | [Cross-root demo](./demo-cross-root-fields.html) |
-| Checkbox (ship this) | Native inner `<input type="checkbox">` | Inner input | [Cross-root demo](./demo-cross-root-fields.html) |
-| Progress bar | `ElementInternals` or inner `role="progressbar"` | Usually not focusable | [Progress demos](./demo-host-progressbar-shadow.html) |
-| Host-role textfield/checkbox | `ElementInternals` | Host | Host-role demos above |
+| Combobox / picker | Host (`ElementInternals`) | Host | [Combobox demos](./demo-combobox-shadow-label.html) |
+| Textfield | Host (`ElementInternals`) | Host or inner input (`delegatesFocus`) | [Host shadow labels](./demo-host-shadow-label.html) · [Cross-root label wiring](./demo-cross-root-fields.html) |
+| Checkbox | Host (`ElementInternals`) | Host or inner input | [Host shadow labels](./demo-host-shadow-label.html) · [Cross-root label wiring](./demo-cross-root-fields.html) |
+| Progress bar | Host (`ElementInternals`) | Usually not focusable | [Progress demos](./demo-host-progressbar-shadow.html) |
 
----
-
-| Control | Where role lives | Where focus goes | Demo |
-| ------- | ---------------- | ---------------- | ---- |
-| Combobox / picker | `ElementInternals` (or host fallback) | Host | [Combobox demos](./demo-combobox-shadow-label.html) |
-| Textfield (ship this) | Native inner `<input>` | Inner input (`delegatesFocus`) | [Cross-root demo](./demo-cross-root-fields.html) |
-| Checkbox (ship this) | Native inner `<input type="checkbox">` | Inner input | [Cross-root demo](./demo-cross-root-fields.html) |
-| Progress bar | `ElementInternals` or inner `role="progressbar"` | Usually not focusable | [Progress demos](./demo-host-progressbar-shadow.html) |
-| Host-role textfield/checkbox | `ElementInternals` | Host | Host-role demos above |
+> **Cross-root demos** wire page labels to a shadow inner input ([CodePen pattern](https://codepen.io/spectrum-css/pen/pvNEVda)). That is a **Q3 label-wiring** technique; Q2 still places the role on the host.
 
 ---
 
@@ -225,7 +218,7 @@ Legacy function wrappers (`syncHostFieldAriaRefs`, `establishSlottedFieldAriaSyn
 | Shadow listbox | `internals.ariaControlsElements` |
 | Slotted options | Host `aria-activedescendant="id"` |
 
-**Controllers:** [`SplitSurfaceAriaController`](./split-surface-aria-controller.js) · [`SlottedFieldAriaController`](./slotted-field-aria-controller.js) · [`InnerCrossRootAriaController`](./inner-cross-root-aria-controller.js)
+**Controllers:** [guides](./docs/controllers/README.md) · [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) · [`SlottedFieldAriaController`](./docs/controllers/slotted-field-aria-controller.md) · [`InnerCrossRootAriaController`](./docs/controllers/inner-cross-root-aria-controller.md)
 
 ---
 
@@ -238,7 +231,7 @@ Shadow labels **cannot** link from the host. Choose:
 | **`ElementInternals` + mirror text** | Component owns the label in shadow |
 | **Slots** | App author supplies label markup |
 | **Page-level label** | Label sits next to the field on the page |
-| **Inner input refs** | Production textfield/checkbox with page label |
+| **Inner input refs** | Page label wired to shadow inner control ([cross-root demo](./demo-cross-root-fields.html)) |
 
 ---
 
@@ -260,9 +253,9 @@ Shadow labels **cannot** link from the host. Choose:
 | Component | Role | Label / help / popup |
 | --------- | ---- | -------------------- |
 | Combobox | Internals combobox | Internals → shadow listbox; split label/help; light options |
-| Textfield (production) | Inner native input | Inner input → light label ([demo](./demo-cross-root-fields.html)) |
-| Checkbox (production) | Inner native input | Same |
-| Textfield (host PoC) | Internals textbox | Shadow → internals; light → host |
+| Textfield | Host / internals textbox | Shadow → internals; light → host ([demo](./demo-host-shadow-label.html)) |
+| Checkbox | Host / internals checkbox | Same |
+| Textfield / checkbox (cross-root label wiring) | Host role; labels on inner input | Inner input → light label ([demo](./demo-cross-root-fields.html)) |
 | Progress bar | Internals progressbar | Shadow → internals + mirror |
 
 ---
