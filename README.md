@@ -153,27 +153,6 @@ Extract from PoC into `@spectrum-web-components/core` (names illustrative):
 
 Consumers keep composing `<label>` + `<swc-*>` + help in light DOM **or** use bundled shadow label/help without changing ARIA behavior.
 
----
-
-## Review checklist
-
-### Acceptance (team process)
-
-- [ ] **SWC maintainer** sign-off (review approval or comment)
-- [ ] **A11y stakeholder** sign-off (review approval or comment)
-- [ ] PoC links verified open: [demos](./combobox-aria-element-refs/), [CodePen](https://codepen.io/spectrum-css/pen/pvNEVda?editors=0010), [StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/combobox-aria-element-refs)
-- [ ] Epic / Miro board linked from SWC PR description
-- [ ] Jira Epic summary updated with Q1–Q4 table (short form); this README remains canonical detail
-
-### Sign-off log
-
-| Reviewer | Role | Date | Status |
-| -------- | ---- | ---- | ------ |
-| _name_ | SWC maintainer | | Pending |
-| _name_ | A11y stakeholder | | Pending |
-
----
-
 ## Running the PoC
 
 ```bash
