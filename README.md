@@ -98,7 +98,7 @@ Each page has a **Resolved ARIA references** panel per control. Open [index.html
 
 ## Reusable controllers
 
-Demos share three controllers. Each handles connect/disconnect, ID assignment, ref wiring, and re-sync when label/help changes.
+Demos share two controllers. Each handles connect/disconnect, ID assignment, ref wiring, and re-sync when label/help changes.
 
 **Full implementation guides:** [`docs/controllers/`](./docs/controllers/README.md)
 
@@ -137,7 +137,7 @@ this.#ariaController = new SlottedFieldAriaController({
   internals: this.#internals,
   role: 'textbox',
   labelSlot: 'label',
-  helpSlot: 'description',
+  helpSlot: 'help-text',
   onRefsChange: ({ labelElements, descriptionElements }) => { /* update log */ },
 });
 this.#ariaController.connect();
@@ -167,16 +167,16 @@ Legacy function wrappers (`syncHostFieldAriaRefs`, `establishSlottedFieldAriaSyn
 | Label / help scenario | Label | Description (help text) | Role (Q2 — same for all) | Re-sync when | Controller |
 | --------------------- | ----- | ----------------------- | ------------------------ | ------------ | ---------- |
 | **Light DOM** — label and help on the page, outside the component | `host.ariaLabelledByElements = [labelEl]` | `host.ariaDescribedByElements = [helpEl]` | `internals.role = 'textbox'` (etc.) | Page nodes added/removed or text changes | [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) |
-| **Shadow DOM** — label and help owned inside the component | `internals.ariaLabelledByElements = [labelEl]` | `internals.ariaDescribedByElements = [helpEl]` | Same | Shadow label/help text changes (including slotted content) | [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) |
-| **Slotted** — label and help passed in by the app author (`slot="label"`, `slot="description"`) | `host.ariaLabelledByElements = […assigned slot nodes]` | `host.ariaDescribedByElements = […assigned slot nodes]` | Same | `slotchange`, slotted node text changes | [`SlottedFieldAriaController`](./docs/controllers/slotted-field-aria-controller.md) |
+| **Shadow DOM** — label and help containers inside the component; text slotted into inner `<slot name="label">` / `<slot name="help-text">` | `internals.ariaLabelledByElements = [shadowLabelEl]` | `internals.ariaDescribedByElements = [shadowHelpEl]` | Same | Slotted text or container content changes | [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) |
+| **Slotted** — whole label and help nodes passed in by the app author (`slot="label"`, `slot="help-text"`) | `host.ariaLabelledByElements = […assigned slot nodes]` | `host.ariaDescribedByElements = […assigned slot nodes]` | Same | `slotchange`, slotted node text changes | [`SlottedFieldAriaController`](./docs/controllers/slotted-field-aria-controller.md) |
 
 ### Required extras by scenario
 
 | Scenario | Also do this | Do not do this |
 | -------- | ------------ | -------------- |
 | Light DOM | Give label/help stable **IDs** before setting element refs. Resolve page nodes via `getElementById`, attributes, or `resolveRefs`. | `host.ariaLabelledByElements` → shadow label nodes |
-| Shadow DOM | **Mirror text:** copy label/help string to `internals.ariaLabel` and `internals.ariaDescription` (not refs alone). Use `<span class="field-label">` with an inner `<slot name="label">`, not `<label>` — focus is on the host. | `host.ariaLabelledByElements` → shadow nodes |
-| Slotted | Collect assigned nodes from named slots; treat them as light DOM (they stay in the light tree). | Assume slotted nodes are shadow-internal |
+| Shadow DOM | **Mirror text** from the shadow label/help containers to `internals.ariaLabel` / `ariaDescription`. Use `<span class="field-label"><slot name="label">…</slot></span>` — not `<label>`. Wire refs to the **container**, not the slotted text nodes. | `host.ariaLabelledByElements` → shadow nodes |
+| Slotted | Collect **whole** assigned label/help nodes from named slots; they stay in the light tree. | Assume slotted nodes are shadow-internal |
 
 ### Combobox / picker add-on (any label scenario)
 
@@ -210,8 +210,8 @@ Shadow labels **cannot** link from the host. Choose:
 
 | Approach | Best when |
 | -------- | --------- |
-| **`ElementInternals` + mirror text** | Component owns the label in shadow |
-| **Slots** | App author supplies label markup |
+| **`ElementInternals` + inner slots** | Component owns the label in shadow, and app author supplied label text (as prop or in light DOM) |
+| **Slots (whole nodes)** | App author supplies full label/help markup projected into the component |
 | **Page-level label** | Label sits next to the field on the page |
 
 ---

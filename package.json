@@ -1,5 +1,6 @@
 {
   "name": "web-component-form-strategy-demos",
+  "description": "Interactive PoCs for host-role ARIA (Q2) and split-surface label/help wiring (Q3) across textfield, checkbox, progress bar, and combobox.",
   "private": true,
   "scripts": {
     "start": "servor . index.html 8080 --reload"

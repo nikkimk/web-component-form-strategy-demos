@@ -231,5 +231,5 @@ Set value state separately on `internals.ariaValueNow`, `ariaValueText`, etc.
 ## Related
 
 - [`SlottedFieldAriaController`](./slotted-field-aria-controller.md) — label/help from slots
-- [`InnerCrossRootAriaController`](./inner-cross-root-aria-controller.md) — inner input → page label
+- [`SlottedFieldAriaController`](./slotted-field-aria-controller.md) — whole label/help nodes from slots
 - [Project README — reusable controllers](../../README.md#reusable-controllers)

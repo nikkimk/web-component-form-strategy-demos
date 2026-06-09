@@ -222,5 +222,5 @@ Multiple description nodes are supported — pass them all through the descripti
 ## Related
 
 - [`SplitSurfaceAriaController`](./split-surface-aria-controller.md) — underlying split-surface wiring
-- [`InnerCrossRootAriaController`](./inner-cross-root-aria-controller.md) — production inner-input pattern
+- [`SlottedFieldAriaController`](./slotted-field-aria-controller.md) — whole label/help nodes from slots
 - [Project README — reusable controllers](../../README.md#reusable-controllers)
