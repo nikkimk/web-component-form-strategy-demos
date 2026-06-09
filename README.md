@@ -1,13 +1,5 @@
 # Form fields strategy
 
-**Status:** Proposed — for team review before scaling 2nd-gen form field migration  
-**Audience:** SWC maintainers, a11y stakeholders, 2nd-gen migration contributors  
-**Non-goal:** This document does not implement a shared mixin or migrate a production SWC component. It records direction only.
-
----
-
-## Summary
-
 PoC work in [`combobox-aria-element-refs/`](./combobox-aria-element-refs/) validates a **split-surface ARIA model** for encapsulated form controls. The team should adopt this as the default 2nd-gen forms strategy unless a component class has a documented exception.
 
 **Recommendation in one sentence:** Put **widget semantics and focus on the host**, wire **shadow-internal relationships through `ElementInternals` reflected element references**, keep **consumer-owned or slotted content in Light DOM** where ID-based references or slotted composition are required, and **centralize the wiring in a shared form-field base/mixin** derived from the PoC’s `syncAriaElementRefs` pattern.
