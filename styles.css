@@ -3,10 +3,15 @@
     outline: none;
 }
 
-.combobox-host {
+.combobox-field {
     display: grid;
     gap: 0.25rem;
     max-width: 20rem;
+}
+
+.combobox-host {
+    display: grid;
+    gap: 0;
 }
 
 .combobox-trigger {

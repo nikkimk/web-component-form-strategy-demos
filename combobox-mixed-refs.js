@@ -32,20 +32,22 @@ export class ComboboxMixedRefs extends HTMLElement {
     connectedCallback() {
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
-            <div class="combobox-host" part="host">
-                <span class="field-label mixed-note" part="shadow-label">(Shadow label supplement)</span>
-                <span class="field-help mixed-note" part="shadow-help">(Shadow help supplement)</span>
-                <div class="combobox-trigger" part="trigger">
-                    <span class="combobox-value" part="value">Select a fruit</span>
-                    <span class="combobox-chevron" aria-hidden="true">▾</span>
+            <div class="combobox-field" part="field">
+                <span class="field-label mixed-note" part="shadow-label" aria-hidden="true">(Shadow label supplement)</span>
+                <span class="field-help mixed-note" part="shadow-help" aria-hidden="true">(Shadow help supplement)</span>
+                <div class="combobox-host" part="host">
+                    <div class="combobox-trigger" part="trigger">
+                        <span class="combobox-value" part="value">Select a fruit</span>
+                        <span class="combobox-chevron" aria-hidden="true">▾</span>
+                    </div>
+                    <ul class="combobox-listbox" role="listbox" part="listbox" hidden>
+                        <slot name="option"></slot>
+                    </ul>
                 </div>
-                <ul class="combobox-listbox" role="listbox" part="listbox" hidden>
-                    <slot name="option"></slot>
-                </ul>
             </div>
         `;
 
-        const hostSurface = this.shadowRoot.querySelector('.combobox-host');
+        const trigger = this.shadowRoot.querySelector('.combobox-trigger');
         this.#shadowLabelEl = this.shadowRoot.querySelector('[part="shadow-label"]');
         this.#shadowHelpEl = this.shadowRoot.querySelector('[part="shadow-help"]');
         const valueEl = this.shadowRoot.querySelector('.combobox-value');
@@ -94,7 +96,7 @@ export class ComboboxMixedRefs extends HTMLElement {
             this.#controller?.disconnect();
             this.#controller = new ComboboxController({
                 host: this,
-                trigger: hostSurface,
+                trigger,
                 valueEl,
                 listbox: this.#listbox,
                 options,
