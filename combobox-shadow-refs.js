@@ -2,6 +2,7 @@ import {
     ComboboxController,
     logAriaRefs,
     syncAriaElementRefs,
+    resolveLogElement,
     watchSlottedOptions,
 } from './combobox-base.js';
 
@@ -28,7 +29,7 @@ export class ComboboxShadowRefs extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="combobox-host" part="host">
-                <label class="field-label" part="label">Favorite fruit</label>
+                <span class="field-label" part="label">Favorite fruit</span>
                 <span class="field-help" part="help">Choose a fruit from the list. Arrow keys navigate; Enter selects.</span>
                 <div class="combobox-trigger" part="trigger">
                     <span class="combobox-value" part="value">Select a fruit</span>
@@ -54,7 +55,7 @@ export class ComboboxShadowRefs extends HTMLElement {
             [this.#helpEl]
         );
 
-        const logEl = document.querySelector('[data-aria-log="shadow"]');
+        const logEl = resolveLogElement('shadow');
         const refreshLog = () => {
             if (logEl) {
                 logAriaRefs(

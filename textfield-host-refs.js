@@ -1,6 +1,7 @@
 import {
     logHostFieldAriaRefs,
     resolveLightFieldRefs,
+    resolveLogElement,
     syncHostFieldAriaRefs,
 } from './form-field-base.js';
 
@@ -25,7 +26,7 @@ export class TextfieldHostRefs extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="field-host" part="host">
-                <label class="field-label" part="label">Email address</label>
+                <span class="field-label" part="label">Email address</span>
                 <span class="field-help" part="help">Role is on the host; the inner input is presentational.</span>
                 <div class="control-surface textfield-surface" part="control">
                     <input
@@ -70,7 +71,7 @@ export class TextfieldHostRefs extends HTMLElement {
         this.#syncDisplay();
 
         const logKey = this.getAttribute('data-aria-log') ?? 'textfield';
-        const logEl = document.querySelector(`[data-aria-log="${logKey}"]`);
+        const logEl = resolveLogElement(logKey);
         const refreshLog = () => {
             if (logEl) {
                 logHostFieldAriaRefs(

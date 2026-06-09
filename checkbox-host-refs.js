@@ -1,6 +1,7 @@
 import {
     logHostFieldAriaRefs,
     resolveLightFieldRefs,
+    resolveLogElement,
     syncHostFieldAriaRefs,
 } from './form-field-base.js';
 
@@ -25,7 +26,7 @@ export class CheckboxHostRefs extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="field-host" part="host">
-                <label class="field-label" part="label">Subscribe to newsletter</label>
+                <span class="field-label" part="label">Subscribe to newsletter</span>
                 <span class="field-help" part="help">Space toggles; role and aria-checked are on the host.</span>
                 <div class="control-surface checkbox-surface" part="control">
                     <span class="checkbox-box" part="box" aria-hidden="true"></span>
@@ -63,7 +64,7 @@ export class CheckboxHostRefs extends HTMLElement {
         this.#setChecked(false);
 
         const logKey = this.getAttribute('data-aria-log') ?? 'checkbox';
-        const logEl = document.querySelector(`[data-aria-log="${logKey}"]`);
+        const logEl = resolveLogElement(logKey);
         const refreshLog = () => {
             if (logEl) {
                 logHostFieldAriaRefs(

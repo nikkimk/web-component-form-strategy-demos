@@ -1,4 +1,4 @@
-import { logHostFieldAriaRefs, syncHostFieldAriaRefs } from './form-field-base.js';
+import { logHostFieldAriaRefs, resolveLogElement, syncHostFieldAriaRefs } from './form-field-base.js';
 
 /**
  * Progress bar with role="progressbar" on the host.
@@ -61,7 +61,7 @@ export class ProgressbarHostRefs extends HTMLElement {
         this.setAttribute('aria-valuemax', String(this.#max));
 
         const logKey = this.getAttribute('data-aria-log') ?? 'progressbar';
-        const logEl = document.querySelector(`[data-aria-log="${logKey}"]`);
+        const logEl = resolveLogElement(logKey);
         const refreshLog = () => {
             if (logEl) {
                 logHostFieldAriaRefs(

@@ -45,11 +45,54 @@ function partitionByRoot(elements) {
 }
 
 /**
+ * @param {HTMLElement[]} elements
+ */
+function prepareRefTargets(elements) {
+    return elements.filter(Boolean).map((element, index) => {
+        ensureFallbackId(element, `ref-${index}`);
+        return element;
+    });
+}
+
+/**
+ * @param {ElementInternals} internals
+ * @param {HTMLElement[]} shadowLabels
+ * @param {HTMLElement[]} shadowDescriptions
+ */
+function applyShadowNameFallback(internals, shadowLabels, shadowDescriptions) {
+    if (shadowLabels.length && !internals.ariaLabelledByElements?.length) {
+        internals.ariaLabel = shadowLabels
+            .map((element) => element.textContent?.trim())
+            .filter(Boolean)
+            .join(' ');
+    }
+
+    if (shadowDescriptions.length && !internals.ariaDescribedByElements?.length) {
+        const description = shadowDescriptions
+            .map((element) => element.textContent?.trim())
+            .filter(Boolean)
+            .join(' ');
+
+        if ('ariaDescription' in internals) {
+            internals.ariaDescription = description;
+        }
+    }
+}
+
+/**
+ * @param {string} logKey
+ * @returns {HTMLElement | null}
+ */
+export function resolveLogElement(logKey) {
+    return document.querySelector(`.log[data-aria-log="${logKey}"]`);
+}
+
+/**
+ * @param {HTMLElement} host
  * @param {ElementInternals} internals
  * @param {HTMLElement} listbox
  * @param {HTMLElement[]} labelElements
  * @param {HTMLElement[]} descriptionElements
- * @param {HTMLElement} host
  */
 export function syncAriaElementRefs(
     host,
@@ -66,36 +109,41 @@ export function syncAriaElementRefs(
     const { light: lightDescriptions, shadow: shadowDescriptions } =
         partitionByRoot(descriptionElements);
 
+    const preparedLightLabels = prepareRefTargets(lightLabels);
+    const preparedShadowLabels = prepareRefTargets(shadowLabels);
+    const preparedLightDescriptions = prepareRefTargets(lightDescriptions);
+    const preparedShadowDescriptions = prepareRefTargets(shadowDescriptions);
+
     if (!SUPPORTS_ELEMENT_REFS) {
         ensureFallbackId(listbox, 'listbox');
         host.setAttribute('aria-controls', listbox.id);
 
-        if (lightLabels.length) {
+        if (preparedLightLabels.length) {
             host.setAttribute(
                 'aria-labelledby',
-                lightLabels.map((el, index) => ensureFallbackId(el, `label-${index}`)).join(' ')
+                preparedLightLabels.map((el) => el.id).join(' ')
             );
         }
 
-        if (lightDescriptions.length) {
+        if (preparedLightDescriptions.length) {
             host.setAttribute(
                 'aria-describedby',
-                lightDescriptions
-                    .map((el, index) => ensureFallbackId(el, `desc-${index}`))
-                    .join(' ')
+                preparedLightDescriptions.map((el) => el.id).join(' ')
             );
         }
 
         return;
     }
 
-    // Shadow-internal targets must use ElementInternals on custom elements.
+    internals.role = 'combobox';
     internals.ariaControlsElements = [listbox];
-    internals.ariaLabelledByElements = shadowLabels;
-    internals.ariaDescribedByElements = shadowDescriptions;
+    internals.ariaLabelledByElements = preparedShadowLabels;
+    internals.ariaDescribedByElements = preparedShadowDescriptions;
 
-    host.ariaLabelledByElements = lightLabels;
-    host.ariaDescribedByElements = lightDescriptions;
+    host.ariaLabelledByElements = preparedLightLabels;
+    host.ariaDescribedByElements = preparedLightDescriptions;
+
+    applyShadowNameFallback(internals, preparedShadowLabels, preparedShadowDescriptions);
 }
 
 /**

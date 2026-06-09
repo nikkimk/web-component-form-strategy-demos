@@ -27,6 +27,24 @@ function ensureFallbackId(element, prefix) {
 /**
  * @param {HTMLElement[]} elements
  */
+function prepareRefTargets(elements) {
+    return elements.filter(Boolean).map((element, index) => {
+        ensureFallbackId(element, `ref-${index}`);
+        return element;
+    });
+}
+
+/**
+ * @param {string} logKey
+ * @returns {HTMLElement | null}
+ */
+export function resolveLogElement(logKey) {
+    return document.querySelector(`.log[data-aria-log="${logKey}"]`);
+}
+
+/**
+ * @param {HTMLElement[]} elements
+ */
 function partitionByRoot(elements) {
     const light = [];
     const shadow = [];
@@ -72,30 +90,62 @@ export function syncHostFieldAriaRefs(
     const { light: lightDescriptions, shadow: shadowDescriptions } =
         partitionByRoot(descriptionElements);
 
+    const preparedLightLabels = prepareRefTargets(lightLabels);
+    const preparedShadowLabels = prepareRefTargets(shadowLabels);
+    const preparedLightDescriptions = prepareRefTargets(lightDescriptions);
+    const preparedShadowDescriptions = prepareRefTargets(shadowDescriptions);
+
     if (!SUPPORTS_ELEMENT_REFS) {
-        if (lightLabels.length) {
+        if (preparedLightLabels.length) {
             host.setAttribute(
                 'aria-labelledby',
-                lightLabels.map((el, index) => ensureFallbackId(el, `label-${index}`)).join(' ')
+                preparedLightLabels.map((el) => el.id).join(' ')
             );
         }
 
-        if (lightDescriptions.length) {
+        if (preparedLightDescriptions.length) {
             host.setAttribute(
                 'aria-describedby',
-                lightDescriptions
-                    .map((el, index) => ensureFallbackId(el, `desc-${index}`))
-                    .join(' ')
+                preparedLightDescriptions.map((el) => el.id).join(' ')
             );
         }
 
         return;
     }
 
-    internals.ariaLabelledByElements = shadowLabels;
-    internals.ariaDescribedByElements = shadowDescriptions;
-    host.ariaLabelledByElements = lightLabels;
-    host.ariaDescribedByElements = lightDescriptions;
+    internals.role = role;
+    internals.ariaLabelledByElements = preparedShadowLabels;
+    internals.ariaDescribedByElements = preparedShadowDescriptions;
+    host.ariaLabelledByElements = preparedLightLabels;
+    host.ariaDescribedByElements = preparedLightDescriptions;
+
+    applyShadowNameFallback(internals, preparedShadowLabels, preparedShadowDescriptions);
+}
+
+/**
+ * When element refs do not read back, mirror shadow label/help text on internals.
+ * @param {ElementInternals} internals
+ * @param {HTMLElement[]} shadowLabels
+ * @param {HTMLElement[]} shadowDescriptions
+ */
+function applyShadowNameFallback(internals, shadowLabels, shadowDescriptions) {
+    if (shadowLabels.length && !internals.ariaLabelledByElements?.length) {
+        internals.ariaLabel = shadowLabels
+            .map((element) => element.textContent?.trim())
+            .filter(Boolean)
+            .join(' ');
+    }
+
+    if (shadowDescriptions.length && !internals.ariaDescribedByElements?.length) {
+        const description = shadowDescriptions
+            .map((element) => element.textContent?.trim())
+            .filter(Boolean)
+            .join(' ');
+
+        if ('ariaDescription' in internals) {
+            internals.ariaDescription = description;
+        }
+    }
 }
 
 /**
@@ -120,6 +170,7 @@ export function logHostFieldAriaRefs(logEl, host, internals, labels, description
     lines.push(`host.role="${host.getAttribute('role') ?? ''}"`);
 
     if (SUPPORTS_ELEMENT_REFS) {
+        lines.push(`internals.role="${internals.role ?? ''}"`);
         lines.push(
             `internals.ariaLabelledByElements → ${formatElements(internals.ariaLabelledByElements)}`
         );
@@ -132,6 +183,14 @@ export function logHostFieldAriaRefs(logEl, host, internals, labels, description
         lines.push(
             `host.ariaDescribedByElements → ${formatElements(host.ariaDescribedByElements)}`
         );
+
+        if (internals.ariaLabel) {
+            lines.push(`internals.ariaLabel="${internals.ariaLabel}"`);
+        }
+
+        if ('ariaDescription' in internals && internals.ariaDescription) {
+            lines.push(`internals.ariaDescription="${internals.ariaDescription}"`);
+        }
     } else {
         lines.push(`aria-labelledby="${host.getAttribute('aria-labelledby') ?? ''}"`);
         lines.push(`aria-describedby="${host.getAttribute('aria-describedby') ?? ''}"`);

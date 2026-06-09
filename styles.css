@@ -103,6 +103,23 @@
     max-width: 24rem;
 }
 
+.field-label {
+    display: block;
+    font-weight: 600;
+}
+
+.field-help {
+    display: block;
+    font-size: 0.875rem;
+    color: #555;
+}
+
+@media (prefers-color-scheme: dark) {
+    .field-help {
+        color: #bbb;
+    }
+}
+
 .control-surface {
     outline: none;
 }

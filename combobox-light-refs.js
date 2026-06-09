@@ -1,6 +1,7 @@
 import {
     ComboboxController,
     logAriaRefs,
+    resolveLogElement,
     syncAriaElementRefs,
     watchSlottedOptions,
 } from './combobox-base.js';
@@ -66,7 +67,7 @@ export class ComboboxLightRefs extends HTMLElement {
             descriptionElements
         );
 
-        const logEl = document.querySelector('[data-aria-log="light"]');
+        const logEl = resolveLogElement('light');
         const refreshLog = () => {
             if (logEl) {
                 logAriaRefs(
