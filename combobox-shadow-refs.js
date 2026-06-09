@@ -1,8 +1,8 @@
 import {
     ComboboxController,
+    createLogRefresher,
     logAriaRefs,
     syncAriaElementRefs,
-    resolveLogElement,
     watchSlottedOptions,
 } from './combobox-base.js';
 
@@ -55,20 +55,17 @@ export class ComboboxShadowRefs extends HTMLElement {
             [this.#helpEl]
         );
 
-        const logEl = resolveLogElement('shadow');
-        const refreshLog = () => {
-            if (logEl) {
-                logAriaRefs(
-                    logEl,
-                    this,
-                    this.#internals,
-                    this.#listbox,
-                    [this.#labelEl],
-                    [this.#helpEl],
-                    this.#options
-                );
-            }
-        };
+        const refreshLog = createLogRefresher('shadow', (logEl) => {
+            logAriaRefs(
+                logEl,
+                this,
+                this.#internals,
+                this.#listbox,
+                [this.#labelEl],
+                [this.#helpEl],
+                this.#options
+            );
+        });
 
         this.#unwatchSlot = watchSlottedOptions(this, (options) => {
             if (!options.length) {

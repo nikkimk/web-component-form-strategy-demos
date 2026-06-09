@@ -1,7 +1,7 @@
 import {
     ComboboxController,
+    createLogRefresher,
     logAriaRefs,
-    resolveLogElement,
     syncAriaElementRefs,
     watchSlottedOptions,
 } from './combobox-base.js';
@@ -67,20 +67,17 @@ export class ComboboxLightRefs extends HTMLElement {
             descriptionElements
         );
 
-        const logEl = resolveLogElement('light');
-        const refreshLog = () => {
-            if (logEl) {
-                logAriaRefs(
-                    logEl,
-                    this,
-                    this.#internals,
-                    this.#listbox,
-                    labelElements,
-                    descriptionElements,
-                    this.#options
-                );
-            }
-        };
+        const refreshLog = createLogRefresher('light', (logEl) => {
+            logAriaRefs(
+                logEl,
+                this,
+                this.#internals,
+                this.#listbox,
+                labelElements,
+                descriptionElements,
+                this.#options
+            );
+        });
 
         this.#unwatchSlot = watchSlottedOptions(this, (options) => {
             if (!options.length) {

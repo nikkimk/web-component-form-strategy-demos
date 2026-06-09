@@ -1,7 +1,7 @@
 import {
+    createLogRefresher,
     logHostFieldAriaRefs,
     resolveLightFieldRefs,
-    resolveLogElement,
     syncHostFieldAriaRefs,
 } from './form-field-base.js';
 
@@ -64,23 +64,18 @@ export class CheckboxHostRefs extends HTMLElement {
         this.#setChecked(false);
 
         const logKey = this.getAttribute('data-aria-log') ?? 'checkbox';
-        const logEl = resolveLogElement(logKey);
-        const refreshLog = () => {
-            if (logEl) {
-                logHostFieldAriaRefs(
-                    logEl,
-                    this,
-                    this.#internals,
-                    labelElements,
-                    descriptionElements
-                );
-            }
-        };
+        this.#refreshLog = createLogRefresher(logKey, (logEl) => {
+            logHostFieldAriaRefs(
+                logEl,
+                this,
+                this.#internals,
+                labelElements,
+                descriptionElements
+            );
+        });
 
         this.addEventListener('click', this.#onClick);
         this.addEventListener('keydown', this.#onKeyDown);
-        refreshLog();
-        this.#refreshLog = refreshLog;
     }
 
     disconnectedCallback() {

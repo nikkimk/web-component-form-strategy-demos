@@ -79,13 +79,7 @@ function applyShadowNameFallback(internals, shadowLabels, shadowDescriptions) {
     }
 }
 
-/**
- * @param {string} logKey
- * @returns {HTMLElement | null}
- */
-export function resolveLogElement(logKey) {
-    return document.querySelector(`.log[data-aria-log="${logKey}"]`);
-}
+export { createLogRefresher, resolveLogElement } from './form-field-base.js';
 
 /**
  * @param {HTMLElement} host

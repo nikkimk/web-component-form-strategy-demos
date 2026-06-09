@@ -43,6 +43,24 @@ export function resolveLogElement(logKey) {
 }
 
 /**
+ * @param {string} logKey
+ * @param {(logEl: HTMLElement) => void} render
+ */
+export function createLogRefresher(logKey, render) {
+    const refresh = () => {
+        const logEl = resolveLogElement(logKey);
+        if (logEl) {
+            render(logEl);
+        }
+    };
+
+    refresh();
+    queueMicrotask(refresh);
+
+    return refresh;
+}
+
+/**
  * @param {HTMLElement[]} elements
  */
 function partitionByRoot(elements) {

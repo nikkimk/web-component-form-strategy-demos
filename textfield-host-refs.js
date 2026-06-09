@@ -1,7 +1,7 @@
 import {
+    createLogRefresher,
     logHostFieldAriaRefs,
     resolveLightFieldRefs,
-    resolveLogElement,
     syncHostFieldAriaRefs,
 } from './form-field-base.js';
 
@@ -71,23 +71,18 @@ export class TextfieldHostRefs extends HTMLElement {
         this.#syncDisplay();
 
         const logKey = this.getAttribute('data-aria-log') ?? 'textfield';
-        const logEl = resolveLogElement(logKey);
-        const refreshLog = () => {
-            if (logEl) {
-                logHostFieldAriaRefs(
-                    logEl,
-                    this,
-                    this.#internals,
-                    labelElements,
-                    descriptionElements
-                );
-            }
-        };
+        this.#refreshLog = createLogRefresher(logKey, (logEl) => {
+            logHostFieldAriaRefs(
+                logEl,
+                this,
+                this.#internals,
+                labelElements,
+                descriptionElements
+            );
+        });
 
         this.addEventListener('keydown', this.#onKeyDown);
         this.addEventListener('click', this.#onClick);
-        refreshLog();
-        this.#refreshLog = refreshLog;
     }
 
     #refreshLog = () => {};
