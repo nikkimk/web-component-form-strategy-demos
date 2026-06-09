@@ -16,10 +16,10 @@ These demos do **not** cover Q1 (form association / `setFormValue`) or Q4 (axe p
 | Demo | What it exercises | StackBlitz |
 | ---- | ----------------- | ---------- |
 | [Combobox ARIA element refs](./combobox-aria-element-refs/) | Q2 composite widget + Q3 listbox split, label/help split, `aria-activedescendant` | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/combobox-aria-element-refs) |
-| [Host-role textfield](./host-role-form-controls/demo-textfield-shadow.html) | Q2 host `role="textbox"` + Q3 shadow label/help via internals | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/textfield) |
-| [Host-role checkbox](./host-role-form-controls/demo-checkbox-shadow.html) | Q2 host `role="checkbox"` + Q3 shadow label/help via internals | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/checkbox) |
-| [Host-role progress bar](./host-role-form-controls/demo-progressbar-shadow.html) | Q2 host `role="progressbar"` + Q3 shadow label/description via internals | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/progressbar) |
-| [Host-role index](./host-role-form-controls/) | All host-role PoCs + light DOM label variant | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls) |
+| [Textfield](./host-role-form-controls/demo-textfield-shadow.html) | Q2 host `role="textbox"` + Q3 shadow label/help via internals | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/textfield) |
+| [Checkbox](./host-role-form-controls/demo-checkbox-shadow.html) | Q2 host `role="checkbox"` + Q3 shadow label/help via internals | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/checkbox) |
+| [Progress bar](./host-role-form-controls/demo-progressbar-shadow.html) | Q2 host `role="progressbar"` + Q3 shadow label/description via internals | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/progressbar) |
+| [index](./host-role-form-controls/) | All host-role PoCs + light DOM label variant | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls) |
 
 Related baseline: [Cross-root ARIA element refs CodePen](https://codepen.io/spectrum-css/pen/pvNEVda?editors=0010) (NVDA + VoiceOver described-by validation).
 
