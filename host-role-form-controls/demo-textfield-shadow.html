@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Host-role textfield — shadow label and help</title>
+        <link rel="stylesheet" href="./page.css" />
+    </head>
+    <body>
+        <main class="page">
+            <p><a href="./index.html">← Host-role demos</a></p>
+
+            <h1>Host-role textfield</h1>
+            <p class="lead">
+                <code>role="textbox"</code> on the custom element host. Label and help live in
+                Shadow DOM and are wired through
+                <code>ElementInternals.ariaLabelledByElements</code> and
+                <code>ariaDescribedByElements</code>. The inner input is presentational.
+            </p>
+
+            <div id="support-status" class="status" aria-live="polite"></div>
+
+            <section class="demo-card" aria-labelledby="textfield-heading">
+                <h2 id="textfield-heading">Textfield</h2>
+                <textfield-host-refs data-aria-log="textfield-shadow"></textfield-host-refs>
+                <h3>Resolved ARIA references</h3>
+                <pre class="log" data-aria-log="textfield-shadow" aria-live="polite"></pre>
+            </section>
+        </main>
+
+        <script type="module">
+            import { renderSupportStatus } from './form-field-base.js';
+            import './textfield-host-refs.js';
+
+            renderSupportStatus(document.getElementById('support-status'));
+        </script>
+    </body>
+</html>

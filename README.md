@@ -1,167 +1,128 @@
-# Form fields strategy
+# Form fields strategy — Q2 & Q3 recommendations (demo evidence)
 
-PoC work in [`combobox-aria-element-refs/`](./combobox-aria-element-refs/) validates a **split-surface ARIA model** for encapsulated form controls. The team should adopt this as the default 2nd-gen forms strategy unless a component class has a documented exception.
+Interactive PoCs in this repo support two decisions for 2nd-gen Spectrum form fields:
 
-**Recommendation in one sentence:** Put **widget semantics and focus on the host**, wire **shadow-internal relationships through `ElementInternals` reflected element references**, keep **consumer-owned or slotted content in Light DOM** where ID-based references or slotted composition are required, and **centralize the wiring in a shared form-field base/mixin** derived from the PoC’s `syncAriaElementRefs` pattern.
-
----
-
-## PoC evidence
-
-| Artifact | What it proves |
+| Question | Recommendation |
 | -------- | -------------- |
-| **[Combobox ARIA element reference demos](./combobox-aria-element-refs/)** (this repo) | `ElementInternals.ariaControlsElements` links host combobox → shadow listbox; shadow label/help via `internals.ariaLabelledByElements` / `ariaDescribedByElements`; light label/help via host element refs; slotted light options + host `aria-activedescendant`; host focus with trigger focus ring via `:host(:focus)` |
-| **[StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/combobox-aria-element-refs)** | Runnable copy of the PoC (`npm start`) |
-| **[Cross-root ARIA element refs CodePen](https://codepen.io/spectrum-css/pen/pvNEVda?editors=0010)** | Baseline Apr 2025 `aria*Elements` IDL on native controls; NVDA + VoiceOver validation for described-by wiring (related surface used by form fields) |
+| **Q2** — Where do ARIA roles live? | **Heuristic by control class** — not one rule for every field |
+| **Q3** — How do label, help, and popup relationships wire across shadow and light DOM? | **Split-surface element references** — host for light DOM targets, `ElementInternals` for shadow-internal targets |
 
-**Related SWC context**
-
-- Epic: [SWC-48 — ElementInternals / form-associated custom elements](https://jira.corp.adobe.com/browse/SWC-48)
-- Cross-root ARIA guide: [Semantic HTML and ARIA (Storybook)](https://github.com/adobe/spectrum-web-components/blob/main/2nd-gen/packages/swc/.storybook/guides/accessibility-guides/semantic_html_aria.mdx) — also published in SWC Storybook as **Accessibility → Semantic HTML and ARIA**
-- Focus strategy (host vs inner): [Focus management strategy RFC](https://github.com/adobe/spectrum-web-components/blob/main/CONTRIBUTOR-DOCS/03_project-planning/05_strategies/focus-management-strategy-rfc.md)
-- Design board: _Miro Form fields RFC board_ — link when publishing the SWC PR that adopts this doc
+These demos do **not** cover Q1 (form association / `setFormValue`) or Q4 (axe policy). See [SWC-48](https://jira.corp.adobe.com/browse/SWC-48) and the [Semantic HTML and ARIA guide](https://github.com/adobe/spectrum-web-components/blob/main/2nd-gen/packages/swc/.storybook/guides/accessibility-guides/semantic_html_aria.mdx) for broader context.
 
 ---
 
-## Epic questions (Q1–Q4)
+## Runnable examples
 
-After this RFC is **Accepted**, contributors should not re-litigate these per component. Use the summary table below; full rationale follows.
+| Demo | What it exercises | StackBlitz |
+| ---- | ----------------- | ---------- |
+| [Combobox ARIA element refs](./combobox-aria-element-refs/) | Q2 composite widget + Q3 listbox split, label/help split, `aria-activedescendant` | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/combobox-aria-element-refs) |
+| [Host-role textfield](./host-role-form-controls/demo-textfield-shadow.html) | Q2 host `role="textbox"` + Q3 shadow label/help via internals | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/textfield) |
+| [Host-role checkbox](./host-role-form-controls/demo-checkbox-shadow.html) | Q2 host `role="checkbox"` + Q3 shadow label/help via internals | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/checkbox) |
+| [Host-role progress bar](./host-role-form-controls/demo-progressbar-shadow.html) | Q2 host `role="progressbar"` + Q3 shadow label/description via internals | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/progressbar) |
+| [Host-role index](./host-role-form-controls/) | All host-role PoCs + light DOM label variant | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls) |
 
-| # | Question | Recommended answer |
-| - | -------- | ------------------ |
-| **Q1** | ElementInternals / form-associated custom elements? | **Hybrid with allowlist** |
-| **Q2** | Where do ARIA roles live by default? | **Heuristic by control class** (see table) |
-| **Q3** | IDREF strategy for label / help / error? | **Split-surface: host for light, internals for shadow; slotted light for IDREF targets** |
-| **Q4** | axe-core policy for false positives? | **Story-level exclusions with rationale + upstream tracking** |
-
----
-
-## Q1 — ElementInternals and form association
-
-### Recommendation: **Hybrid with allowlist**
-
-| Use `ElementInternals` | Do not require (yet) |
-| ---------------------- | -------------------- |
-| `ariaControlsElements` → shadow popup / listbox shell | `setFormValue` / full **form-associated** lifecycle on every field |
-| `ariaLabelledByElements` / `ariaDescribedByElements` → **shadow-internal** label, help, error nodes | `type="submit"` / `reset` on button-like controls until axe + platform story is clear |
-| Future: `ariaErrorMessageElements` for shadow-resident error text | Assuming `host.ariaControlsElements = [shadowNode]` works — **it does not**; always use **internals** for inward shadow refs |
-
-**Rationale (from PoC):** Setting `host.ariaControlsElements = [shadowListbox]` is silently ignored in Chromium; `internals.ariaControlsElements` readback succeeds. Custom elements must call `attachInternals()` in the constructor for shadow-internal relationship targets.
-
-**Browser / AT notes**
-
-- Reflected element references (`aria*Elements`) are [Baseline Apr 2025](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/ariaControlsElements) in Chromium and Safari; verify Firefox on your matrix before dropping ID fallbacks.
-- Form-associated custom elements (`static formAssociated = true`, `setFormValue`, validity APIs) remain on an **allowlist** (e.g. `swc-textfield`, `swc-picker`, `swc-checkbox`) gated on SWC-48 + axe maturity — not on presentational or button-only components.
-- Until allowlisted, document `type="button"` defaults and native `<button>` / `<input>` submission patterns in migration guides (same deferral as [`swc-button` migration guide](https://github.com/adobe/spectrum-web-components/blob/main/2nd-gen/packages/swc/components/button/migration-guide.mdx)).
+Related baseline: [Cross-root ARIA element refs CodePen](https://codepen.io/spectrum-css/pen/pvNEVda?editors=0010) (NVDA + VoiceOver described-by validation).
 
 ---
 
 ## Q2 — Where roles live
 
-### Recommendation: **Heuristic by control class** (not one rule for all fields)
+**Recommendation:** Choose role placement by **control class**. Use the demos below as the reference implementations.
 
-| Control class | Role / semantics | Focus | Popup / list shell | Notes |
-| ------------- | ---------------- | ----- | ------------------ | ----- |
-| **Composite closed widgets** (combobox, picker, select-like) | **Host** (`role="combobox"`, `aria-expanded`, …) | **Host** `tabindex="0"`; visual ring on inner **trigger** via `:host(:focus) .trigger` | **Shadow** listbox/menu shell; **options slotted light** | Matches [combobox PoC](./combobox-aria-element-refs/) |
-| **Native text-like fields** (textfield, textarea, number-field) | **Native inner** `<input>` / `<textarea>`; host is presentation wrapper | **`delegatesFocus: true`** → inner native control | N/A | Do not duplicate `role="textbox"` on host |
-| **Toggle / checkbox / switch** | Prefer **native** `<input type="checkbox">` inside shadow; host exposes labelled-by | `delegatesFocus` or host per APG | N/A | Validity on allowlisted internals when enabled |
-| **Static / meter / progress** | **Host** carries role when no inner native equivalent | Host focusable when interactive | N/A | See meter a11y analysis pattern |
-| **Field group / tags** | **Host** `role="group"`; items keep own roles | Container not in tab order unless roving pattern | N/A | Label group via light DOM or shadow per Q3 |
+| Control class | Role / semantics | Focus | Popup / list shell | Demo |
+| ------------- | ---------------- | ----- | ------------------ | ---- |
+| **Composite closed widgets** (combobox, picker) | **Host** — `role="combobox"`, `aria-expanded`, `aria-activedescendant` | **Host** `tabindex="0"`; focus ring on inner trigger via `:host(:focus)` | **Shadow** `<ul role="listbox">`; **Light DOM** options slotted in | [Combobox PoC](./combobox-aria-element-refs/) |
+| **Native text-like fields** (textfield, textarea) | **Default (production):** native inner `<input>` / `<textarea>`; host is wrapper | `delegatesFocus: true` | N/A | _Not demonstrated here — production default_ |
+| **Host-role textfield** (PoC) | **Host** `role="textbox"`; inner input `aria-hidden` | Host `tabindex="0"` | N/A | [StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/textfield) |
+| **Native checkbox / switch** | **Default (production):** native `<input type="checkbox">` in shadow | `delegatesFocus` | N/A | _Not demonstrated here — production default_ |
+| **Host-role checkbox** (PoC) | **Host** `role="checkbox"`, `aria-checked` | Host `tabindex="0"` | N/A | [StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/checkbox) |
+| **Progress / meter / static indicators** | **Host** carries widget role | Not in tab order unless interactive | N/A | [StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/progressbar) |
 
-**PoC detail:** The combobox host owns keyboard handling, `aria-expanded`, and `aria-activedescendant`. The trigger is not a separate tab stop; it is the visual focus target when the host is focused.
+### Findings from the combobox demo (Q2)
+
+- The **host** owns widget semantics (`role="combobox"`), keyboard handling, `aria-expanded`, and `aria-activedescendant`.
+- The **trigger** is not a separate tab stop — it is the visual focus target when the host is focused.
+- The **listbox shell** (`role="listbox"`) is in **Shadow DOM**; **option nodes** are in **Light DOM** and slotted into that shell. This split is required for Q3 as well (see below).
+
+### Findings from the host-role demos (Q2)
+
+- **Textfield and checkbox:** role and interactive state live on the host; decorative inner markup is presentational (`aria-hidden`).
+- **Progress bar:** `role="progressbar"` and value attributes (`aria-valuenow`, `aria-valuetext`) live on the host; the visual track is presentational. The host is **not** focusable.
 
 ---
 
-## Q3 — IDREF strategy (label, help, error)
+## Q3 — Label, help, and relationship wiring
 
-### Recommendation: **Split-surface element references + slotted light composition**
-
-Implement a shared **`syncAriaElementRefs(host, internals, …)`** (see [`combobox-base.js`](./combobox-aria-element-refs/combobox-base.js)) that **partitions targets by tree root**:
+**Recommendation:** **Split-surface element references** — partition relationship targets by tree root and assign each to the correct API surface.
 
 ```
-Light DOM label/help/error  →  host.ariaLabelledByElements / host.ariaDescribedByElements
-                              (fallback: aria-labelledby / aria-describedby IDs)
+Light DOM label / help / error  →  host.ariaLabelledByElements / host.ariaDescribedByElements
+                                   (fallback: aria-labelledby / aria-describedby ID attributes)
 
-Shadow DOM label/help/error →  internals.ariaLabelledByElements / internals.ariaDescribedByElements
+Shadow DOM label / help / error →  internals.ariaLabelledByElements / internals.ariaDescribedByElements
 
-Shadow popup / listbox      →  internals.ariaControlsElements
+Shadow popup / listbox shell    →  internals.ariaControlsElements
+                                   (host.ariaControlsElements = [shadowNode] is silently ignored in Chromium)
 
-Slotted light options/items →  host aria-activedescendant="option-id"
-                              (ID attribute, not ariaActiveDescendantElement)
+Slotted Light DOM options       →  host aria-activedescendant="option-id"
+                                   (ID attribute — not ariaActiveDescendantElement)
 ```
 
-**Label / help model (2nd-gen)**
+Implementation pattern: [`syncAriaElementRefs`](./combobox-aria-element-refs/combobox-base.js) in the combobox PoC and [`syncHostFieldAriaRefs`](./host-role-form-controls/form-field-base.js) in the host-role PoCs.
 
-- **Default Spectrum composition:** label and help can live in **shadow** (field component owns `<sp-field-label>`-equivalent markup) *or* **light DOM** (consumer supplies `<label>` + help nodes) — both are first-class; see three PoC variants (shadow / light / mixed).
-- **Mixin direction:** Evolve 1st-gen `ManageHelpText` into a 2nd-gen **FormFieldAriaMixin** that:
-  - calls `attachInternals()` once;
-  - registers label/help/error elements on connect;
-  - re-syncs on slotchange / invalid toggles;
-  - exposes the same slots (`help-text`, `negative-help-text`) for light-DOM override.
-- **Cross-root mitigation:** Never rely on shadow-only IDs for `aria-controls`, `aria-labelledby`, or `aria-describedby` on the host — they do not resolve across roots. Element refs on the correct surface (host vs internals) replace IDREF for modern browsers; ID fallback remains for light-only refs when element refs are unavailable.
-- **`aria-errormessage`:** Same split as help — shadow error node → `internals.ariaErrorMessageElements`; light error node → host (or attribute fallback). Wire when `invalid` is true.
+### What the demos validate
 
-**Slotted listbox options (combobox / picker):** Keep option nodes in **Light DOM** (`<li slot="option">`) assigned into a shadow `<ul role="listbox">`. This preserves document-scoped IDs for `aria-activedescendant` on the host — validated in PoC.
+| Pattern | Demo | Result |
+| ------- | ---- | ------ |
+| Shadow label/help → internals | Combobox (shadow label variant), all host-role shadow-label pages | `internals.ariaLabelledByElements` / `ariaDescribedByElements` read back correctly |
+| Light label/help → host | Combobox (light label variant), host-role light-label page | `host.ariaLabelledByElements` / `ariaDescribedByElements` read back correctly |
+| Mixed shadow + light label/help | Combobox (mixed variant) | Each target wired on its own surface |
+| Host combobox → shadow listbox | Combobox (all variants) | `internals.ariaControlsElements` succeeds; host assignment does not |
+| Host → light option IDs | Combobox (all variants) | `aria-activedescendant` on host points at slotted light option `id`s |
+| Shadow listbox + light options | Combobox (all variants) | Listbox role on shadow `<ul>`; options authored as `<li slot="option">` in light DOM |
 
----
+### Rules derived from the demos
 
-## Q4 — axe-core policy
-
-### Recommendation: **Documented story-level exclusions + upstream tracking**
-
-Align with [`2nd-gen/packages/swc/.storybook/test-runner.ts`](https://github.com/adobe/spectrum-web-components/blob/main/2nd-gen/packages/swc/.storybook/test-runner.ts):
-
-| Mechanism | When to use |
-| --------- | ----------- |
-| `parameters.a11y.disabledRules` | Rule is globally noisy for web components **and** tracked upstream |
-| `parameters.a11y.exclude[ruleId]` | Specific selector is a **known false positive** with written rationale in story/docs |
-| Manual / AT checks in migration Phase 4 | Relationship wiring via `ElementInternals` or slotted IDREF |
-
-**Known gaps (Q2–Q3 2026 window — Deque / browser roadmap)**
-
-- axe does **not** fully validate **ElementInternals**-mediated relationships (controls, labelledby, describedby, errormessage).
-- **Invalid role via internals** and some **form-associated** scenarios may not fail or pass correctly in CI — do not treat green axe as proof for those cases.
-- **Direct element refs** on the host work for **light → host** targets only; do not add CI rules that assume host → shadow refs.
-
-**Contribution path when axe flags a real issue:** fix in component if valid → else story exclusion with comment linking GitHub issue → open/contribute upstream axe rule or [accname / aria reflection](https://w3c.github.io/aria/) spec issue if platform bug.
-
-**Policy:** No permanent global disable of `aria-*` rules for form fields. Exclusions must name the rule, selector, PoC/Epic link, and removal condition.
+1. **Never rely on shadow-only IDs** for `aria-controls`, `aria-labelledby`, or `aria-describedby` on the host — they do not resolve across shadow boundaries.
+2. **Always call `attachInternals()`** in the constructor when wiring shadow-internal relationships.
+3. **Keep listbox options in Light DOM** — shadow-resident option IDs do not work with host `aria-activedescendant`.
+4. **Label and help may live in shadow or light DOM** — both are first-class; the wiring surface follows the tree root, not the authoring preference.
+5. **Use ID attribute fallback** for light-only refs when `aria*Elements` is unavailable; shadow-only refs require element refs.
 
 ---
 
-## Component decision table (short form)
+## Applying Q2 + Q3 together
 
-| Component class | Role placement | Internals | IDREF / composition | axe note |
-| --------------- | -------------- | --------- | ------------------- | -------- |
-| Combobox / Picker | Host combobox | `ariaControlsElements` → shadow listbox | Light options slotted; label/help split host/internals; `aria-activedescendant` on host | Exclude only documented internals false positives; AT test popup |
-| Textfield / Textarea | Inner native input | Allowlist: form value + validity when SWC-48 ships | Internal `aria-describedby` to shadow help id; light label via `for` + delegatesFocus | Standard input rules; no host combobox rules |
-| Checkbox / Switch | Inner native or host per APG | Allowlist optional | Light label `for` → host with reference target when available | |
-| Field group | Host `group` | Rare | Light legend / aria-labelledby on host | |
-| Button (field adjacent) | Inner `<button>` | Not form field | Light aria-labelledby deferred same as SWC button RFC | |
-
-_Full per-component rows live in migration a11y analyses; extend this table when new classes ship._
+| Component | Q2 (role) | Q3 (relationships) |
+| --------- | --------- | ------------------ |
+| Combobox / picker | Host combobox | Internals → shadow listbox; host/internals label/help split; light slotted options + host `aria-activedescendant` |
+| Textfield (production) | Inner native input | Light label via `for` + `delegatesFocus`; shadow help via internal described-by |
+| Textfield (host-role PoC) | Host textbox | Same label/help split as combobox; inner input presentational |
+| Checkbox (host-role PoC) | Host checkbox | Same label/help split as combobox |
+| Progress bar (host-role PoC) | Host progressbar | Shadow label/description via internals; track presentational |
 
 ---
 
-## Proposed shared implementation (future PR — out of scope here)
+## Running locally
 
-Extract from PoC into `@spectrum-web-components/core` (names illustrative):
-
-1. **`FormFieldElement`** — `attachInternals()`, `syncAriaElementRefs()`, slot watchers  
-2. **`FormFieldAriaController`** — invalid/help/error sync, active-descendant helper for listbox patterns  
-3. **Story helper** — `logAriaRefs` debug panel pattern for Storybook a11y reviews  
-
-Consumers keep composing `<label>` + `<swc-*>` + help in light DOM **or** use bundled shadow label/help without changing ARIA behavior.
-
-## Running the PoC
+**Combobox**
 
 ```bash
 cd combobox-aria-element-refs
-npm install
-npm start
+npm install && npm start
 ```
 
-Open `http://localhost:8080/index.html` and walk through **shadow**, **light**, and **mixed** label/help variants. Each page logs resolved host vs `internals` references and `aria-activedescendant` while interacting.
+**Host-role controls**
+
+```bash
+cd host-role-form-controls
+npm install && npm start                 # index
+npm run start:textfield                  # textfield only
+npm run start:checkbox                   # checkbox only
+npm run start:progressbar                # progress bar only
+```
+
+Open `http://localhost:8080/index.html` for each folder. Each demo includes a live **Resolved ARIA references** panel.
 
 ---
 
@@ -169,5 +130,4 @@ Open `http://localhost:8080/index.html` and walk through **shadow**, **light**, 
 
 - [ElementInternals.ariaControlsElements (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/ariaControlsElements)
 - [Reflected element references (MDN)](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Guides/Reflected_attributes)
-- [Shadow DOM and accessibility (Nolan Lawson)](https://nolanlawson.com/2022/11/28/shadow-dom-and-accessibility-the-trouble-with-aria/)
-- [1st-gen ManageHelpText pattern](https://github.com/adobe/spectrum-web-components/blob/main/1st-gen/packages/help-text/help-text-mixin.md)
+- [Focus management strategy RFC (SWC)](https://github.com/adobe/spectrum-web-components/blob/main/CONTRIBUTOR-DOCS/03_project-planning/05_strategies/focus-management-strategy-rfc.md)

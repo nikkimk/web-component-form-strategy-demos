@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Host-role progress bar — shadow label and description</title>
+        <link rel="stylesheet" href="./page.css" />
+    </head>
+    <body>
+        <main class="page">
+            <p><a href="./index.html">← Host-role demos</a></p>
+
+            <h1>Host-role progress bar</h1>
+            <p class="lead">
+                <code>role="progressbar"</code> on the custom element host. Label and description
+                live in Shadow DOM and are wired through
+                <code>ElementInternals.ariaLabelledByElements</code> and
+                <code>ariaDescribedByElements</code>. The visual track is presentational.
+            </p>
+
+            <div id="support-status" class="status" aria-live="polite"></div>
+
+            <section class="demo-card" aria-labelledby="progressbar-heading">
+                <h2 id="progressbar-heading">Progress bar</h2>
+                <progressbar-host-refs data-aria-log="progressbar-shadow"></progressbar-host-refs>
+                <h3>Resolved ARIA references</h3>
+                <pre class="log" data-aria-log="progressbar-shadow" aria-live="polite"></pre>
+            </section>
+        </main>
+
+        <script type="module">
+            import { renderSupportStatus } from './form-field-base.js';
+            import './progressbar-host-refs.js';
+
+            renderSupportStatus(document.getElementById('support-status'));
+        </script>
+    </body>
+</html>

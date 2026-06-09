@@ -1,0 +1,10 @@
+{
+  "name": "host-role-progressbar-stackblitz",
+  "private": true,
+  "scripts": {
+    "start": "servor ../.. demo-progressbar-shadow.html 8080 --reload"
+  },
+  "devDependencies": {
+    "servor": "^4.0.2"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "host-role-textfield-stackblitz",
+  "private": true,
+  "scripts": {
+    "start": "servor ../.. demo-textfield-shadow.html 8080 --reload"
+  },
+  "devDependencies": {
+    "servor": "^4.0.2"
+  }
+}

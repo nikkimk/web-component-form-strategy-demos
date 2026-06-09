@@ -1,0 +1,126 @@
+:host {
+    display: block;
+    outline: none;
+}
+
+.field-host {
+    display: grid;
+    gap: 0.75rem;
+    max-width: 24rem;
+}
+
+.control-surface {
+    outline: none;
+}
+
+:host(:focus) .control-surface {
+    outline: 2px solid #2680eb;
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+}
+
+.textfield-surface {
+    display: block;
+}
+
+.textfield-input {
+    display: block;
+    width: 100%;
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #888;
+    border-radius: 0.375rem;
+    background: #fff;
+    font: inherit;
+    pointer-events: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    .textfield-input {
+        background: #333;
+        border-color: #666;
+        color: #f2f2f2;
+    }
+}
+
+.checkbox-surface {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    width: fit-content;
+    padding: 0.25rem;
+}
+
+.checkbox-box {
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 2px solid #555;
+    border-radius: 0.2rem;
+    background: #fff;
+    position: relative;
+}
+
+.checkbox-box.is-checked {
+    background: #2680eb;
+    border-color: #2680eb;
+}
+
+.checkbox-box.is-checked::after {
+    content: '';
+    position: absolute;
+    left: 0.2rem;
+    top: 0.05rem;
+    width: 0.35rem;
+    height: 0.65rem;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+@media (prefers-color-scheme: dark) {
+    .checkbox-box {
+        background: #333;
+        border-color: #aaa;
+    }
+}
+
+.checkbox-label-text {
+    user-select: none;
+}
+
+.progressbar-surface {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.progressbar-track {
+    height: 0.5rem;
+    border-radius: 999px;
+    background: #ddd;
+    overflow: hidden;
+}
+
+.progressbar-fill {
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    background: #2680eb;
+    transition: width 0.35s ease;
+}
+
+.progressbar-value {
+    font-size: 0.875rem;
+    color: #555;
+}
+
+@media (prefers-color-scheme: dark) {
+    .progressbar-track {
+        background: #555;
+    }
+
+    .progressbar-value {
+        color: #ccc;
+    }
+}
+

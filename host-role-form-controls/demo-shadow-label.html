@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Host-role form controls — shadow labels</title>
+        <link rel="stylesheet" href="./page.css" />
+    </head>
+    <body>
+        <main class="page">
+            <p><a href="./index.html">← Host-role demos</a> · <a href="../README.md">Q2 & Q3 recommendations</a></p>
+
+            <h1>Host role — shadow label and help</h1>
+            <p class="lead">
+                Controls expose widget roles on the custom element host. Label and help live in
+                Shadow DOM and are wired through
+                <code>ElementInternals.ariaLabelledByElements</code> and
+                <code>ariaDescribedByElements</code>.
+            </p>
+
+            <div id="support-status" class="status" aria-live="polite"></div>
+
+            <div class="demo-grid">
+                <section class="demo-card" aria-labelledby="textfield-heading">
+                    <h2 id="textfield-heading">Textfield</h2>
+                    <textfield-host-refs data-aria-log="textfield-shadow"></textfield-host-refs>
+                    <h3>Resolved ARIA references</h3>
+                    <pre class="log" data-aria-log="textfield-shadow" aria-live="polite"></pre>
+                </section>
+
+                <section class="demo-card" aria-labelledby="checkbox-heading">
+                    <h2 id="checkbox-heading">Checkbox</h2>
+                    <checkbox-host-refs data-aria-log="checkbox-shadow"></checkbox-host-refs>
+                    <h3>Resolved ARIA references</h3>
+                    <pre class="log" data-aria-log="checkbox-shadow" aria-live="polite"></pre>
+                </section>
+
+                <section class="demo-card" aria-labelledby="progressbar-heading">
+                    <h2 id="progressbar-heading">Progress bar</h2>
+                    <progressbar-host-refs data-aria-log="progressbar-shadow"></progressbar-host-refs>
+                    <h3>Resolved ARIA references</h3>
+                    <pre class="log" data-aria-log="progressbar-shadow" aria-live="polite"></pre>
+                </section>
+            </div>
+        </main>
+
+        <script type="module">
+            import { renderSupportStatus } from './form-field-base.js';
+            import './textfield-host-refs.js';
+            import './checkbox-host-refs.js';
+            import './progressbar-host-refs.js';
+
+            renderSupportStatus(document.getElementById('support-status'));
+        </script>
+    </body>
+</html>
