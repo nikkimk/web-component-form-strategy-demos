@@ -12,7 +12,6 @@ Wire label and help text when targets live in **both** Light DOM and Shadow DOM.
 
 - [All controls — light label](../../demo-light-label.html)
 - [All controls — shadow label](../../demo-shadow-label.html)
-- [All controls — mixed label](../../demo-mixed-label.html)
 
 ---
 
@@ -20,7 +19,7 @@ Wire label and help text when targets live in **both** Light DOM and Shadow DOM.
 
 | Use this controller | Do not use it |
 | ------------------- | ------------- |
-| Combobox or picker with label/help in shadow, light, or both | Label/help supplied only through slots → use [`SlottedFieldAriaController`](./slotted-field-aria-controller.md) |
+| Combobox or picker with label/help in shadow or light | Label/help supplied only through slots → use [`SlottedFieldAriaController`](./slotted-field-aria-controller.md) |
 | Host-role fields (textfield, checkbox, progress bar) | |
 | Any field that needs `internals` → shadow listbox link | |
 
@@ -155,30 +154,7 @@ connectedCallback() {
 
 ---
 
-## Example 3 — mixed shadow + light label/help
-
-Pass **all** label and help nodes in one array. The controller splits them by tree root automatically.
-
-```javascript
-const lightLabel = document.getElementById('page-label');
-const shadowLabel = this.shadowRoot.querySelector('.shadow-label');
-const lightHelp = document.getElementById('page-help');
-const shadowHelp = this.shadowRoot.querySelector('.shadow-help');
-
-this.#ariaController = new SplitSurfaceAriaController({
-    host: this,
-    internals: this.#internals,
-    role: 'combobox',
-    controls: [this.#listbox],
-    labelElements: [lightLabel, shadowLabel].filter(Boolean),
-    descriptionElements: [lightHelp, shadowHelp].filter(Boolean),
-});
-this.#ariaController.connect();
-```
-
----
-
-## Example 4 — host-role textfield (PoC)
+## Example 3 — host-role textfield (PoC)
 
 Shadow label/help only. Role lives on `internals`, not the inner input.
 
@@ -195,7 +171,7 @@ this.#ariaController.connect();
 
 ---
 
-## Example 5 — progress bar (not focusable)
+## Example 4 — progress bar (not focusable)
 
 ```javascript
 this.#ariaController = new SplitSurfaceAriaController({

@@ -94,7 +94,7 @@ export function resolveLightFieldRefs(host, config) {
 }
 
 /**
- * Resolve label/help refs for host-role fields across light, shadow, and mixed modes.
+ * Resolve label/help refs for host-role fields in light or shadow mode.
  *
  * @param {HTMLElement} host
  * @param {object} config
@@ -106,7 +106,6 @@ export function resolveSplitSurfaceFieldRefs(host, config) {
     const shadowLabels = [shadowLabelEl].filter(Boolean);
     const shadowDescriptions = [shadowHelpEl].filter(Boolean);
     const useLightLabel = host.hasAttribute('label-target');
-    const useMixed = host.hasAttribute('mixed');
 
     if (!useLightLabel) {
         return {
@@ -115,17 +114,8 @@ export function resolveSplitSurfaceFieldRefs(host, config) {
         };
     }
 
-    const lightRefs = resolveLightFieldRefs(host, {
+    return resolveLightFieldRefs(host, {
         labelTarget: host.getAttribute('label-target') ?? '',
         helpTarget: host.getAttribute('help-target') ?? '',
     });
-
-    if (useMixed) {
-        return {
-            labelElements: [...lightRefs.labelElements, ...shadowLabels],
-            descriptionElements: [...lightRefs.descriptionElements, ...shadowDescriptions],
-        };
-    }
-
-    return lightRefs;
 }

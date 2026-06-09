@@ -56,12 +56,9 @@ export class ProgressbarHostRefs extends HTMLElement {
 
         const useLightLabel = this.hasAttribute('label-target');
 
-        if (useLightLabel && !this.hasAttribute('mixed')) {
+        if (useLightLabel) {
             this.#labelEl.hidden = true;
             this.#helpEl.hidden = true;
-        } else if (this.hasAttribute('mixed')) {
-            this.#labelEl.textContent = '(Shadow label supplement)';
-            this.#helpEl.textContent = '(Shadow help supplement)';
         }
 
         const logKey = this.getAttribute('data-aria-log') ?? 'progressbar';

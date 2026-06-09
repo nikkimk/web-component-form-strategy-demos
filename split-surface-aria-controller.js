@@ -150,14 +150,10 @@ export class SplitSurfaceAriaController {
             host.ariaDescribedByElements = preparedLightDescriptions;
 
             if (preparedShadowLabels.length || preparedShadowDescriptions.length) {
-                const isMixedLabels =
-                    preparedLightLabels.length > 0 && preparedShadowLabels.length > 0;
-                const isMixedDescriptions =
-                    preparedLightDescriptions.length > 0 && preparedShadowDescriptions.length > 0;
                 mirrorShadowAccessibleName(
                     internals,
-                    isMixedLabels ? [] : preparedShadowLabels,
-                    isMixedDescriptions ? [] : preparedShadowDescriptions
+                    preparedShadowLabels,
+                    preparedShadowDescriptions
                 );
             } else {
                 internals.ariaLabel = null;

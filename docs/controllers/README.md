@@ -4,7 +4,7 @@ Reusable controllers for wiring label and help text across Shadow DOM and Light 
 
 | Controller | Doc | Use when |
 | ---------- | --- | -------- |
-| **SplitSurfaceAriaController** | [split-surface-aria-controller.md](./split-surface-aria-controller.md) | Light, shadow, or mixed label/help on host-role fields and combobox |
+| **SplitSurfaceAriaController** | [split-surface-aria-controller.md](./split-surface-aria-controller.md) | Light or shadow label/help on host-role fields and combobox |
 | **SlottedFieldAriaController** | [slotted-field-aria-controller.md](./slotted-field-aria-controller.md) | Label/help slotted from the app author |
 
 ## Demo pages
@@ -16,7 +16,6 @@ Each page shows textfield, checkbox, progress bar, and combobox for one label sc
 | Light DOM label/help | [demo-light-label.html](../../demo-light-label.html) |
 | Shadow DOM label/help | [demo-shadow-label.html](../../demo-shadow-label.html) |
 | Slotted label/help | [demo-slotted-label.html](../../demo-slotted-label.html) |
-| Mixed light + shadow | [demo-mixed-label.html](../../demo-mixed-label.html) |
 
 ## Quick pick
 
@@ -26,7 +25,7 @@ Where does label/help live?
 ├─ Slotted from app author
 │  └─ SlottedFieldAriaController
 │
-└─ Page, shadow, or both (host owns role / combobox)
+└─ Page or shadow (host owns role / combobox)
    └─ SplitSurfaceAriaController
 ```
 
