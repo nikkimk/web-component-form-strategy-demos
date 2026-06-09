@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Form fields strategy demos — Q2 & Q3</title>
+        <link rel="stylesheet" href="./page.css" />
+    </head>
+    <body>
+        <main class="page">
+            <h1>Form fields strategy demos</h1>
+            <p class="lead">
+                Interactive PoCs for <strong>Q2</strong> (where ARIA roles live) and
+                <strong>Q3</strong> (split-surface label, help, and popup wiring). See
+                <a href="./README.md">README</a> for recommendations.
+            </p>
+
+            <div id="support-status" class="status" aria-live="polite"></div>
+
+            <section class="demo-section" aria-labelledby="combobox-heading">
+                <h2 id="combobox-heading">Combobox</h2>
+                <p>
+                    Host <code>role="combobox"</code>; shadow listbox linked via
+                    <code>internals.ariaControlsElements</code>; options slotted from Light DOM.
+                </p>
+                <ul class="nav-list">
+                    <li>
+                        <a href="./demo-combobox-shadow-label.html">Shadow DOM label and help</a>
+                    </li>
+                    <li>
+                        <a href="./demo-combobox-light-label.html">Light DOM label and help</a>
+                    </li>
+                    <li>
+                        <a href="./demo-combobox-mixed-label.html">Mixed shadow and light label/help</a>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="demo-section" aria-labelledby="host-role-heading">
+                <h2 id="host-role-heading">Host-role form controls</h2>
+                <p>
+                    Widget semantics on the custom element host; same split-surface label/help
+                    wiring as the combobox.
+                </p>
+                <ul class="nav-list">
+                    <li>
+                        <a href="./demo-host-shadow-label.html">Textfield, checkbox, and progress bar — shadow labels</a>
+                    </li>
+                    <li>
+                        <a href="./demo-host-light-label.html">Textfield and checkbox — light DOM labels</a>
+                    </li>
+                    <li>
+                        <a href="./demo-host-textfield-shadow.html">Textfield only</a>
+                    </li>
+                    <li>
+                        <a href="./demo-host-checkbox-shadow.html">Checkbox only</a>
+                    </li>
+                    <li>
+                        <a href="./demo-host-progressbar-shadow.html">Progress bar only</a>
+                    </li>
+                </ul>
+            </section>
+        </main>
+
+        <script type="module">
+            import { renderSupportStatus } from './combobox-base.js';
+
+            renderSupportStatus(document.getElementById('support-status'));
+        </script>
+    </body>
+</html>

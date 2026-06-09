@@ -69,6 +69,11 @@ h2 {
     margin-top: 1.5rem;
 }
 
+.demo-layout {
+    display: grid;
+    gap: 0.75rem;
+}
+
 .field-label {
     display: block;
     font-weight: 600;
@@ -108,14 +113,15 @@ h2 {
     }
 }
 
-.stackblitz-links {
-    display: grid;
-    gap: 0.5rem;
-    margin: 1rem 0 1.5rem;
-    padding: 0;
-    list-style: none;
+.demo-section {
+    margin-top: 2rem;
 }
 
-.stackblitz-links a {
-    color: #2680eb;
+.demo-section h2 {
+    margin-bottom: 0.75rem;
+}
+
+.mixed-note {
+    font-size: 0.875rem;
+    font-style: italic;
 }

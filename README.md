@@ -9,17 +9,24 @@ Interactive PoCs in this repo support two decisions for 2nd-gen Spectrum form fi
 
 These demos do **not** cover Q1 (form association / `setFormValue`) or Q4 (axe policy). See [SWC-48](https://jira.corp.adobe.com/browse/SWC-48) and the [Semantic HTML and ARIA guide](https://github.com/adobe/spectrum-web-components/blob/main/2nd-gen/packages/swc/.storybook/guides/accessibility-guides/semantic_html_aria.mdx) for broader context.
 
+**[Open all demos in StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos)** — one project; start at [`index.html`](./index.html).
+
 ---
 
 ## Runnable examples
 
-| Demo | What it exercises | StackBlitz |
-| ---- | ----------------- | ---------- |
-| [Combobox ARIA element refs](./combobox-aria-element-refs/) | Q2 composite widget + Q3 listbox split, label/help split, `aria-activedescendant` | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/combobox-aria-element-refs) |
-| [Textfield](./host-role-form-controls/demo-textfield-shadow.html) | Q2 host `role="textbox"` + Q3 shadow label/help via internals | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/textfield) |
-| [Checkbox](./host-role-form-controls/demo-checkbox-shadow.html) | Q2 host `role="checkbox"` + Q3 shadow label/help via internals | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/checkbox) |
-| [Progress bar](./host-role-form-controls/demo-progressbar-shadow.html) | Q2 host `role="progressbar"` + Q3 shadow label/description via internals | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/progressbar) |
-| [index](./host-role-form-controls/) | All host-role PoCs + light DOM label variant | [Open](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls) |
+All demos live at the repo root and are linked from [`index.html`](./index.html).
+
+| Demo | What it exercises |
+| ---- | ----------------- |
+| [Combobox — shadow label/help](./demo-combobox-shadow-label.html) | Q2 composite widget + Q3 listbox split, shadow label/help via internals |
+| [Combobox — light label/help](./demo-combobox-light-label.html) | Q3 light label/help via host element refs |
+| [Combobox — mixed label/help](./demo-combobox-mixed-label.html) | Q3 split-surface wiring with both shadow and light targets |
+| [Host-role textfield, checkbox, progress bar — shadow labels](./demo-host-shadow-label.html) | Q2 host roles + Q3 shadow label/help via internals |
+| [Host-role textfield and checkbox — light labels](./demo-host-light-label.html) | Q3 light label/help on host-role controls |
+| [Host-role textfield](./demo-host-textfield-shadow.html) | Q2 host `role="textbox"` |
+| [Host-role checkbox](./demo-host-checkbox-shadow.html) | Q2 host `role="checkbox"` |
+| [Host-role progress bar](./demo-host-progressbar-shadow.html) | Q2 host `role="progressbar"` |
 
 Related baseline: [Cross-root ARIA element refs CodePen](https://codepen.io/spectrum-css/pen/pvNEVda?editors=0010) (NVDA + VoiceOver described-by validation).
 
@@ -31,10 +38,12 @@ Related baseline: [Cross-root ARIA element refs CodePen](https://codepen.io/spec
 
 | Control class | Role / semantics | Focus | Popup / list shell | Demo |
 | ------------- | ---------------- | ----- | ------------------ | ---- |
-| **Composite closed widgets** (combobox, picker) | **Host** — `role="combobox"`, `aria-expanded`, `aria-activedescendant` | **Host** `tabindex="0"`; focus ring on inner trigger via `:host(:focus)` | **Shadow** `<ul role="listbox">`; **Light DOM** options slotted in | [Combobox PoC](./combobox-aria-element-refs/) |
-| **Host-role textfield** (PoC) | **Host** `role="textbox"`; inner input `aria-hidden` | Host `tabindex="0"` | N/A | [StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/textfield) |
-| **Host-role checkbox** (PoC) | **Host** `role="checkbox"`, `aria-checked` | Host `tabindex="0"` | N/A | [StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/checkbox) |
-| **Progress / meter / static indicators** | **Host** carries widget role | Not in tab order unless interactive | N/A | [StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/progressbar) |
+| **Composite closed widgets** (combobox, picker) | **Host** — `role="combobox"`, `aria-expanded`, `aria-activedescendant` | **Host** `tabindex="0"`; focus ring on inner trigger via `:host(:focus)` | **Shadow** `<ul role="listbox">`; **Light DOM** options slotted in | [Combobox demos](./demo-combobox-shadow-label.html) |
+| **Native text-like fields** (textfield, textarea) | **Default (production):** native inner `<input>` / `<textarea>`; host is wrapper | `delegatesFocus: true` | N/A | _Not demonstrated here — production default_ |
+| **Host-role textfield** (PoC) | **Host** `role="textbox"`; inner input `aria-hidden` | Host `tabindex="0"` | N/A | [Textfield demo](./demo-host-textfield-shadow.html) |
+| **Native checkbox / switch** | **Default (production):** native `<input type="checkbox">` in shadow | `delegatesFocus` | N/A | _Not demonstrated here — production default_ |
+| **Host-role checkbox** (PoC) | **Host** `role="checkbox"`, `aria-checked` | Host `tabindex="0"` | N/A | [Checkbox demo](./demo-host-checkbox-shadow.html) |
+| **Progress / meter / static indicators** | **Host** carries widget role | Not in tab order unless interactive | N/A | [Progress bar demo](./demo-host-progressbar-shadow.html) |
 
 ### Findings from the combobox demo (Q2)
 
@@ -66,15 +75,15 @@ Slotted Light DOM options       →  host aria-activedescendant="option-id"
                                    (ID attribute — not ariaActiveDescendantElement)
 ```
 
-Implementation pattern: [`syncAriaElementRefs`](./combobox-aria-element-refs/combobox-base.js) in the combobox PoC and [`syncHostFieldAriaRefs`](./host-role-form-controls/form-field-base.js) in the host-role PoCs.
+Implementation pattern: [`syncAriaElementRefs`](./combobox-base.js) in the combobox PoC and [`syncHostFieldAriaRefs`](./form-field-base.js) in the host-role PoCs.
 
 ### What the demos validate
 
 | Pattern | Demo | Result |
 | ------- | ---- | ------ |
-| Shadow label/help → internals | Combobox (shadow label variant), all host-role shadow-label pages | `internals.ariaLabelledByElements` / `ariaDescribedByElements` read back correctly |
-| Light label/help → host | Combobox (light label variant), host-role light-label page | `host.ariaLabelledByElements` / `ariaDescribedByElements` read back correctly |
-| Mixed shadow + light label/help | Combobox (mixed variant) | Each target wired on its own surface |
+| Shadow label/help → internals | [Combobox shadow label](./demo-combobox-shadow-label.html), [host shadow labels](./demo-host-shadow-label.html) | `internals.ariaLabelledByElements` / `ariaDescribedByElements` read back correctly |
+| Light label/help → host | [Combobox light label](./demo-combobox-light-label.html), [host light labels](./demo-host-light-label.html) | `host.ariaLabelledByElements` / `ariaDescribedByElements` read back correctly |
+| Mixed shadow + light label/help | [Combobox mixed label](./demo-combobox-mixed-label.html) | Each target wired on its own surface |
 | Host combobox → shadow listbox | Combobox (all variants) | `internals.ariaControlsElements` succeeds; host assignment does not |
 | Host → light option IDs | Combobox (all variants) | `aria-activedescendant` on host points at slotted light option `id`s |
 | Shadow listbox + light options | Combobox (all variants) | Listbox role on shadow `<ul>`; options authored as `<li slot="option">` in light DOM |
@@ -103,24 +112,12 @@ Implementation pattern: [`syncAriaElementRefs`](./combobox-aria-element-refs/com
 
 ## Running locally
 
-**Combobox**
-
 ```bash
-cd combobox-aria-element-refs
-npm install && npm start
+npm install
+npm start
 ```
 
-**Host-role controls**
-
-```bash
-cd host-role-form-controls
-npm install && npm start                 # index
-npm run start:textfield                  # textfield only
-npm run start:checkbox                   # checkbox only
-npm run start:progressbar                # progress bar only
-```
-
-Open `http://localhost:8080/index.html` for each folder. Each demo includes a live **Resolved ARIA references** panel.
+Open [http://localhost:8080/index.html](http://localhost:8080/index.html) — the index links to every demo. Each page includes a live **Resolved ARIA references** panel.
 
 ---
 

@@ -1,5 +1,5 @@
 {
-  "name": "combobox-aria-element-refs",
+  "name": "web-component-form-strategy-demos",
   "private": true,
   "scripts": {
     "start": "servor . index.html 8080 --reload"
