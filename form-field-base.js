@@ -1,48 +1,25 @@
 /**
- * Shared helpers for form controls with ARIA role on the custom element host.
- * @see https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/ariaLabelledByElements
+ * Logging and re-exports for host-role form field demos.
  */
 
-export const SUPPORTS_ELEMENT_REFS = 'ariaControlsElements' in Element.prototype;
+import { SUPPORTS_ELEMENT_REFS } from './aria-ref-utils.js';
 
-/**
- * @param {HTMLElement} element
- * @returns {boolean}
- */
-function isShadowElement(element) {
-    return element.getRootNode() instanceof ShadowRoot;
-}
-
-/**
- * @param {HTMLElement} element
- * @param {string} prefix
- */
-function ensureFallbackId(element, prefix) {
-    if (!element.id) {
-        element.id = `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
-    }
-    return element.id;
-}
-
-/**
- * @param {HTMLElement[]} elements
- */
-function prepareRefTargets(elements) {
-    return elements.filter(Boolean).map((element, index) => {
-        ensureFallbackId(element, `ref-${index}`);
-        return element;
-    });
-}
-
-/**
- * @param {HTMLElement[]} elements
- */
-function collectElementText(elements) {
-    return elements
-        .map((element) => element.textContent?.trim())
-        .filter(Boolean)
-        .join(' ');
-}
+export { SUPPORTS_ELEMENT_REFS } from './aria-ref-utils.js';
+export {
+    collectSlottedFieldRefs,
+    resolveLightFieldRefs,
+    watchRefTargets,
+    watchSlottedFieldRefs,
+} from './field-ref-watchers.js';
+export { SplitSurfaceAriaController } from './split-surface-aria-controller.js';
+export { SlottedFieldAriaController } from './slotted-field-aria-controller.js';
+export {
+    syncHostFieldAriaRefs,
+    syncAriaElementRefs,
+} from './split-surface-aria-controller.js';
+export {
+    establishSlottedFieldAriaSync,
+} from './slotted-field-aria-controller.js';
 
 /**
  * @param {string} logKey
@@ -68,261 +45,6 @@ export function createLogRefresher(logKey, render) {
     queueMicrotask(refresh);
 
     return refresh;
-}
-
-/**
- * @param {HTMLElement[]} elements
- */
-function partitionByRoot(elements) {
-    const light = [];
-    const shadow = [];
-
-    elements.filter(Boolean).forEach((element) => {
-        if (isShadowElement(element)) {
-            shadow.push(element);
-        } else {
-            light.push(element);
-        }
-    });
-
-    return { light, shadow };
-}
-
-/**
- * Always mirror shadow label/help text on internals alongside element refs.
- * @param {ElementInternals} internals
- * @param {HTMLElement[]} shadowLabels
- * @param {HTMLElement[]} shadowDescriptions
- */
-export function mirrorShadowAccessibleName(internals, shadowLabels, shadowDescriptions) {
-    const labelText = collectElementText(shadowLabels);
-
-    if (labelText) {
-        internals.ariaLabel = labelText;
-    } else {
-        internals.ariaLabel = null;
-    }
-
-    const descriptionText = collectElementText(shadowDescriptions);
-
-    if ('ariaDescription' in internals) {
-        internals.ariaDescription = descriptionText || null;
-    }
-}
-
-/**
- * @param {HTMLElement} host
- * @param {ElementInternals} internals
- * @param {string} role
- * @param {HTMLElement[]} labelElements
- * @param {HTMLElement[]} descriptionElements
- * @param {{ focusable?: boolean, resolveRefs?: () => { labelElements: HTMLElement[], descriptionElements: HTMLElement[] } }} [options]
- * @returns {() => void} resync — call when label/help text or slotted nodes change
- */
-export function syncHostFieldAriaRefs(
-    host,
-    internals,
-    role,
-    labelElements = [],
-    descriptionElements = [],
-    options = {}
-) {
-    const { focusable = true, resolveRefs } = options;
-
-    const resync = () => {
-        const refs = resolveRefs?.() ?? { labelElements, descriptionElements };
-        const activeLabels = refs.labelElements ?? labelElements;
-        const activeDescriptions = refs.descriptionElements ?? descriptionElements;
-        if (focusable) {
-            host.setAttribute('tabindex', '0');
-        } else {
-            host.removeAttribute('tabindex');
-        }
-
-        const { light: lightLabels, shadow: shadowLabels } = partitionByRoot(activeLabels);
-        const { light: lightDescriptions, shadow: shadowDescriptions } =
-            partitionByRoot(activeDescriptions);
-
-        const preparedLightLabels = prepareRefTargets(lightLabels);
-        const preparedShadowLabels = prepareRefTargets(shadowLabels);
-        const preparedLightDescriptions = prepareRefTargets(lightDescriptions);
-        const preparedShadowDescriptions = prepareRefTargets(shadowDescriptions);
-
-        if (!SUPPORTS_ELEMENT_REFS) {
-            host.setAttribute('role', role);
-            host.removeAttribute('aria-label');
-            host.removeAttribute('aria-description');
-
-            if (preparedLightLabels.length) {
-                host.setAttribute(
-                    'aria-labelledby',
-                    preparedLightLabels.map((el) => el.id).join(' ')
-                );
-            } else {
-                host.removeAttribute('aria-labelledby');
-            }
-
-            if (preparedLightDescriptions.length) {
-                host.setAttribute(
-                    'aria-describedby',
-                    preparedLightDescriptions.map((el) => el.id).join(' ')
-                );
-            } else {
-                host.removeAttribute('aria-describedby');
-            }
-
-            return;
-        }
-
-        host.removeAttribute('role');
-        host.removeAttribute('aria-labelledby');
-        host.removeAttribute('aria-describedby');
-
-        internals.role = role;
-        internals.ariaLabelledByElements = preparedShadowLabels;
-        internals.ariaDescribedByElements = preparedShadowDescriptions;
-        host.ariaLabelledByElements = preparedLightLabels;
-        host.ariaDescribedByElements = preparedLightDescriptions;
-
-        if (preparedShadowLabels.length || preparedShadowDescriptions.length) {
-            mirrorShadowAccessibleName(
-                internals,
-                preparedShadowLabels,
-                preparedShadowDescriptions
-            );
-        } else {
-            internals.ariaLabel = null;
-            if ('ariaDescription' in internals) {
-                internals.ariaDescription = null;
-            }
-        }
-    };
-
-    resync();
-    return resync;
-}
-
-/**
- * @param {HTMLElement} host
- * @param {{ labelSlot?: string, helpSlot?: string }} [options]
- */
-export function collectSlottedFieldRefs(host, options = {}) {
-    const { labelSlot = 'label', helpSlot = 'help-text' } = options;
-
-    const labelSlotEl = host.shadowRoot?.querySelector(`slot[name="${labelSlot}"]`);
-    const helpSlotEl = host.shadowRoot?.querySelector(`slot[name="${helpSlot}"]`);
-
-    const labelElements = (
-        labelSlotEl?.assignedElements({ flatten: true }) ?? []
-    ).filter((element) => element instanceof HTMLElement);
-
-    const descriptionElements = (
-        helpSlotEl?.assignedElements({ flatten: true }) ?? []
-    ).filter((element) => element instanceof HTMLElement);
-
-    return { labelElements, descriptionElements };
-}
-
-/**
- * @param {HTMLElement[]} elements
- * @param {() => void} resync
- */
-export function watchRefTargets(elements, resync) {
-    const targets = elements.filter(Boolean);
-
-    if (!targets.length) {
-        return () => {};
-    }
-
-    const observer = new MutationObserver(resync);
-
-    targets.forEach((target) => {
-        observer.observe(target, {
-            childList: true,
-            characterData: true,
-            subtree: true,
-        });
-    });
-
-    return () => observer.disconnect();
-}
-
-/**
- * @param {HTMLElement} host
- * @param {() => void} resync
- * @param {{ labelSlot?: string, helpSlot?: string }} [options]
- */
-export function watchSlottedFieldRefs(host, resync, options = {}) {
-    const { labelSlot = 'label', helpSlot = 'help-text' } = options;
-
-    const slots = [labelSlot, helpSlot]
-        .map((name) => host.shadowRoot?.querySelector(`slot[name="${name}"]`))
-        .filter(Boolean);
-
-    slots.forEach((slot) => slot.addEventListener('slotchange', resync));
-
-    return () => {
-        slots.forEach((slot) => slot.removeEventListener('slotchange', resync));
-    };
-}
-
-/**
- * Collect slotted label/description nodes, assign stable IDs, and keep host refs in sync
- * when slot assignments or slotted text change.
- *
- * @param {HTMLElement} host
- * @param {ElementInternals} internals
- * @param {string} role
- * @param {{
- *   labelSlot?: string,
- *   helpSlot?: string,
- *   focusable?: boolean,
- *   onRefsChange?: (refs: { labelElements: HTMLElement[], descriptionElements: HTMLElement[] }) => void
- * }} [options]
- */
-export function establishSlottedFieldAriaSync(host, internals, role, options = {}) {
-    const {
-        labelSlot = 'label',
-        helpSlot = 'help-text',
-        focusable = true,
-        onRefsChange,
-    } = options;
-
-    let unwatchSlots = () => {};
-    let unwatchTargets = () => {};
-    let labelElements = [];
-    let descriptionElements = [];
-
-    const resync = () => {
-        unwatchTargets();
-
-        const refs = collectSlottedFieldRefs(host, { labelSlot, helpSlot });
-        labelElements = refs.labelElements;
-        descriptionElements = refs.descriptionElements;
-
-        syncHostFieldAriaRefs(host, internals, role, labelElements, descriptionElements, {
-            focusable,
-        })();
-
-        unwatchTargets = watchRefTargets(
-            [...labelElements, ...descriptionElements],
-            resync
-        );
-
-        onRefsChange?.({ labelElements, descriptionElements });
-    };
-
-    unwatchSlots = watchSlottedFieldRefs(host, resync, { labelSlot, helpSlot });
-    resync();
-
-    return {
-        disconnect: () => {
-            unwatchSlots();
-            unwatchTargets();
-        },
-        getRefs: () => ({ labelElements, descriptionElements }),
-        resync,
-    };
 }
 
 /**
@@ -445,31 +167,4 @@ function describeElement(element) {
     const root = element.getRootNode();
     parts.push(root instanceof ShadowRoot ? '(shadow)' : '(light)');
     return parts.join('');
-}
-
-/**
- * @param {HTMLElement} host
- * @param {object} config
- * @param {string} config.labelTarget
- * @param {string} config.helpTarget
- * @param {HTMLElement} config.previousLabelSibling
- * @param {HTMLElement} config.nextHelpSibling
- */
-export function resolveLightFieldRefs(host, config) {
-    const labelEl = config.labelTarget
-        ? document.getElementById(config.labelTarget)
-        : config.previousLabelSibling?.matches('label')
-          ? config.previousLabelSibling
-          : null;
-
-    const helpEl = config.helpTarget
-        ? document.getElementById(config.helpTarget)
-        : config.nextHelpSibling?.hasAttribute('data-help')
-          ? config.nextHelpSibling
-          : null;
-
-    return {
-        labelElements: [labelEl].filter(Boolean),
-        descriptionElements: [helpEl].filter(Boolean),
-    };
 }

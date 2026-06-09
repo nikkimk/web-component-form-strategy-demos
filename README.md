@@ -111,7 +111,7 @@ input.ariaDescribedByElements = [document.getElementById('email-help')];
 - **Progress bar:** `<div role="progressbar">` inside shadow.
 - **No fallback** if element refs are missing — string IDs cannot cross shadow.
 
-Helper: [`wireInnerCrossRootAriaRefs`](./cross-root-field-base.js)
+Helper: [`InnerCrossRootAriaController`](./inner-cross-root-aria-controller.js)
 
 ---
 
@@ -131,7 +131,79 @@ These put the widget role on the custom element host. Use them to **learn** the 
 
 ---
 
+## Reusable controllers
+
+Demos share three controllers. Each handles connect/disconnect, ID assignment, ref wiring, and re-sync when label/help changes.
+
+| Controller | Use when | Module |
+| ---------- | -------- | ------ |
+| **`SplitSurfaceAriaController`** | Label/help split across host + `ElementInternals` (combobox, host-role fields) | [`split-surface-aria-controller.js`](./split-surface-aria-controller.js) |
+| **`SlottedFieldAriaController`** | Label/help slotted from the app author | [`slotted-field-aria-controller.js`](./slotted-field-aria-controller.js) |
+| **`InnerCrossRootAriaController`** | Inner shadow input → page label/help (CodePen pattern) | [`inner-cross-root-aria-controller.js`](./inner-cross-root-aria-controller.js) |
+
+Shared utilities: [`aria-ref-utils.js`](./aria-ref-utils.js) · [`field-ref-watchers.js`](./field-ref-watchers.js)
+
+### Example — combobox (split surface + listbox)
+
+```javascript
+import { SplitSurfaceAriaController } from './split-surface-aria-controller.js';
+
+this.#ariaController = new SplitSurfaceAriaController({
+  host: this,
+  internals: this.#internals,
+  role: 'combobox',
+  controls: [this.#listbox],
+  labelElements: [shadowLabelEl],
+  descriptionElements: [shadowHelpEl],
+  onSync: () => this.#refreshLog(),
+});
+this.#ariaController.connect();
+// disconnectedCallback: this.#ariaController.disconnect();
+```
+
+### Example — slotted label
+
+```javascript
+import { SlottedFieldAriaController } from './slotted-field-aria-controller.js';
+
+this.#ariaController = new SlottedFieldAriaController({
+  host: this,
+  internals: this.#internals,
+  role: 'textbox',
+  labelSlot: 'label',
+  helpSlot: 'description',
+  onRefsChange: ({ labelElements, descriptionElements }) => { /* update log */ },
+});
+this.#ariaController.connect();
+```
+
+### Example — production textfield (inner input → page label)
+
+```javascript
+import { InnerCrossRootAriaController } from './inner-cross-root-aria-controller.js';
+
+this.#ariaController = new InnerCrossRootAriaController({
+  innerSurface: this.shadowRoot.querySelector('[data-aria-surface]'),
+  resolveRefs: () => resolveLightFieldRefs(this, { labelTarget, helpTarget }),
+});
+this.#ariaController.connect();
+```
+
+Legacy function wrappers (`syncHostFieldAriaRefs`, `establishSlottedFieldAriaSync`, etc.) still exist but are deprecated — prefer the controllers above.
+
+---
+
 ## Where to put the role (Q2)
+
+| Control | Where role lives | Where focus goes | Demo |
+| ------- | ---------------- | ---------------- | ---- |
+| Combobox / picker | `ElementInternals` (or host fallback) | Host | [Combobox demos](./demo-combobox-shadow-label.html) |
+| Textfield (ship this) | Native inner `<input>` | Inner input (`delegatesFocus`) | [Cross-root demo](./demo-cross-root-fields.html) |
+| Checkbox (ship this) | Native inner `<input type="checkbox">` | Inner input | [Cross-root demo](./demo-cross-root-fields.html) |
+| Progress bar | `ElementInternals` or inner `role="progressbar"` | Usually not focusable | [Progress demos](./demo-host-progressbar-shadow.html) |
+| Host-role textfield/checkbox | `ElementInternals` | Host | Host-role demos above |
+
+---
 
 | Control | Where role lives | Where focus goes | Demo |
 | ------- | ---------------- | ---------------- | ---- |
@@ -153,7 +225,7 @@ These put the widget role on the custom element host. Use them to **learn** the 
 | Shadow listbox | `internals.ariaControlsElements` |
 | Slotted options | Host `aria-activedescendant="id"` |
 
-**Helpers:** [`syncAriaElementRefs`](./combobox-base.js) · [`syncHostFieldAriaRefs`](./form-field-base.js) · [`establishSlottedFieldAriaSync`](./form-field-base.js)
+**Controllers:** [`SplitSurfaceAriaController`](./split-surface-aria-controller.js) · [`SlottedFieldAriaController`](./slotted-field-aria-controller.js) · [`InnerCrossRootAriaController`](./inner-cross-root-aria-controller.js)
 
 ---
 

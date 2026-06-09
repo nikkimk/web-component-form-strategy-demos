@@ -1,70 +1,18 @@
 /**
- * Cross-root ARIA wiring on an inner shadow surface (shadow → light).
- * Pattern from https://codepen.io/spectrum-css/pen/pvNEVda
- *
- * The inner control (input, checkbox, progressbar) references light DOM
- * label/help via element refs. No ElementInternals. Light → shadow is not supported.
+ * Cross-root ARIA logging and re-exports (shadow inner surface → light label/help).
  */
 
-import { createLogRefresher, resolveLightFieldRefs, watchRefTargets } from './form-field-base.js';
+import { SUPPORTS_ELEMENT_REFS } from './aria-ref-utils.js';
+import { createLogRefresher, resolveLightFieldRefs } from './form-field-base.js';
 
-export { createLogRefresher, resolveLightFieldRefs, watchRefTargets };
+export { createLogRefresher, resolveLightFieldRefs } from './form-field-base.js';
+export { InnerCrossRootAriaController } from './inner-cross-root-aria-controller.js';
+export {
+    establishInnerCrossRootAriaSync,
+    wireInnerCrossRootAriaRefs,
+} from './inner-cross-root-aria-controller.js';
 
-export const SUPPORTS_INNER_CROSS_ROOT_REFS = 'ariaLabelledByElements' in Element.prototype;
-
-/**
- * @param {HTMLElement | null} innerSurface
- * @param {HTMLElement[]} labelElements
- * @param {HTMLElement[]} descriptionElements
- */
-export function wireInnerCrossRootAriaRefs(innerSurface, labelElements, descriptionElements) {
-    const labels = labelElements.filter(Boolean);
-    const descriptions = descriptionElements.filter(Boolean);
-
-    if (!innerSurface) {
-        return false;
-    }
-
-    if (!SUPPORTS_INNER_CROSS_ROOT_REFS) {
-        return false;
-    }
-
-    innerSurface.ariaLabelledByElements = labels;
-    innerSurface.ariaDescribedByElements = descriptions;
-    return true;
-}
-
-/**
- * @param {HTMLElement | null} innerSurface
- * @param {() => { labelElements: HTMLElement[], descriptionElements: HTMLElement[] }} resolveRefs
- * @param {() => void} refreshLog
- */
-export function establishInnerCrossRootAriaSync(innerSurface, resolveRefs, refreshLog) {
-    let unwatchTargets = () => {};
-
-    const resync = () => {
-        unwatchTargets();
-
-        const { labelElements, descriptionElements } = resolveRefs();
-        wireInnerCrossRootAriaRefs(innerSurface, labelElements, descriptionElements);
-
-        unwatchTargets = watchRefTargets(
-            [...labelElements, ...descriptionElements],
-            () => {
-                resync();
-                refreshLog();
-            }
-        );
-
-        refreshLog();
-    };
-
-    resync();
-
-    return () => {
-        unwatchTargets();
-    };
-}
+export const SUPPORTS_INNER_CROSS_ROOT_REFS = SUPPORTS_ELEMENT_REFS;
 
 /**
  * @param {HTMLElement | null} innerSurface

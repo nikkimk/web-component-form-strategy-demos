@@ -3,14 +3,14 @@ import {
     createLogRefresher,
     logHostFieldAriaRefs,
     resolveLightFieldRefs,
-    syncHostFieldAriaRefs,
-    watchRefTargets,
+    SplitSurfaceAriaController,
 } from './form-field-base.js';
 
 /**
  * Checkbox with role="checkbox" on the host (no native input in the accessibility tree).
  */
 export class CheckboxHostRefs extends HTMLElement {
+    #ariaController = null;
     #internals = null;
     #labelEl = null;
     #helpEl = null;
@@ -18,7 +18,6 @@ export class CheckboxHostRefs extends HTMLElement {
     #checked = false;
     #labelElements = [];
     #descriptionElements = [];
-    #unwatchLabels = () => {};
     #refreshLog = () => {};
 
     constructor() {
@@ -46,38 +45,10 @@ export class CheckboxHostRefs extends HTMLElement {
 
         const useLightLabel = this.hasAttribute('label-target');
 
-        const { labelElements, descriptionElements } = useLightLabel
-            ? resolveLightFieldRefs(this, {
-                  labelTarget: this.getAttribute('label-target') ?? '',
-                  helpTarget: this.getAttribute('help-target') ?? '',
-              })
-            : { labelElements: [this.#labelEl], descriptionElements: [this.#helpEl] };
-
-        this.#labelElements = labelElements;
-        this.#descriptionElements = descriptionElements;
-
         if (useLightLabel) {
             this.#labelEl.hidden = true;
             this.#helpEl.hidden = true;
         }
-
-        const resyncAria = syncHostFieldAriaRefs(
-            this,
-            this.#internals,
-            'checkbox',
-            this.#labelElements,
-            this.#descriptionElements
-        );
-
-        this.#unwatchLabels = watchRefTargets(
-            [...this.#labelElements, ...this.#descriptionElements],
-            () => {
-                resyncAria();
-                this.#refreshLog();
-            }
-        );
-
-        this.#setChecked(false);
 
         const logKey = this.getAttribute('data-aria-log') ?? 'checkbox';
         this.#refreshLog = createLogRefresher(logKey, (logEl) => {
@@ -90,12 +61,32 @@ export class CheckboxHostRefs extends HTMLElement {
             );
         });
 
+        this.#ariaController = new SplitSurfaceAriaController({
+            host: this,
+            internals: this.#internals,
+            role: 'checkbox',
+            resolveRefs: () => {
+                const refs = useLightLabel
+                    ? resolveLightFieldRefs(this, {
+                          labelTarget: this.getAttribute('label-target') ?? '',
+                          helpTarget: this.getAttribute('help-target') ?? '',
+                      })
+                    : { labelElements: [this.#labelEl], descriptionElements: [this.#helpEl] };
+                this.#labelElements = refs.labelElements;
+                this.#descriptionElements = refs.descriptionElements;
+                return refs;
+            },
+            onSync: () => this.#refreshLog(),
+        });
+        this.#ariaController.connect();
+
+        this.#setChecked(false);
         this.addEventListener('click', this.#onClick);
         this.addEventListener('keydown', this.#onKeyDown);
     }
 
     disconnectedCallback() {
-        this.#unwatchLabels();
+        this.#ariaController?.disconnect();
         this.removeEventListener('click', this.#onClick);
         this.removeEventListener('keydown', this.#onKeyDown);
     }

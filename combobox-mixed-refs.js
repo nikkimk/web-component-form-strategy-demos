@@ -2,10 +2,9 @@ import {
     ComboboxController,
     createLogRefresher,
     logAriaRefs,
-    syncAriaElementRefs,
+    SplitSurfaceAriaController,
     watchSlottedOptions,
 } from './combobox-base.js';
-import { watchRefTargets } from './form-field-base.js';
 
 /**
  * Combobox that associates both Light DOM and Shadow DOM elements
@@ -14,13 +13,13 @@ import { watchRefTargets } from './form-field-base.js';
  */
 export class ComboboxMixedRefs extends HTMLElement {
     #controller = null;
+    #ariaController = null;
     #internals = null;
     #shadowLabelEl = null;
     #shadowHelpEl = null;
     #listbox = null;
     #options = [];
     #unwatchSlot = null;
-    #unwatchLabels = () => {};
     #labelElements = [];
     #descriptionElements = [];
 
@@ -70,21 +69,20 @@ export class ComboboxMixedRefs extends HTMLElement {
             );
         });
 
-        const resyncAria = syncAriaElementRefs(
-            this,
-            this.#internals,
-            this.#listbox,
-            this.#labelElements,
-            this.#descriptionElements
-        );
-
-        this.#unwatchLabels = watchRefTargets(
-            [...this.#labelElements, ...this.#descriptionElements],
-            () => {
-                resyncAria();
-                refreshLog();
-            }
-        );
+        this.#ariaController = new SplitSurfaceAriaController({
+            host: this,
+            internals: this.#internals,
+            role: 'combobox',
+            controls: [this.#listbox],
+            labelElements: this.#labelElements,
+            descriptionElements: this.#descriptionElements,
+            onRefsChange: ({ labelElements, descriptionElements }) => {
+                this.#labelElements = labelElements;
+                this.#descriptionElements = descriptionElements;
+            },
+            onSync: refreshLog,
+        });
+        this.#ariaController.connect();
 
         this.#unwatchSlot = watchSlottedOptions(this, (options) => {
             if (!options.length) {
@@ -107,7 +105,7 @@ export class ComboboxMixedRefs extends HTMLElement {
     }
 
     disconnectedCallback() {
-        this.#unwatchLabels();
+        this.#ariaController?.disconnect();
         this.#unwatchSlot?.();
         this.#controller?.disconnect();
     }

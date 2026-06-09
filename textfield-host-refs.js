@@ -2,8 +2,7 @@ import {
     createLogRefresher,
     logHostFieldAriaRefs,
     resolveLightFieldRefs,
-    syncHostFieldAriaRefs,
-    watchRefTargets,
+    SplitSurfaceAriaController,
 } from './form-field-base.js';
 
 /**
@@ -11,6 +10,7 @@ import {
  * The decorative inner input is aria-hidden; typing is handled on the host.
  */
 export class TextfieldHostRefs extends HTMLElement {
+    #ariaController = null;
     #internals = null;
     #labelEl = null;
     #helpEl = null;
@@ -18,7 +18,7 @@ export class TextfieldHostRefs extends HTMLElement {
     #value = '';
     #labelElements = [];
     #descriptionElements = [];
-    #unwatchLabels = () => {};
+    #refreshLog = () => {};
 
     constructor() {
         super();
@@ -51,38 +51,10 @@ export class TextfieldHostRefs extends HTMLElement {
 
         const useLightLabel = this.hasAttribute('label-target');
 
-        const { labelElements, descriptionElements } = useLightLabel
-            ? resolveLightFieldRefs(this, {
-                  labelTarget: this.getAttribute('label-target') ?? '',
-                  helpTarget: this.getAttribute('help-target') ?? '',
-              })
-            : { labelElements: [this.#labelEl], descriptionElements: [this.#helpEl] };
-
-        this.#labelElements = labelElements;
-        this.#descriptionElements = descriptionElements;
-
         if (useLightLabel) {
             this.#labelEl.hidden = true;
             this.#helpEl.hidden = true;
         }
-
-        const resyncAria = syncHostFieldAriaRefs(
-            this,
-            this.#internals,
-            'textbox',
-            this.#labelElements,
-            this.#descriptionElements
-        );
-
-        this.#unwatchLabels = watchRefTargets(
-            [...this.#labelElements, ...this.#descriptionElements],
-            () => {
-                resyncAria();
-                this.#refreshLog();
-            }
-        );
-
-        this.#syncDisplay();
 
         const logKey = this.getAttribute('data-aria-log') ?? 'textfield';
         this.#refreshLog = createLogRefresher(logKey, (logEl) => {
@@ -95,14 +67,32 @@ export class TextfieldHostRefs extends HTMLElement {
             );
         });
 
+        this.#ariaController = new SplitSurfaceAriaController({
+            host: this,
+            internals: this.#internals,
+            role: 'textbox',
+            resolveRefs: () => {
+                const refs = useLightLabel
+                    ? resolveLightFieldRefs(this, {
+                          labelTarget: this.getAttribute('label-target') ?? '',
+                          helpTarget: this.getAttribute('help-target') ?? '',
+                      })
+                    : { labelElements: [this.#labelEl], descriptionElements: [this.#helpEl] };
+                this.#labelElements = refs.labelElements;
+                this.#descriptionElements = refs.descriptionElements;
+                return refs;
+            },
+            onSync: () => this.#refreshLog(),
+        });
+        this.#ariaController.connect();
+
+        this.#syncDisplay();
         this.addEventListener('keydown', this.#onKeyDown);
         this.addEventListener('click', this.#onClick);
     }
 
-    #refreshLog = () => {};
-
     disconnectedCallback() {
-        this.#unwatchLabels();
+        this.#ariaController?.disconnect();
         this.removeEventListener('keydown', this.#onKeyDown);
         this.removeEventListener('click', this.#onClick);
     }

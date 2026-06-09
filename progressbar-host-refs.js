@@ -2,8 +2,7 @@ import {
     SUPPORTS_ELEMENT_REFS,
     createLogRefresher,
     logHostFieldAriaRefs,
-    syncHostFieldAriaRefs,
-    watchRefTargets,
+    SplitSurfaceAriaController,
 } from './form-field-base.js';
 
 /**
@@ -11,6 +10,7 @@ import {
  * Label and description live in Shadow DOM; the visual track is presentational.
  */
 export class ProgressbarHostRefs extends HTMLElement {
+    #ariaController = null;
     #internals = null;
     #labelEl = null;
     #helpEl = null;
@@ -21,7 +21,6 @@ export class ProgressbarHostRefs extends HTMLElement {
     #intervalId = null;
     #labelElements = [];
     #descriptionElements = [];
-    #unwatchLabels = () => {};
     #refreshLog = () => {};
 
     constructor() {
@@ -57,23 +56,6 @@ export class ProgressbarHostRefs extends HTMLElement {
         this.#labelElements = [this.#labelEl];
         this.#descriptionElements = [this.#helpEl];
 
-        const resyncAria = syncHostFieldAriaRefs(
-            this,
-            this.#internals,
-            'progressbar',
-            this.#labelElements,
-            this.#descriptionElements,
-            { focusable: false }
-        );
-
-        this.#unwatchLabels = watchRefTargets(
-            [this.#labelEl, this.#helpEl],
-            () => {
-                resyncAria();
-                this.#refreshLog();
-            }
-        );
-
         const logKey = this.getAttribute('data-aria-log') ?? 'progressbar';
         this.#refreshLog = createLogRefresher(logKey, (logEl) => {
             logHostFieldAriaRefs(
@@ -85,6 +67,17 @@ export class ProgressbarHostRefs extends HTMLElement {
             );
         });
 
+        this.#ariaController = new SplitSurfaceAriaController({
+            host: this,
+            internals: this.#internals,
+            role: 'progressbar',
+            labelElements: this.#labelElements,
+            descriptionElements: this.#descriptionElements,
+            focusable: false,
+            onSync: () => this.#refreshLog(),
+        });
+        this.#ariaController.connect();
+
         this.#setValue(Number(this.getAttribute('value') ?? 0));
 
         if (!this.hasAttribute('value')) {
@@ -93,7 +86,7 @@ export class ProgressbarHostRefs extends HTMLElement {
     }
 
     disconnectedCallback() {
-        this.#unwatchLabels();
+        this.#ariaController?.disconnect();
         this.#stopDemoAnimation();
     }
 

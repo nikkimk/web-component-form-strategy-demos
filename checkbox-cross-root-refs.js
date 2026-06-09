@@ -1,6 +1,6 @@
 import {
     createLogRefresher,
-    establishInnerCrossRootAriaSync,
+    InnerCrossRootAriaController,
     logInnerCrossRootAriaRefs,
     resolveLightFieldRefs,
 } from './cross-root-field-base.js';
@@ -10,10 +10,10 @@ import {
  * Light DOM label/help wire via inner.ariaLabelledByElements / ariaDescribedByElements.
  */
 export class CheckboxCrossRootRefs extends HTMLElement {
+    #ariaController = null;
     #innerInput = null;
     #labelElements = [];
     #descriptionElements = [];
-    #disconnectAria = () => {};
     #refreshLog = () => {};
 
     constructor() {
@@ -41,16 +41,6 @@ export class CheckboxCrossRootRefs extends HTMLElement {
 
         this.#innerInput = this.shadowRoot.querySelector('[data-aria-surface]');
 
-        const resolveRefs = () => {
-            const refs = resolveLightFieldRefs(this, {
-                labelTarget: this.getAttribute('label-target') ?? '',
-                helpTarget: this.getAttribute('help-target') ?? '',
-            });
-            this.#labelElements = refs.labelElements;
-            this.#descriptionElements = refs.descriptionElements;
-            return refs;
-        };
-
         const logKey = this.getAttribute('data-aria-log') ?? 'checkbox-cross-root';
         this.#refreshLog = createLogRefresher(logKey, (logEl) => {
             logInnerCrossRootAriaRefs(
@@ -61,18 +51,27 @@ export class CheckboxCrossRootRefs extends HTMLElement {
             );
         });
 
-        this.#disconnectAria = establishInnerCrossRootAriaSync(
-            this.#innerInput,
-            resolveRefs,
-            this.#refreshLog
-        );
+        this.#ariaController = new InnerCrossRootAriaController({
+            innerSurface: this.#innerInput,
+            resolveRefs: () => {
+                const refs = resolveLightFieldRefs(this, {
+                    labelTarget: this.getAttribute('label-target') ?? '',
+                    helpTarget: this.getAttribute('help-target') ?? '',
+                });
+                this.#labelElements = refs.labelElements;
+                this.#descriptionElements = refs.descriptionElements;
+                return refs;
+            },
+            onSync: () => this.#refreshLog(),
+        });
+        this.#ariaController.connect();
 
         this.#innerInput.addEventListener('change', this.#refreshLog);
     }
 
     disconnectedCallback() {
-        this.#disconnectAria();
         this.#innerInput?.removeEventListener('change', this.#refreshLog);
+        this.#ariaController?.disconnect();
     }
 }
 

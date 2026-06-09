@@ -1,9 +1,8 @@
-import { watchRefTargets } from './form-field-base.js';
 import {
     ComboboxController,
     createLogRefresher,
     logAriaRefs,
-    syncAriaElementRefs,
+    SplitSurfaceAriaController,
     watchSlottedOptions,
 } from './combobox-base.js';
 
@@ -13,13 +12,13 @@ import {
  */
 export class ComboboxShadowRefs extends HTMLElement {
     #controller = null;
+    #ariaController = null;
     #internals = null;
     #labelEl = null;
     #helpEl = null;
     #listbox = null;
     #options = [];
     #unwatchSlot = null;
-    #unwatchLabels = () => {};
 
     constructor() {
         super();
@@ -61,18 +60,16 @@ export class ComboboxShadowRefs extends HTMLElement {
             );
         });
 
-        const resyncAria = syncAriaElementRefs(
-            this,
-            this.#internals,
-            this.#listbox,
-            [this.#labelEl],
-            [this.#helpEl]
-        );
-
-        this.#unwatchLabels = watchRefTargets([this.#labelEl, this.#helpEl], () => {
-            resyncAria();
-            refreshLog();
+        this.#ariaController = new SplitSurfaceAriaController({
+            host: this,
+            internals: this.#internals,
+            role: 'combobox',
+            controls: [this.#listbox],
+            labelElements: [this.#labelEl],
+            descriptionElements: [this.#helpEl],
+            onSync: refreshLog,
         });
+        this.#ariaController.connect();
 
         this.#unwatchSlot = watchSlottedOptions(this, (options) => {
             if (!options.length) {
@@ -95,7 +92,7 @@ export class ComboboxShadowRefs extends HTMLElement {
     }
 
     disconnectedCallback() {
-        this.#unwatchLabels();
+        this.#ariaController?.disconnect();
         this.#unwatchSlot?.();
         this.#controller?.disconnect();
     }

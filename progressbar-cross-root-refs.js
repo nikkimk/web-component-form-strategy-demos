@@ -1,6 +1,6 @@
 import {
     createLogRefresher,
-    establishInnerCrossRootAriaSync,
+    InnerCrossRootAriaController,
     logInnerCrossRootAriaRefs,
     resolveLightFieldRefs,
 } from './cross-root-field-base.js';
@@ -10,6 +10,7 @@ import {
  * Light DOM label/help wire via inner.ariaLabelledByElements / ariaDescribedByElements.
  */
 export class ProgressbarCrossRootRefs extends HTMLElement {
+    #ariaController = null;
     #innerSurface = null;
     #fillEl = null;
     #valueEl = null;
@@ -18,7 +19,6 @@ export class ProgressbarCrossRootRefs extends HTMLElement {
     #intervalId = null;
     #labelElements = [];
     #descriptionElements = [];
-    #disconnectAria = () => {};
     #refreshLog = () => {};
 
     constructor() {
@@ -52,16 +52,6 @@ export class ProgressbarCrossRootRefs extends HTMLElement {
         this.#fillEl = this.shadowRoot.querySelector('.progressbar-fill');
         this.#valueEl = this.shadowRoot.querySelector('.progressbar-value');
 
-        const resolveRefs = () => {
-            const refs = resolveLightFieldRefs(this, {
-                labelTarget: this.getAttribute('label-target') ?? '',
-                helpTarget: this.getAttribute('help-target') ?? '',
-            });
-            this.#labelElements = refs.labelElements;
-            this.#descriptionElements = refs.descriptionElements;
-            return refs;
-        };
-
         const logKey = this.getAttribute('data-aria-log') ?? 'progressbar-cross-root';
         this.#refreshLog = createLogRefresher(logKey, (logEl) => {
             logInnerCrossRootAriaRefs(
@@ -72,11 +62,20 @@ export class ProgressbarCrossRootRefs extends HTMLElement {
             );
         });
 
-        this.#disconnectAria = establishInnerCrossRootAriaSync(
-            this.#innerSurface,
-            resolveRefs,
-            this.#refreshLog
-        );
+        this.#ariaController = new InnerCrossRootAriaController({
+            innerSurface: this.#innerSurface,
+            resolveRefs: () => {
+                const refs = resolveLightFieldRefs(this, {
+                    labelTarget: this.getAttribute('label-target') ?? '',
+                    helpTarget: this.getAttribute('help-target') ?? '',
+                });
+                this.#labelElements = refs.labelElements;
+                this.#descriptionElements = refs.descriptionElements;
+                return refs;
+            },
+            onSync: () => this.#refreshLog(),
+        });
+        this.#ariaController.connect();
 
         this.#setValue(Number(this.getAttribute('value') ?? 0));
 
@@ -86,7 +85,7 @@ export class ProgressbarCrossRootRefs extends HTMLElement {
     }
 
     disconnectedCallback() {
-        this.#disconnectAria();
+        this.#ariaController?.disconnect();
         this.#stopDemoAnimation();
     }
 

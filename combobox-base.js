@@ -1,145 +1,17 @@
 /**
  * Shared combobox custom element base using reflected ARIA element references.
- * @see https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/ariaControlsElements
- * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/ariaLabelledByElements
- * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/ariaDescribedByElements
  */
 
-import { createLogRefresher, mirrorShadowAccessibleName, resolveLogElement } from './form-field-base.js';
+import { ensureFallbackId, SUPPORTS_ELEMENT_REFS } from './aria-ref-utils.js';
+import { createLogRefresher, resolveLogElement } from './form-field-base.js';
+import {
+    SplitSurfaceAriaController,
+    syncAriaElementRefs,
+} from './split-surface-aria-controller.js';
 
 export { createLogRefresher, resolveLogElement };
-
-/**
- * @param {HTMLElement} element
- * @returns {boolean}
- */
-function isShadowElement(element) {
-    return element.getRootNode() instanceof ShadowRoot;
-}
-
-/**
- * @param {HTMLElement} element
- * @param {string} prefix
- */
-function ensureFallbackId(element, prefix) {
-    if (!element.id) {
-        element.id = `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
-    }
-    return element.id;
-}
-
-/**
- * @param {HTMLElement[]} elements
- */
-function partitionByRoot(elements) {
-    const light = [];
-    const shadow = [];
-
-    elements.filter(Boolean).forEach((element) => {
-        if (isShadowElement(element)) {
-            shadow.push(element);
-        } else {
-            light.push(element);
-        }
-    });
-
-    return { light, shadow };
-}
-
-/**
- * @param {HTMLElement[]} elements
- */
-function prepareRefTargets(elements) {
-    return elements.filter(Boolean).map((element, index) => {
-        ensureFallbackId(element, `ref-${index}`);
-        return element;
-    });
-}
-
-export const SUPPORTS_ELEMENT_REFS = 'ariaControlsElements' in Element.prototype;
-
-/**
- * @param {HTMLElement} host
- * @param {ElementInternals} internals
- * @param {HTMLElement} listbox
- * @param {HTMLElement[]} labelElements
- * @param {HTMLElement[]} descriptionElements
- */
-export function syncAriaElementRefs(
-    host,
-    internals,
-    listbox,
-    labelElements = [],
-    descriptionElements = []
-) {
-    const resync = () => {
-        host.setAttribute('tabindex', '0');
-        host.setAttribute('aria-haspopup', 'listbox');
-
-        const { light: lightLabels, shadow: shadowLabels } = partitionByRoot(labelElements);
-        const { light: lightDescriptions, shadow: shadowDescriptions } =
-            partitionByRoot(descriptionElements);
-
-        const preparedLightLabels = prepareRefTargets(lightLabels);
-        const preparedShadowLabels = prepareRefTargets(shadowLabels);
-        const preparedLightDescriptions = prepareRefTargets(lightDescriptions);
-        const preparedShadowDescriptions = prepareRefTargets(shadowDescriptions);
-
-        if (!SUPPORTS_ELEMENT_REFS) {
-            host.setAttribute('role', 'combobox');
-            ensureFallbackId(listbox, 'listbox');
-            host.setAttribute('aria-controls', listbox.id);
-
-            if (preparedLightLabels.length) {
-                host.setAttribute(
-                    'aria-labelledby',
-                    preparedLightLabels.map((el) => el.id).join(' ')
-                );
-            } else {
-                host.removeAttribute('aria-labelledby');
-            }
-
-            if (preparedLightDescriptions.length) {
-                host.setAttribute(
-                    'aria-describedby',
-                    preparedLightDescriptions.map((el) => el.id).join(' ')
-                );
-            } else {
-                host.removeAttribute('aria-describedby');
-            }
-
-            return;
-        }
-
-        host.removeAttribute('role');
-        host.removeAttribute('aria-controls');
-        host.removeAttribute('aria-labelledby');
-        host.removeAttribute('aria-describedby');
-
-        internals.role = 'combobox';
-        internals.ariaControlsElements = [listbox];
-        internals.ariaLabelledByElements = preparedShadowLabels;
-        internals.ariaDescribedByElements = preparedShadowDescriptions;
-        host.ariaLabelledByElements = preparedLightLabels;
-        host.ariaDescribedByElements = preparedLightDescriptions;
-
-        if (preparedShadowLabels.length || preparedShadowDescriptions.length) {
-            mirrorShadowAccessibleName(
-                internals,
-                preparedShadowLabels,
-                preparedShadowDescriptions
-            );
-        } else {
-            internals.ariaLabel = null;
-            if ('ariaDescription' in internals) {
-                internals.ariaDescription = null;
-            }
-        }
-    };
-
-    resync();
-    return resync;
-}
+export { SUPPORTS_ELEMENT_REFS } from './aria-ref-utils.js';
+export { SplitSurfaceAriaController, syncAriaElementRefs };
 
 /**
  * Slotted options remain in Light DOM, so the host uses aria-activedescendant IDs.

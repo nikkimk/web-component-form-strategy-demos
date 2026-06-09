@@ -1,21 +1,19 @@
 import {
     createLogRefresher,
-    establishSlottedFieldAriaSync,
     logHostFieldAriaRefs,
+    SlottedFieldAriaController,
 } from './form-field-base.js';
 
 /**
  * Text field with label and description slotted from Light DOM.
- * Re-collects assigned nodes on slotchange, assigns IDs when missing, and
- * updates host element refs (or aria-labelledby / aria-describedby fallback).
  */
 export class TextfieldSlottedRefs extends HTMLElement {
+    #ariaController = null;
     #internals = null;
     #inputEl = null;
     #value = '';
     #labelElements = [];
     #descriptionElements = [];
-    #disconnectAria = () => {};
     #refreshLog = () => {};
 
     constructor() {
@@ -63,17 +61,19 @@ export class TextfieldSlottedRefs extends HTMLElement {
             );
         });
 
-        const ariaSync = establishSlottedFieldAriaSync(this, this.#internals, 'textbox', {
+        this.#ariaController = new SlottedFieldAriaController({
+            host: this,
+            internals: this.#internals,
+            role: 'textbox',
             labelSlot,
             helpSlot: descriptionSlot,
             onRefsChange: ({ labelElements, descriptionElements }) => {
                 this.#labelElements = labelElements;
                 this.#descriptionElements = descriptionElements;
-                this.#refreshLog();
             },
+            onSync: () => this.#refreshLog(),
         });
-
-        this.#disconnectAria = ariaSync.disconnect;
+        this.#ariaController.connect();
 
         this.#syncDisplay();
         this.addEventListener('keydown', this.#onKeyDown);
@@ -81,7 +81,7 @@ export class TextfieldSlottedRefs extends HTMLElement {
     }
 
     disconnectedCallback() {
-        this.#disconnectAria();
+        this.#ariaController?.disconnect();
         this.removeEventListener('keydown', this.#onKeyDown);
         this.removeEventListener('click', this.#onClick);
     }
