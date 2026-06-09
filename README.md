@@ -13,6 +13,70 @@ These demos do **not** cover Q1 (form association / `setFormValue`) or Q4 (axe p
 
 ---
 
+## What we learned from building the demos
+
+These PoCs were built iteratively and debugged in StackBlitz, VoiceOver, and NVDA. The findings below are the practical lessons — not just the intended design.
+
+### Platform constraints (non-negotiable)
+
+| Observation | Implication |
+| ----------- | ----------- |
+| **`host.ariaLabelledByElements` / `ariaDescribedByElements` only resolve Light DOM targets** | Shadow-resident label/help **cannot** be linked from the host. Use `internals.ariaLabelledByElements` for shadow-inward refs, or keep label/help in Light DOM (external or slotted). |
+| **`host.ariaControlsElements = [shadowNode]` is silently ignored in Chromium** | Shadow popup/listbox shells must use **`internals.ariaControlsElements`**. Do not assign shadow-internal controls on the host. |
+| **ID attributes on the host do not cross shadow boundaries** | `aria-labelledby`, `aria-describedby`, and `aria-controls` on the host cannot point at shadow-only IDs. Same split as element refs. |
+| **Host `aria-activedescendant` needs Light DOM option IDs** | Slotted options work; shadow-resident option IDs do not resolve from the host. The demos use the **ID attribute** (`aria-activedescendant="option-id"`), not `ariaActiveDescendantElement`. |
+| **Reflected element refs require stable target nodes** | Assign IDs to every label/help/listbox node before setting `aria*Elements`. Use presentational spans, not shadow `<label>` without a valid `for` target. |
+
+### The split-surface mental model
+
+Think of the custom element as having **two ARIA wiring surfaces**:
+
+```
+Light DOM (host)                         Shadow DOM (internals)
+────────────────                         ──────────────────────
+host.ariaLabelledByElements              internals.ariaLabelledByElements
+host.ariaDescribedByElements             internals.ariaDescribedByElements
+host aria-activedescendant → light IDs   internals.ariaControlsElements → shadow listbox
+host tabindex / keyboard / focus         internals.role + widget state (when refs supported)
+```
+
+- **Outward and light-tree relationships** → host.
+- **Inward shadow relationships** → `ElementInternals`.
+- **Focus and keyboard** stay on the host for composite widgets and host-role PoCs.
+
+This is why shadow label/help “crosses a root” — but only through **`internals`**, never by setting refs on the host and expecting them to reach into shadow.
+
+### Patterns that worked reliably
+
+1. **Mirror shadow text on internals** — Set `internals.ariaLabel` / `ariaDescription` from shadow label/help text **in addition to** element refs. Element-ref readback and some AT/browser combinations are flaky; the mirrored string properties give a dependable accessible name/description.
+2. **Slotted label/help** — When consumers supply markup, project it through named slots. Slotted nodes stay in the light tree, so `host.ariaLabelledByElements` works without any cross-root shadow wiring. See the [slotted demo](./demo-host-slotted-label.html).
+3. **Listbox shell in shadow, options in light DOM** — `<ul role="listbox">` inside shadow; `<li slot="option">` authored in light DOM. Required for both `internals.ariaControlsElements` and host `aria-activedescendant`.
+4. **Widget role and state on internals** — When reflected element refs are supported, set `internals.role`, `internals.ariaChecked`, and progress value properties on internals instead of duplicating host attributes.
+5. **Re-sync on change** — Use `MutationObserver` on label/help nodes and `slotchange` on slotted refs when content is dynamic ([`watchRefTargets`](./form-field-base.js), [`watchSlottedFieldRefs`](./form-field-base.js)).
+
+### Pitfalls we hit while building (and fixes)
+
+| Symptom | Cause | Fix |
+| ------- | ----- | --- |
+| Shadow label/help missing in AT | Tried to wire shadow nodes via `host.ariaLabelledByElements` | Use `internals` element refs + mirrored `ariaLabel` / `ariaDescription` |
+| Empty “Resolved ARIA references” log | `querySelector('[data-aria-log=…]')` matched the **custom element** before the `<pre>` | Target `.log[data-aria-log="…"]` only |
+| Log empty on first paint | `connectedCallback` runs before the following `<pre>` exists in the document | Lazy resolve + `queueMicrotask()` refresh ([`createLogRefresher`](./form-field-base.js)) |
+| Element refs read back as `[]` | Missing IDs on shadow label/help targets | [`prepareRefTargets`](./form-field-base.js) assigns stable IDs before wiring |
+| Shadow `<label>` did not associate | Focusable control is the **host** outside shadow; shadow `<label for>` cannot target it | Use `<span class="field-label">` for shadow-resident labels in host-role PoCs |
+| Listbox not linked to combobox | `host.ariaControlsElements = [listbox]` | `internals.ariaControlsElements = [listbox]` |
+
+### Authoring guidance for 2nd-gen SWC
+
+| Label/help authored… | Recommended wiring |
+| -------------------- | ------------------ |
+| In shadow (component-owned) | `internals.ariaLabelledByElements` + mirrored `ariaLabel` / `ariaDescription` |
+| Slotted from consumer markup | `host.ariaLabelledByElements` / `ariaDescribedByElements` |
+| External in page Light DOM | `host.ariaLabelledByElements` / `ariaDescribedByElements` (or native `<label for>` + `delegatesFocus` for production textfields) |
+
+**Production default for textfields and checkboxes** remains native inner controls with `delegatesFocus` — the host-role demos exist to validate the split-surface model for composite widgets and edge cases, not to replace native semantics for simple fields.
+
+---
+
 ## Runnable examples
 
 All demos live at the repo root and are linked from [`index.html`](./index.html).
@@ -25,9 +89,9 @@ All demos live at the repo root and are linked from [`index.html`](./index.html)
 | [Host-role textfield, checkbox, progress bar — shadow labels](./demo-host-shadow-label.html) | Q2 host roles + Q3 shadow label/help via internals |
 | [Host-role textfield — slotted label and help](./demo-host-slotted-label.html) | Q3 slotted light label/help via host refs (no cross-root shadow link) |
 | [Host-role textfield and checkbox — light labels](./demo-host-light-label.html) | Q3 light label/help on host-role controls |
-| [Host-role textfield](./demo-host-textfield-shadow.html) | Q2 host `role="textbox"` |
-| [Host-role checkbox](./demo-host-checkbox-shadow.html) | Q2 host `role="checkbox"` |
-| [Host-role progress bar](./demo-host-progressbar-shadow.html) | Q2 host `role="progressbar"` |
+| [Host-role textfield](./demo-host-textfield-shadow.html) | Q2 internals `role="textbox"` |
+| [Host-role checkbox](./demo-host-checkbox-shadow.html) | Q2 internals `role="checkbox"` |
+| [Host-role progress bar](./demo-host-progressbar-shadow.html) | Q2 internals `role="progressbar"` |
 
 Related baseline: [Cross-root ARIA element refs CodePen](https://codepen.io/spectrum-css/pen/pvNEVda?editors=0010) (NVDA + VoiceOver described-by validation).
 
@@ -39,7 +103,7 @@ Related baseline: [Cross-root ARIA element refs CodePen](https://codepen.io/spec
 
 | Control class | Role / semantics | Focus | Popup / list shell | Demo |
 | ------------- | ---------------- | ----- | ------------------ | ---- |
-| **Composite closed widgets** (combobox, picker) | **Host** — `role="combobox"`, `aria-expanded`, `aria-activedescendant` | **Host** `tabindex="0"`; focus ring on inner trigger via `:host(:focus)` | **Shadow** `<ul role="listbox">`; **Light DOM** options slotted in | [Combobox demos](./demo-combobox-shadow-label.html) |
+| **Composite closed widgets** (combobox, picker) | **Internals** `role="combobox"` when element refs supported; host owns `aria-expanded`, `aria-activedescendant`, keyboard | **Host** `tabindex="0"`; focus ring on inner trigger via `:host(:focus)` | **Shadow** `<ul role="listbox">`; **Light DOM** options slotted in | [Combobox demos](./demo-combobox-shadow-label.html) |
 | **Native text-like fields** (textfield, textarea) | **Default (production):** native inner `<input>` / `<textarea>`; host is wrapper | `delegatesFocus: true` | N/A | _Not demonstrated here — production default_ |
 | **Host-role textfield** (PoC) | **Internals** `role="textbox"` when element refs are supported; inner input `aria-hidden` | Host `tabindex="0"` | N/A | [Textfield demo](./demo-host-textfield-shadow.html) |
 | **Native checkbox / switch** | **Default (production):** native `<input type="checkbox">` in shadow | `delegatesFocus` | N/A | _Not demonstrated here — production default_ |
@@ -48,7 +112,8 @@ Related baseline: [Cross-root ARIA element refs CodePen](https://codepen.io/spec
 
 ### Findings from the combobox demo (Q2)
 
-- The **host** owns widget semantics (`role="combobox"`), keyboard handling, `aria-expanded`, and `aria-activedescendant`.
+- **Combobox role** lives on **`ElementInternals`** when reflected element refs are supported (fallback: host `role="combobox"` attribute).
+- The **host** still owns keyboard handling, `aria-expanded`, and `aria-activedescendant`.
 - The **trigger** is not a separate tab stop — it is the visual focus target when the host is focused.
 - The **listbox shell** (`role="listbox"`) is in **Shadow DOM**; **option nodes** are in **Light DOM** and slotted into that shell. This split is required for Q3 as well (see below).
 
@@ -123,7 +188,7 @@ Shared helpers: [`mirrorShadowAccessibleName`](./form-field-base.js), [`watchRef
 
 | Component | Q2 (role) | Q3 (relationships) |
 | --------- | --------- | ------------------ |
-| Combobox / picker | Host combobox | Internals → shadow listbox; host/internals label/help split; light slotted options + host `aria-activedescendant` |
+| Combobox / picker | Internals combobox (refs supported) | Internals → shadow listbox; host/internals label/help split; light slotted options + host `aria-activedescendant` |
 | Textfield (production) | Inner native input | Light label via `for` + `delegatesFocus`; shadow help via internal described-by |
 | Textfield (host-role PoC) | Internals textbox | Shadow label/help via internals + mirror; slotted or light label via host |
 | Checkbox (host-role PoC) | Internals checkbox | Same label/help split as combobox |
