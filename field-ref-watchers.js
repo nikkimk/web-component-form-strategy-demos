@@ -3,6 +3,33 @@
  */
 
 /**
+ * Markup for shadow-resident label and help with slottable text content.
+ *
+ * @param {object} [options]
+ * @param {string} [options.labelSlot]
+ * @param {string} [options.helpSlot]
+ * @param {string} [options.labelDefault]
+ * @param {string} [options.helpDefault]
+ */
+export function shadowLabelHelpMarkup(options = {}) {
+    const {
+        labelSlot = 'label',
+        helpSlot = 'help-text',
+        labelDefault = '',
+        helpDefault = '',
+    } = options;
+
+    return `
+        <span class="field-label" part="label">
+            <slot name="${labelSlot}">${labelDefault}</slot>
+        </span>
+        <span class="field-help" part="help">
+            <slot name="${helpSlot}">${helpDefault}</slot>
+        </span>
+    `;
+}
+
+/**
  * @param {HTMLElement[]} elements
  * @param {() => void} resync
  */

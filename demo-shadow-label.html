@@ -17,10 +17,12 @@
 
             <h1>Shadow DOM label and help</h1>
             <p class="lead">
-                Role on the host via <code>ElementInternals</code>. Component-owned label and help
-                wire through <code>internals.ariaLabelledByElements</code> and
-                <code>internals.ariaDescribedByElements</code>, with mirrored
-                <code>internals.ariaLabel</code> / <code>ariaDescription</code>.
+                Role on the host via <code>ElementInternals</code>. Label and help containers live
+                in shadow DOM with <code>&lt;slot name="label"&gt;</code> and
+                <code>&lt;slot name="help-text"&gt;</code> for slottable text. Wiring uses
+                <code>internals.ariaLabelledByElements</code> and
+                <code>internals.ariaDescribedByElements</code> on those shadow elements, with
+                mirrored <code>internals.ariaLabel</code> / <code>ariaDescription</code>.
             </p>
 
             <div id="support-status" class="status" aria-live="polite"></div>
@@ -28,21 +30,37 @@
             <div class="demo-grid">
                 <section class="demo-card" aria-labelledby="textfield-heading">
                     <h2 id="textfield-heading">Textfield</h2>
-                    <textfield-host-refs data-aria-log="textfield-shadow"></textfield-host-refs>
+                    <textfield-host-refs data-aria-log="textfield-shadow">
+                        <span slot="label">Email address</span>
+                        <span slot="help-text"
+                            >Role is on the host; the inner input is presentational.</span
+                        >
+                    </textfield-host-refs>
                     <h3>Resolved ARIA references</h3>
                     <pre class="log" data-aria-log="textfield-shadow" aria-live="polite"></pre>
                 </section>
 
                 <section class="demo-card" aria-labelledby="checkbox-heading">
                     <h2 id="checkbox-heading">Checkbox</h2>
-                    <checkbox-host-refs data-aria-log="checkbox-shadow"></checkbox-host-refs>
+                    <checkbox-host-refs data-aria-log="checkbox-shadow">
+                        <span slot="label">Subscribe to newsletter</span>
+                        <span slot="help-text"
+                            >Space toggles; role and aria-checked are on the host.</span
+                        >
+                    </checkbox-host-refs>
                     <h3>Resolved ARIA references</h3>
                     <pre class="log" data-aria-log="checkbox-shadow" aria-live="polite"></pre>
                 </section>
 
                 <section class="demo-card" aria-labelledby="progressbar-heading">
                     <h2 id="progressbar-heading">Progress bar</h2>
-                    <progressbar-host-refs data-aria-log="progressbar-shadow"></progressbar-host-refs>
+                    <progressbar-host-refs data-aria-log="progressbar-shadow">
+                        <span slot="label">Upload progress</span>
+                        <span slot="help-text"
+                            >Label and description are in shadow; role and value live on
+                            internals.</span
+                        >
+                    </progressbar-host-refs>
                     <h3>Resolved ARIA references</h3>
                     <pre class="log" data-aria-log="progressbar-shadow" aria-live="polite"></pre>
                 </section>
@@ -50,6 +68,10 @@
                 <section class="demo-card" aria-labelledby="combobox-heading">
                     <h2 id="combobox-heading">Combobox</h2>
                     <combobox-shadow-refs data-aria-log="combobox-shadow">
+                        <span slot="label">Favorite fruit</span>
+                        <span slot="help-text"
+                            >Choose a fruit from the list. Arrow keys navigate; Enter selects.</span
+                        >
                         <li slot="option" id="shadow-apple">Apple</li>
                         <li slot="option" id="shadow-banana">Banana</li>
                         <li slot="option" id="shadow-cherry">Cherry</li>

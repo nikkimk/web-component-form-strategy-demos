@@ -3,7 +3,9 @@ import {
     createLogRefresher,
     logHostFieldAriaRefs,
     resolveSplitSurfaceFieldRefs,
+    shadowLabelHelpMarkup,
     SplitSurfaceAriaController,
+    watchSlottedFieldRefs,
 } from './form-field-base.js';
 
 /**
@@ -19,6 +21,7 @@ export class CheckboxHostRefs extends HTMLElement {
     #labelElements = [];
     #descriptionElements = [];
     #refreshLog = () => {};
+    #unwatchShadowLabelSlots = () => {};
 
     constructor() {
         super();
@@ -30,8 +33,10 @@ export class CheckboxHostRefs extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="field-host" part="host">
-                <span class="field-label" part="label">Subscribe to newsletter</span>
-                <span class="field-help" part="help">Space toggles; role and aria-checked are on the host.</span>
+                ${shadowLabelHelpMarkup({
+                    labelDefault: 'Subscribe to newsletter',
+                    helpDefault: 'Space toggles; role and aria-checked are on the host.',
+                })}
                 <div class="control-surface checkbox-surface" part="control">
                     <span class="checkbox-box" part="box" aria-hidden="true"></span>
                     <span class="checkbox-label-text" part="label-text">Send me updates</span>
@@ -78,12 +83,19 @@ export class CheckboxHostRefs extends HTMLElement {
         });
         this.#ariaController.connect();
 
+        this.#unwatchShadowLabelSlots = watchSlottedFieldRefs(
+            this,
+            () => this.#ariaController?.resync(),
+            { labelSlot: 'label', helpSlot: 'help-text' }
+        );
+
         this.#setChecked(false);
         this.addEventListener('click', this.#onClick);
         this.addEventListener('keydown', this.#onKeyDown);
     }
 
     disconnectedCallback() {
+        this.#unwatchShadowLabelSlots();
         this.#ariaController?.disconnect();
         this.removeEventListener('click', this.#onClick);
         this.removeEventListener('keydown', this.#onKeyDown);

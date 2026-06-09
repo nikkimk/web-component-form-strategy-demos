@@ -2,7 +2,9 @@ import {
     createLogRefresher,
     logHostFieldAriaRefs,
     resolveSplitSurfaceFieldRefs,
+    shadowLabelHelpMarkup,
     SplitSurfaceAriaController,
+    watchSlottedFieldRefs,
 } from './form-field-base.js';
 
 /**
@@ -19,6 +21,7 @@ export class TextfieldHostRefs extends HTMLElement {
     #labelElements = [];
     #descriptionElements = [];
     #refreshLog = () => {};
+    #unwatchShadowLabelSlots = () => {};
 
     constructor() {
         super();
@@ -30,8 +33,10 @@ export class TextfieldHostRefs extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="field-host" part="host">
-                <span class="field-label" part="label">Email address</span>
-                <span class="field-help" part="help">Role is on the host; the inner input is presentational.</span>
+                ${shadowLabelHelpMarkup({
+                    labelDefault: 'Email address',
+                    helpDefault: 'Role is on the host; the inner input is presentational.',
+                })}
                 <div class="control-surface textfield-surface" part="control">
                     <input
                         class="textfield-input"
@@ -84,12 +89,19 @@ export class TextfieldHostRefs extends HTMLElement {
         });
         this.#ariaController.connect();
 
+        this.#unwatchShadowLabelSlots = watchSlottedFieldRefs(
+            this,
+            () => this.#ariaController?.resync(),
+            { labelSlot: 'label', helpSlot: 'help-text' }
+        );
+
         this.#syncDisplay();
         this.addEventListener('keydown', this.#onKeyDown);
         this.addEventListener('click', this.#onClick);
     }
 
     disconnectedCallback() {
+        this.#unwatchShadowLabelSlots();
         this.#ariaController?.disconnect();
         this.removeEventListener('keydown', this.#onKeyDown);
         this.removeEventListener('click', this.#onClick);

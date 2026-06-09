@@ -9,6 +9,7 @@ export {
     collectSlottedFieldRefs,
     resolveLightFieldRefs,
     resolveSplitSurfaceFieldRefs,
+    shadowLabelHelpMarkup,
     watchRefTargets,
     watchSlottedFieldRefs,
 } from './field-ref-watchers.js';

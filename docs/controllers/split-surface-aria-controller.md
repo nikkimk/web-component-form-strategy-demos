@@ -75,14 +75,15 @@ Always call `disconnect()` in `disconnectedCallback`.
 
 ## Example 1 — combobox with shadow label and help
 
-Label and help are `<span>` elements inside shadow DOM. Listbox is also in shadow.
+Label and help are shadow `<span>` elements with inner slots for text. Listbox is also in shadow.
 
 ```javascript
-import { SplitSurfaceAriaController } from './split-surface-aria-controller.js';
+import { SplitSurfaceAriaController, shadowLabelHelpMarkup, watchSlottedFieldRefs } from './form-field-base.js';
 
 class MyCombobox extends HTMLElement {
     #internals;
     #ariaController;
+    #unwatchShadowLabelSlots = () => {};
 
     constructor() {
         super();
@@ -92,9 +93,10 @@ class MyCombobox extends HTMLElement {
 
     connectedCallback() {
         this.shadowRoot.innerHTML = `
-            <span class="field-label">Favorite fruit</span>
-            <span class="field-help">Choose from the list.</span>
-            <div class="trigger">Select…</div>
+            ${shadowLabelHelpMarkup({
+                labelDefault: 'Favorite fruit',
+                helpDefault: 'Choose from the list.',
+            })}
             <ul role="listbox" hidden><slot name="option"></slot></ul>
         `;
 
@@ -112,12 +114,27 @@ class MyCombobox extends HTMLElement {
         });
 
         this.#ariaController.connect();
+        this.#unwatchShadowLabelSlots = watchSlottedFieldRefs(
+            this,
+            () => this.#ariaController?.resync()
+        );
     }
 
     disconnectedCallback() {
+        this.#unwatchShadowLabelSlots();
         this.#ariaController?.disconnect();
     }
 }
+```
+
+Consumer markup:
+
+```html
+<my-combobox>
+    <span slot="label">Favorite fruit</span>
+    <span slot="help-text">Choose from the list.</span>
+    <li slot="option">Apple</li>
+</my-combobox>
 ```
 
 ---

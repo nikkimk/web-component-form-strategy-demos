@@ -5,6 +5,7 @@ import {
     SplitSurfaceAriaController,
     watchSlottedOptions,
 } from './combobox-base.js';
+import { shadowLabelHelpMarkup, watchSlottedFieldRefs } from './form-field-base.js';
 
 /**
  * Combobox with label and help text rendered inside Shadow DOM.
@@ -19,6 +20,7 @@ export class ComboboxShadowRefs extends HTMLElement {
     #listbox = null;
     #options = [];
     #unwatchSlot = null;
+    #unwatchShadowLabelSlots = () => {};
 
     constructor() {
         super();
@@ -29,20 +31,25 @@ export class ComboboxShadowRefs extends HTMLElement {
     connectedCallback() {
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
-            <div class="combobox-host" part="host">
-                <span class="field-label" part="label">Favorite fruit</span>
-                <span class="field-help" part="help">Choose a fruit from the list. Arrow keys navigate; Enter selects.</span>
-                <div class="combobox-trigger" part="trigger">
-                    <span class="combobox-value" part="value">Select a fruit</span>
-                    <span class="combobox-chevron" aria-hidden="true">▾</span>
+            <div class="combobox-field" part="field">
+                ${shadowLabelHelpMarkup({
+                    labelDefault: 'Favorite fruit',
+                    helpDefault:
+                        'Choose a fruit from the list. Arrow keys navigate; Enter selects.',
+                })}
+                <div class="combobox-host" part="host">
+                    <div class="combobox-trigger" part="trigger">
+                        <span class="combobox-value" part="value">Select a fruit</span>
+                        <span class="combobox-chevron" aria-hidden="true">▾</span>
+                    </div>
+                    <ul class="combobox-listbox" role="listbox" part="listbox" hidden>
+                        <slot name="option"></slot>
+                    </ul>
                 </div>
-                <ul class="combobox-listbox" role="listbox" part="listbox" hidden>
-                    <slot name="option"></slot>
-                </ul>
             </div>
         `;
 
-        const hostSurface = this.shadowRoot.querySelector('.combobox-host');
+        const trigger = this.shadowRoot.querySelector('.combobox-trigger');
         this.#labelEl = this.shadowRoot.querySelector('.field-label');
         this.#helpEl = this.shadowRoot.querySelector('.field-help');
         const valueEl = this.shadowRoot.querySelector('.combobox-value');
@@ -72,6 +79,12 @@ export class ComboboxShadowRefs extends HTMLElement {
         });
         this.#ariaController.connect();
 
+        this.#unwatchShadowLabelSlots = watchSlottedFieldRefs(
+            this,
+            () => this.#ariaController?.resync(),
+            { labelSlot: 'label', helpSlot: 'help-text' }
+        );
+
         this.#unwatchSlot = watchSlottedOptions(this, (options) => {
             if (!options.length) {
                 return;
@@ -81,7 +94,7 @@ export class ComboboxShadowRefs extends HTMLElement {
             this.#controller?.disconnect();
             this.#controller = new ComboboxController({
                 host: this,
-                trigger: hostSurface,
+                trigger,
                 valueEl,
                 listbox: this.#listbox,
                 options,
@@ -93,6 +106,7 @@ export class ComboboxShadowRefs extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.#unwatchShadowLabelSlots();
         this.#ariaController?.disconnect();
         this.#unwatchSlot?.();
         this.#controller?.disconnect();

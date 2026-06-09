@@ -85,7 +85,7 @@ Each page has a **Resolved ARIA references** panel per control. Open [index.html
 | Demo page | Controls shown | Key takeaway |
 | --------- | -------------- | ------------ |
 | [Light label](./demo-light-label.html) | Textfield, checkbox, progress bar, combobox | Page label/help → `host.ariaLabelledByElements` / `ariaDescribedByElements` |
-| [Shadow label](./demo-shadow-label.html) | Same four | Shadow label/help → `internals` refs + mirrored `ariaLabel` / `ariaDescription` |
+| [Shadow label](./demo-shadow-label.html) | Same four | Shadow label/help containers with slotted text → `internals` refs + mirrored strings |
 | [Slotted label](./demo-slotted-label.html) | Same four | Slotted nodes stay in light tree → host refs; re-sync on `slotchange` |
 
 **Combobox extras (all pages)**
@@ -167,7 +167,7 @@ Legacy function wrappers (`syncHostFieldAriaRefs`, `establishSlottedFieldAriaSyn
 | Label / help scenario | Label | Description (help text) | Role (Q2 — same for all) | Re-sync when | Controller |
 | --------------------- | ----- | ----------------------- | ------------------------ | ------------ | ---------- |
 | **Light DOM** — label and help on the page, outside the component | `host.ariaLabelledByElements = [labelEl]` | `host.ariaDescribedByElements = [helpEl]` | `internals.role = 'textbox'` (etc.) | Page nodes added/removed or text changes | [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) |
-| **Shadow DOM** — label and help owned inside the component | `internals.ariaLabelledByElements = [labelEl]` | `internals.ariaDescribedByElements = [helpEl]` | Same | Shadow label/help text changes | [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) |
+| **Shadow DOM** — label and help owned inside the component | `internals.ariaLabelledByElements = [labelEl]` | `internals.ariaDescribedByElements = [helpEl]` | Same | Shadow label/help text changes (including slotted content) | [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) |
 | **Slotted** — label and help passed in by the app author (`slot="label"`, `slot="description"`) | `host.ariaLabelledByElements = […assigned slot nodes]` | `host.ariaDescribedByElements = […assigned slot nodes]` | Same | `slotchange`, slotted node text changes | [`SlottedFieldAriaController`](./docs/controllers/slotted-field-aria-controller.md) |
 
 ### Required extras by scenario
@@ -175,7 +175,7 @@ Legacy function wrappers (`syncHostFieldAriaRefs`, `establishSlottedFieldAriaSyn
 | Scenario | Also do this | Do not do this |
 | -------- | ------------ | -------------- |
 | Light DOM | Give label/help stable **IDs** before setting element refs. Resolve page nodes via `getElementById`, attributes, or `resolveRefs`. | `host.ariaLabelledByElements` → shadow label nodes |
-| Shadow DOM | **Mirror text:** copy label/help string to `internals.ariaLabel` and `internals.ariaDescription` (not refs alone). Use `<span class="field-label">`, not `<label>` — focus is on the host. | `host.ariaLabelledByElements` → shadow nodes |
+| Shadow DOM | **Mirror text:** copy label/help string to `internals.ariaLabel` and `internals.ariaDescription` (not refs alone). Use `<span class="field-label">` with an inner `<slot name="label">`, not `<label>` — focus is on the host. | `host.ariaLabelledByElements` → shadow nodes |
 | Slotted | Collect assigned nodes from named slots; treat them as light DOM (they stay in the light tree). | Assume slotted nodes are shadow-internal |
 
 ### Combobox / picker add-on (any label scenario)

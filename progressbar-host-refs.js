@@ -3,7 +3,9 @@ import {
     createLogRefresher,
     logHostFieldAriaRefs,
     resolveSplitSurfaceFieldRefs,
+    shadowLabelHelpMarkup,
     SplitSurfaceAriaController,
+    watchSlottedFieldRefs,
 } from './form-field-base.js';
 
 /**
@@ -23,6 +25,7 @@ export class ProgressbarHostRefs extends HTMLElement {
     #labelElements = [];
     #descriptionElements = [];
     #refreshLog = () => {};
+    #unwatchShadowLabelSlots = () => {};
 
     constructor() {
         super();
@@ -36,10 +39,11 @@ export class ProgressbarHostRefs extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="field-host" part="host">
-                <span class="field-label" part="label">Upload progress</span>
-                <span class="field-help" part="help">
-                    Label and description are in shadow; role and value live on internals.
-                </span>
+                ${shadowLabelHelpMarkup({
+                    labelDefault: 'Upload progress',
+                    helpDefault:
+                        'Label and description are in shadow; role and value live on internals.',
+                })}
                 <div class="control-surface progressbar-surface" part="control" aria-hidden="true">
                     <div class="progressbar-track" part="track">
                         <div class="progressbar-fill" part="fill"></div>
@@ -90,6 +94,12 @@ export class ProgressbarHostRefs extends HTMLElement {
         });
         this.#ariaController.connect();
 
+        this.#unwatchShadowLabelSlots = watchSlottedFieldRefs(
+            this,
+            () => this.#ariaController?.resync(),
+            { labelSlot: 'label', helpSlot: 'help-text' }
+        );
+
         this.#setValue(Number(this.getAttribute('value') ?? 0));
 
         if (!this.hasAttribute('value')) {
@@ -98,6 +108,7 @@ export class ProgressbarHostRefs extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.#unwatchShadowLabelSlots();
         this.#ariaController?.disconnect();
         this.#stopDemoAnimation();
     }
