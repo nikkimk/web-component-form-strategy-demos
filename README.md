@@ -1,4 +1,4 @@
-# Form fields strategy RFC (discussion)
+# Form fields strategy
 
 **Status:** Proposed — for team review before scaling 2nd-gen form field migration  
 **Audience:** SWC maintainers, a11y stakeholders, 2nd-gen migration contributors  
