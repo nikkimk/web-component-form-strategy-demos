@@ -32,9 +32,7 @@ Related baseline: [Cross-root ARIA element refs CodePen](https://codepen.io/spec
 | Control class | Role / semantics | Focus | Popup / list shell | Demo |
 | ------------- | ---------------- | ----- | ------------------ | ---- |
 | **Composite closed widgets** (combobox, picker) | **Host** — `role="combobox"`, `aria-expanded`, `aria-activedescendant` | **Host** `tabindex="0"`; focus ring on inner trigger via `:host(:focus)` | **Shadow** `<ul role="listbox">`; **Light DOM** options slotted in | [Combobox PoC](./combobox-aria-element-refs/) |
-| **Native text-like fields** (textfield, textarea) | **Default (production):** native inner `<input>` / `<textarea>`; host is wrapper | `delegatesFocus: true` | N/A | _Not demonstrated here — production default_ |
 | **Host-role textfield** (PoC) | **Host** `role="textbox"`; inner input `aria-hidden` | Host `tabindex="0"` | N/A | [StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/textfield) |
-| **Native checkbox / switch** | **Default (production):** native `<input type="checkbox">` in shadow | `delegatesFocus` | N/A | _Not demonstrated here — production default_ |
 | **Host-role checkbox** (PoC) | **Host** `role="checkbox"`, `aria-checked` | Host `tabindex="0"` | N/A | [StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/checkbox) |
 | **Progress / meter / static indicators** | **Host** carries widget role | Not in tab order unless interactive | N/A | [StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos/tree/main/host-role-form-controls/stackblitz/progressbar) |
 
