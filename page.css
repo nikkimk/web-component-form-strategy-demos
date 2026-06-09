@@ -111,6 +111,16 @@ h2 {
     .demo-grid {
         grid-template-columns: 1fr 1fr;
     }
+
+    .demo-grid.demo-grid--triple {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 56rem) {
+    .demo-grid.demo-grid--triple {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
 }
 
 .demo-section {

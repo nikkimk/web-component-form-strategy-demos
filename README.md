@@ -23,6 +23,8 @@ These PoCs were built iteratively and debugged in StackBlitz, VoiceOver, and NVD
 | ----------- | ----------- |
 | **`host.ariaLabelledByElements` / `ariaDescribedByElements` only resolve Light DOM targets** | Shadow-resident label/help **cannot** be linked from the host. Use `internals.ariaLabelledByElements` for shadow-inward refs, or keep label/help in Light DOM (external or slotted). |
 | **`host.ariaControlsElements = [shadowNode]` is silently ignored in Chromium** | Shadow popup/listbox shells must use **`internals.ariaControlsElements`**. Do not assign shadow-internal controls on the host. |
+| **Inner shadow surface → light DOM works via element refs** | Set `innerInput.ariaLabelledByElements` / `ariaDescribedByElements` on the **inner control** (native input, inner progressbar). Validated in the [CodePen POC](https://codepen.io/spectrum-css/pen/pvNEVda) and [cross-root fields demo](./demo-cross-root-fields.html). No `ElementInternals` required. |
+| **Light DOM → shadow inner does not work** | Same as host → shadow: no API can link outward from light to shadow-resident label/help nodes. |
 | **ID attributes on the host do not cross shadow boundaries** | `aria-labelledby`, `aria-describedby`, and `aria-controls` on the host cannot point at shadow-only IDs. Same split as element refs. |
 | **Host `aria-activedescendant` needs Light DOM option IDs** | Slotted options work; shadow-resident option IDs do not resolve from the host. The demos use the **ID attribute** (`aria-activedescendant="option-id"`), not `ariaActiveDescendantElement`. |
 | **Reflected element refs require stable target nodes** | Assign IDs to every label/help/listbox node before setting `aria*Elements`. Use presentational spans, not shadow `<label>` without a valid `for` target. |
@@ -93,8 +95,9 @@ All demos live at the repo root and are linked from [`index.html`](./index.html)
 | [Host-role textfield](./demo-host-textfield-shadow.html) | Q2 internals `role="textbox"` |
 | [Host-role checkbox](./demo-host-checkbox-shadow.html) | Q2 internals `role="checkbox"` |
 | [Host-role progress bar](./demo-host-progressbar-shadow.html) | Q2 internals `role="progressbar"` |
+| [Cross-root inner surface — textfield, checkbox, progress bar](./demo-cross-root-fields.html) | CodePen pattern: inner shadow control → light DOM label/help via element refs |
 
-Related baseline: [Cross-root ARIA element refs CodePen](https://codepen.io/spectrum-css/pen/pvNEVda?editors=0010) (NVDA + VoiceOver described-by validation).
+Related baseline: [Cross-root ARIA element refs CodePen](https://codepen.io/spectrum-css/pen/pvNEVda?editors=0010) (NVDA + VoiceOver described-by validation). The [cross-root fields demo](./demo-cross-root-fields.html) applies the same shadow → light wiring to form controls.
 
 ---
 
@@ -185,12 +188,42 @@ Shared helpers: [`mirrorShadowAccessibleName`](./form-field-base.js), [`watchRef
 
 ---
 
-## Applying Q2 + Q3 together
+## Cross-root inner surface (CodePen pattern)
+
+The [ariaDescribedByElements CodePen](https://codepen.io/spectrum-css/pen/pvNEVda) validates **shadow → light** element references on an **inner shadow interactive surface** — not the host, not `ElementInternals`. The [cross-root fields demo](./demo-cross-root-fields.html) applies this to textfield, checkbox, and progress bar.
+
+| Component | Inner ARIA surface | Light DOM wiring |
+| --------- | ------------------ | -------------- |
+| Textfield | Native `<input type="text">` in shadow | `input.ariaLabelledByElements` / `ariaDescribedByElements` → external label + help |
+| Checkbox | Native `<input type="checkbox">` in shadow | Same |
+| Progress bar | `<div role="progressbar">` in shadow | Same |
+
+```javascript
+const inner = host.shadowRoot.querySelector('[data-aria-surface]');
+const label = document.getElementById('email-label');
+const help = document.getElementById('email-help');
+
+inner.ariaLabelledByElements = [label];
+inner.ariaDescribedByElements = [help];
+```
+
+**When to use this vs split-surface / internals:**
+
+| Scenario | Pattern |
+| -------- | ------- |
+| Production textfield/checkbox with light DOM or slotted labels | **Inner surface element refs** (this CodePen pattern) |
+| Shadow-resident label/help | **`ElementInternals`** element refs + mirrored `ariaLabel` |
+| Composite widget (combobox) with host keyboard | Host focus + **internals** for shadow listbox and shadow label/help |
+| Help/tooltip in light DOM, button-like control in shadow | **Inner surface element refs** (original CodePen) |
+
+Shared helper: [`wireInnerCrossRootAriaRefs`](./cross-root-field-base.js).
+
+---
 
 | Component | Q2 (role) | Q3 (relationships) |
 | --------- | --------- | ------------------ |
 | Combobox / picker | Internals combobox (refs supported) | Internals → shadow listbox; host/internals label/help split; light slotted options + host `aria-activedescendant` |
-| Textfield (production) | Inner native input | Light label via `for` + `delegatesFocus`; shadow help via internal described-by |
+| Textfield (production) | Inner native input | Light label via element refs on inner input ([cross-root demo](./demo-cross-root-fields.html)) or `for` + `delegatesFocus` |
 | Textfield (host-role PoC) | Internals textbox | Shadow label/help via internals + mirror; slotted or light label via host |
 | Checkbox (host-role PoC) | Internals checkbox | Same label/help split as combobox |
 | Progress bar (host-role PoC) | Internals progressbar | Shadow label/description via internals + mirror; track presentational |
