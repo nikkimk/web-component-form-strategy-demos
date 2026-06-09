@@ -10,10 +10,9 @@ Wire label and help text when targets live in **both** Light DOM and Shadow DOM.
 
 **Live demos:**
 
-- [Combobox — shadow label](../../demo-combobox-shadow-label.html)
-- [Combobox — light label](../../demo-combobox-light-label.html)
-- [Combobox — mixed label](../../demo-combobox-mixed-label.html)
-- [Host-role fields — shadow labels](../../demo-host-shadow-label.html)
+- [All controls — light label](../../demo-light-label.html)
+- [All controls — shadow label](../../demo-shadow-label.html)
+- [All controls — mixed label](../../demo-mixed-label.html)
 
 ---
 
@@ -21,8 +20,8 @@ Wire label and help text when targets live in **both** Light DOM and Shadow DOM.
 
 | Use this controller | Do not use it |
 | ------------------- | ------------- |
-| Combobox or picker with label/help in shadow, light, or both | Production textfield/checkbox with page label only → use [`InnerCrossRootAriaController`](./inner-cross-root-aria-controller.md) |
-| Host-role PoC fields (role on host via `internals`) | Label/help supplied only through slots → use [`SlottedFieldAriaController`](./slotted-field-aria-controller.md) |
+| Combobox or picker with label/help in shadow, light, or both | Label/help supplied only through slots → use [`SlottedFieldAriaController`](./slotted-field-aria-controller.md) |
+| Host-role fields (textfield, checkbox, progress bar) | |
 | Any field that needs `internals` → shadow listbox link | |
 
 ---

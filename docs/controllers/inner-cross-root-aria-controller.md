@@ -1,4 +1,6 @@
-# InnerCrossRootAriaController
+# InnerCrossRootAriaController (legacy)
+
+> **Not in the current demo matrix.** These demos use host role via `ElementInternals` for all controls. This controller remains for the [CodePen cross-root pattern](https://codepen.io/spectrum-css/pen/pvNEVda).
 
 Wire a **shadow inner control** to **page-level** label and help in Light DOM.
 
@@ -13,7 +15,7 @@ No `ElementInternals`. No host refs. No string `aria-labelledby` fallback across
 
 **Source:** [`inner-cross-root-aria-controller.js`](../../inner-cross-root-aria-controller.js)
 
-**Live demo:** [Cross-root fields — textfield, checkbox, progress bar](../../demo-cross-root-fields.html)
+**Live demo:** No active demo page — see host-role demos: [light label](../../demo-light-label.html), [shadow label](../../demo-shadow-label.html)
 
 ---
 

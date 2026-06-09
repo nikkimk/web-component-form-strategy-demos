@@ -3,19 +3,24 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Host-role form controls — shadow labels</title>
+        <title>Shadow DOM label and help — all form fields</title>
         <link rel="stylesheet" href="./page.css" />
     </head>
     <body>
         <main class="page">
-            <p><a href="./index.html">← All demos</a> · <a href="https://github.com/nikkimk/web-component-form-strategy-demos/blob/main/README.md">Q2 & Q3 recommendations</a></p>
+            <p>
+                <a href="./index.html">← All demos</a> ·
+                <a href="https://github.com/nikkimk/web-component-form-strategy-demos/blob/main/README.md"
+                    >Q2 & Q3 recommendations</a
+                >
+            </p>
 
-            <h1>Host role — shadow label and help</h1>
+            <h1>Shadow DOM label and help</h1>
             <p class="lead">
-                Controls expose widget roles on the custom element host. Label and help live in
-                Shadow DOM and are wired through
-                <code>ElementInternals.ariaLabelledByElements</code> and
-                <code>ariaDescribedByElements</code>.
+                Role on the host via <code>ElementInternals</code>. Component-owned label and help
+                wire through <code>internals.ariaLabelledByElements</code> and
+                <code>internals.ariaDescribedByElements</code>, with mirrored
+                <code>internals.ariaLabel</code> / <code>ariaDescription</code>.
             </p>
 
             <div id="support-status" class="status" aria-live="polite"></div>
@@ -41,6 +46,19 @@
                     <h3>Resolved ARIA references</h3>
                     <pre class="log" data-aria-log="progressbar-shadow" aria-live="polite"></pre>
                 </section>
+
+                <section class="demo-card" aria-labelledby="combobox-heading">
+                    <h2 id="combobox-heading">Combobox</h2>
+                    <combobox-shadow-refs data-aria-log="combobox-shadow">
+                        <li slot="option" id="shadow-apple">Apple</li>
+                        <li slot="option" id="shadow-banana">Banana</li>
+                        <li slot="option" id="shadow-cherry">Cherry</li>
+                        <li slot="option" id="shadow-date">Date</li>
+                        <li slot="option" id="shadow-elderberry">Elderberry</li>
+                    </combobox-shadow-refs>
+                    <h3>Resolved ARIA references</h3>
+                    <pre class="log" data-aria-log="combobox-shadow" aria-live="polite"></pre>
+                </section>
             </div>
         </main>
 
@@ -49,6 +67,7 @@
             import './textfield-host-refs.js';
             import './checkbox-host-refs.js';
             import './progressbar-host-refs.js';
+            import './combobox-shadow-refs.js';
 
             renderSupportStatus(document.getElementById('support-status'));
         </script>

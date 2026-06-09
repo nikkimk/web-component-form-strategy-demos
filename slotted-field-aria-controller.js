@@ -18,6 +18,7 @@ export class SlottedFieldAriaController {
      * @param {string} config.role
      * @param {string} [config.labelSlot]
      * @param {string} [config.helpSlot]
+     * @param {HTMLElement[]} [config.controls]
      * @param {boolean} [config.focusable]
      * @param {(refs: { labelElements: HTMLElement[], descriptionElements: HTMLElement[] }) => void} [config.onRefsChange]
      * @param {() => void} [config.onSync]
@@ -36,6 +37,7 @@ export class SlottedFieldAriaController {
             role,
             labelSlot = 'label',
             helpSlot = 'help-text',
+            controls = [],
             focusable = true,
             onRefsChange,
             onSync,
@@ -45,6 +47,7 @@ export class SlottedFieldAriaController {
             host,
             internals,
             role,
+            controls,
             focusable,
             resolveRefs: () => collectSlottedFieldRefs(host, { labelSlot, helpSlot }),
             onRefsChange,

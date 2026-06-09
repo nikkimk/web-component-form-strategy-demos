@@ -12,8 +12,7 @@ Slotted nodes stay in the light tree even though they appear inside the componen
 
 **Live demos:**
 
-- [Slotted label — textfield](../../demo-host-slotted-label.html)
-- [Dynamic slotted label/description](../../demo-host-slotted-dynamic.html)
+- [All controls — slotted label](../../demo-slotted-label.html)
 
 ---
 
@@ -22,8 +21,8 @@ Slotted nodes stay in the light tree even though they appear inside the componen
 | Use this controller | Do not use it |
 | ------------------- | ------------- |
 | App author passes `<label slot="label">` / help markup | Label is component-owned in shadow → use [`SplitSurfaceAriaController`](./split-surface-aria-controller.md) with shadow elements |
-| Label/help may change at runtime (errors, i18n) | Page-level label outside component → use [`InnerCrossRootAriaController`](./inner-cross-root-aria-controller.md) for production inner input |
-| You want consumer-supplied accessible name markup | |
+| Label/help may change at runtime (errors, i18n) | Page-level label outside component → use [`SplitSurfaceAriaController`](./split-surface-aria-controller.md) with `resolveLightFieldRefs` |
+| Combobox with slotted label/help | Pass `controls: [listbox]` to `SlottedFieldAriaController` |
 
 ---
 

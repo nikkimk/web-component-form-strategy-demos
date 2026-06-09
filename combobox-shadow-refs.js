@@ -48,7 +48,8 @@ export class ComboboxShadowRefs extends HTMLElement {
         const valueEl = this.shadowRoot.querySelector('.combobox-value');
         this.#listbox = this.shadowRoot.querySelector('.combobox-listbox');
 
-        const refreshLog = createLogRefresher('shadow', (logEl) => {
+        const logKey = this.getAttribute('data-aria-log') ?? 'combobox-shadow';
+        const refreshLog = createLogRefresher(logKey, (logEl) => {
             logAriaRefs(
                 logEl,
                 this,

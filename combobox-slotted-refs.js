@@ -2,15 +2,15 @@ import {
     ComboboxController,
     createLogRefresher,
     logAriaRefs,
-    SplitSurfaceAriaController,
     watchSlottedOptions,
 } from './combobox-base.js';
+import { SlottedFieldAriaController } from './form-field-base.js';
 
 /**
- * Combobox with label and help text provided in Light DOM.
+ * Combobox with label and help text slotted from Light DOM.
  * Options are slotted from Light DOM into the Shadow DOM listbox.
  */
-export class ComboboxLightRefs extends HTMLElement {
+export class ComboboxSlottedRefs extends HTMLElement {
     #controller = null;
     #ariaController = null;
     #internals = null;
@@ -27,9 +27,18 @@ export class ComboboxLightRefs extends HTMLElement {
     }
 
     connectedCallback() {
+        const labelSlot = this.getAttribute('label-slot') ?? 'label';
+        const descriptionSlot = this.getAttribute('description-slot') ?? 'help-text';
+
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="combobox-host" part="host">
+                <div class="field-label-slot" part="label-slot">
+                    <slot name="${labelSlot}"></slot>
+                </div>
+                <div class="field-help-slot" part="description-slot">
+                    <slot name="${descriptionSlot}"></slot>
+                </div>
                 <div class="combobox-trigger" part="trigger">
                     <span class="combobox-value" part="value">Select a fruit</span>
                     <span class="combobox-chevron" aria-hidden="true">▾</span>
@@ -44,25 +53,7 @@ export class ComboboxLightRefs extends HTMLElement {
         const valueEl = this.shadowRoot.querySelector('.combobox-value');
         this.#listbox = this.shadowRoot.querySelector('.combobox-listbox');
 
-        const labelTarget = this.getAttribute('label-target');
-        const helpTarget = this.getAttribute('help-target');
-
-        const labelEl = labelTarget
-            ? document.getElementById(labelTarget)
-            : this.previousElementSibling?.matches('label')
-              ? this.previousElementSibling
-              : null;
-
-        const helpEl = helpTarget
-            ? document.getElementById(helpTarget)
-            : this.nextElementSibling?.hasAttribute('data-help')
-              ? this.nextElementSibling
-              : null;
-
-        this.#labelElements = [labelEl].filter(Boolean);
-        this.#descriptionElements = [helpEl].filter(Boolean);
-
-        const logKey = this.getAttribute('data-aria-log') ?? 'combobox-light';
+        const logKey = this.getAttribute('data-aria-log') ?? 'combobox-slotted';
         const refreshLog = createLogRefresher(logKey, (logEl) => {
             logAriaRefs(
                 logEl,
@@ -75,13 +66,13 @@ export class ComboboxLightRefs extends HTMLElement {
             );
         });
 
-        this.#ariaController = new SplitSurfaceAriaController({
+        this.#ariaController = new SlottedFieldAriaController({
             host: this,
             internals: this.#internals,
             role: 'combobox',
+            labelSlot,
+            helpSlot: descriptionSlot,
             controls: [this.#listbox],
-            labelElements: this.#labelElements,
-            descriptionElements: this.#descriptionElements,
             onRefsChange: ({ labelElements, descriptionElements }) => {
                 this.#labelElements = labelElements;
                 this.#descriptionElements = descriptionElements;
@@ -117,4 +108,4 @@ export class ComboboxLightRefs extends HTMLElement {
     }
 }
 
-customElements.define('combobox-light-refs', ComboboxLightRefs);
+customElements.define('combobox-slotted-refs', ComboboxSlottedRefs);

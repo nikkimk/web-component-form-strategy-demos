@@ -1,32 +1,39 @@
 # ARIA ref controllers
 
-Reusable controllers for wiring label and help text across Shadow DOM and Light DOM.
+Reusable controllers for wiring label and help text across Shadow DOM and Light DOM. All demos keep the role on the **host** via `ElementInternals`.
 
 | Controller | Doc | Use when |
 | ---------- | --- | -------- |
-| **SplitSurfaceAriaController** | [split-surface-aria-controller.md](./split-surface-aria-controller.md) | Label/help split across host + `ElementInternals` (combobox, host-role PoC) |
+| **SplitSurfaceAriaController** | [split-surface-aria-controller.md](./split-surface-aria-controller.md) | Light, shadow, or mixed label/help on host-role fields and combobox |
 | **SlottedFieldAriaController** | [slotted-field-aria-controller.md](./slotted-field-aria-controller.md) | Label/help slotted from the app author |
-| **InnerCrossRootAriaController** | [inner-cross-root-aria-controller.md](./inner-cross-root-aria-controller.md) | Inner shadow input → page label (production textfield/checkbox) |
+
+## Demo pages
+
+Each page shows textfield, checkbox, progress bar, and combobox for one label scenario:
+
+| Scenario | Demo |
+| -------- | ---- |
+| Light DOM label/help | [demo-light-label.html](../../demo-light-label.html) |
+| Shadow DOM label/help | [demo-shadow-label.html](../../demo-shadow-label.html) |
+| Slotted label/help | [demo-slotted-label.html](../../demo-slotted-label.html) |
+| Mixed light + shadow | [demo-mixed-label.html](../../demo-mixed-label.html) |
 
 ## Quick pick
 
 ```
 Where does label/help live?
 │
-├─ Page (outside component) + inner native input
-│  └─ InnerCrossRootAriaController
-│
 ├─ Slotted from app author
 │  └─ SlottedFieldAriaController
 │
-└─ Shadow and/or page (host owns focus / combobox)
+└─ Page, shadow, or both (host owns role / combobox)
    └─ SplitSurfaceAriaController
 ```
 
 ## Shared utilities
 
 - [`aria-ref-utils.js`](../../aria-ref-utils.js) — partition light/shadow, assign IDs, mirror text
-- [`field-ref-watchers.js`](../../field-ref-watchers.js) — `resolveLightFieldRefs`, slot watchers, `MutationObserver`
+- [`field-ref-watchers.js`](../../field-ref-watchers.js) — `resolveLightFieldRefs`, `resolveSplitSurfaceFieldRefs`, slot watchers, `MutationObserver`
 
 ## Lifecycle pattern (all controllers)
 

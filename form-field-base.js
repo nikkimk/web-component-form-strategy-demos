@@ -8,6 +8,7 @@ export { SUPPORTS_ELEMENT_REFS } from './aria-ref-utils.js';
 export {
     collectSlottedFieldRefs,
     resolveLightFieldRefs,
+    resolveSplitSurfaceFieldRefs,
     watchRefTargets,
     watchSlottedFieldRefs,
 } from './field-ref-watchers.js';

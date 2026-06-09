@@ -92,3 +92,40 @@ export function resolveLightFieldRefs(host, config) {
         descriptionElements: [helpEl].filter(Boolean),
     };
 }
+
+/**
+ * Resolve label/help refs for host-role fields across light, shadow, and mixed modes.
+ *
+ * @param {HTMLElement} host
+ * @param {object} config
+ * @param {HTMLElement | null} [config.shadowLabelEl]
+ * @param {HTMLElement | null} [config.shadowHelpEl]
+ */
+export function resolveSplitSurfaceFieldRefs(host, config) {
+    const { shadowLabelEl = null, shadowHelpEl = null } = config;
+    const shadowLabels = [shadowLabelEl].filter(Boolean);
+    const shadowDescriptions = [shadowHelpEl].filter(Boolean);
+    const useLightLabel = host.hasAttribute('label-target');
+    const useMixed = host.hasAttribute('mixed');
+
+    if (!useLightLabel) {
+        return {
+            labelElements: shadowLabels,
+            descriptionElements: shadowDescriptions,
+        };
+    }
+
+    const lightRefs = resolveLightFieldRefs(host, {
+        labelTarget: host.getAttribute('label-target') ?? '',
+        helpTarget: host.getAttribute('help-target') ?? '',
+    });
+
+    if (useMixed) {
+        return {
+            labelElements: [...lightRefs.labelElements, ...shadowLabels],
+            descriptionElements: [...lightRefs.descriptionElements, ...shadowDescriptions],
+        };
+    }
+
+    return lightRefs;
+}

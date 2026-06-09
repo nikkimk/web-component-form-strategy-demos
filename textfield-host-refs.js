@@ -1,7 +1,7 @@
 import {
     createLogRefresher,
     logHostFieldAriaRefs,
-    resolveLightFieldRefs,
+    resolveSplitSurfaceFieldRefs,
     SplitSurfaceAriaController,
 } from './form-field-base.js';
 
@@ -51,9 +51,12 @@ export class TextfieldHostRefs extends HTMLElement {
 
         const useLightLabel = this.hasAttribute('label-target');
 
-        if (useLightLabel) {
+        if (useLightLabel && !this.hasAttribute('mixed')) {
             this.#labelEl.hidden = true;
             this.#helpEl.hidden = true;
+        } else if (this.hasAttribute('mixed')) {
+            this.#labelEl.textContent = '(Shadow label supplement)';
+            this.#helpEl.textContent = '(Shadow help supplement)';
         }
 
         const logKey = this.getAttribute('data-aria-log') ?? 'textfield';
@@ -72,12 +75,10 @@ export class TextfieldHostRefs extends HTMLElement {
             internals: this.#internals,
             role: 'textbox',
             resolveRefs: () => {
-                const refs = useLightLabel
-                    ? resolveLightFieldRefs(this, {
-                          labelTarget: this.getAttribute('label-target') ?? '',
-                          helpTarget: this.getAttribute('help-target') ?? '',
-                      })
-                    : { labelElements: [this.#labelEl], descriptionElements: [this.#helpEl] };
+                const refs = resolveSplitSurfaceFieldRefs(this, {
+                    shadowLabelEl: this.#labelEl,
+                    shadowHelpEl: this.#helpEl,
+                });
                 this.#labelElements = refs.labelElements;
                 this.#descriptionElements = refs.descriptionElements;
                 return refs;

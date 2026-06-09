@@ -131,6 +131,26 @@ h2 {
     margin-bottom: 0.75rem;
 }
 
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.75rem;
+}
+
+th,
+td {
+    border: 1px solid #ccc;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+}
+
+@media (prefers-color-scheme: dark) {
+    th,
+    td {
+        border-color: #444;
+    }
+}
+
 .demo-controls {
     display: flex;
     flex-wrap: wrap;

@@ -57,7 +57,8 @@ export class ComboboxMixedRefs extends HTMLElement {
         this.#labelElements = [lightLabel, this.#shadowLabelEl].filter(Boolean);
         this.#descriptionElements = [lightHelp, this.#shadowHelpEl].filter(Boolean);
 
-        const refreshLog = createLogRefresher('mixed', (logEl) => {
+        const logKey = this.getAttribute('data-aria-log') ?? 'combobox-mixed';
+        const refreshLog = createLogRefresher(logKey, (logEl) => {
             logAriaRefs(
                 logEl,
                 this,

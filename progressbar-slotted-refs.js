@@ -2,19 +2,15 @@ import {
     SUPPORTS_ELEMENT_REFS,
     createLogRefresher,
     logHostFieldAriaRefs,
-    resolveSplitSurfaceFieldRefs,
-    SplitSurfaceAriaController,
+    SlottedFieldAriaController,
 } from './form-field-base.js';
 
 /**
- * Progress bar with role="progressbar" on the host.
- * Label and description live in Shadow DOM; the visual track is presentational.
+ * Progress bar with label and description slotted from Light DOM.
  */
-export class ProgressbarHostRefs extends HTMLElement {
+export class ProgressbarSlottedRefs extends HTMLElement {
     #ariaController = null;
     #internals = null;
-    #labelEl = null;
-    #helpEl = null;
     #fillEl = null;
     #valueEl = null;
     #value = 0;
@@ -33,13 +29,18 @@ export class ProgressbarHostRefs extends HTMLElement {
     connectedCallback() {
         this.#max = Number(this.getAttribute('max') ?? 100);
 
+        const labelSlot = this.getAttribute('label-slot') ?? 'label';
+        const descriptionSlot = this.getAttribute('description-slot') ?? 'help-text';
+
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="field-host" part="host">
-                <span class="field-label" part="label">Upload progress</span>
-                <span class="field-help" part="help">
-                    Label and description are in shadow; role and value live on internals.
-                </span>
+                <div class="field-label-slot" part="label-slot">
+                    <slot name="${labelSlot}"></slot>
+                </div>
+                <div class="field-help-slot" part="description-slot">
+                    <slot name="${descriptionSlot}"></slot>
+                </div>
                 <div class="control-surface progressbar-surface" part="control" aria-hidden="true">
                     <div class="progressbar-track" part="track">
                         <div class="progressbar-fill" part="fill"></div>
@@ -49,22 +50,10 @@ export class ProgressbarHostRefs extends HTMLElement {
             </div>
         `;
 
-        this.#labelEl = this.shadowRoot.querySelector('.field-label');
-        this.#helpEl = this.shadowRoot.querySelector('.field-help');
         this.#fillEl = this.shadowRoot.querySelector('.progressbar-fill');
         this.#valueEl = this.shadowRoot.querySelector('.progressbar-value');
 
-        const useLightLabel = this.hasAttribute('label-target');
-
-        if (useLightLabel && !this.hasAttribute('mixed')) {
-            this.#labelEl.hidden = true;
-            this.#helpEl.hidden = true;
-        } else if (this.hasAttribute('mixed')) {
-            this.#labelEl.textContent = '(Shadow label supplement)';
-            this.#helpEl.textContent = '(Shadow help supplement)';
-        }
-
-        const logKey = this.getAttribute('data-aria-log') ?? 'progressbar';
+        const logKey = this.getAttribute('data-aria-log') ?? 'progressbar-slotted';
         this.#refreshLog = createLogRefresher(logKey, (logEl) => {
             logHostFieldAriaRefs(
                 logEl,
@@ -75,20 +64,17 @@ export class ProgressbarHostRefs extends HTMLElement {
             );
         });
 
-        this.#ariaController = new SplitSurfaceAriaController({
+        this.#ariaController = new SlottedFieldAriaController({
             host: this,
             internals: this.#internals,
             role: 'progressbar',
-            resolveRefs: () => {
-                const refs = resolveSplitSurfaceFieldRefs(this, {
-                    shadowLabelEl: this.#labelEl,
-                    shadowHelpEl: this.#helpEl,
-                });
-                this.#labelElements = refs.labelElements;
-                this.#descriptionElements = refs.descriptionElements;
-                return refs;
-            },
+            labelSlot,
+            helpSlot: descriptionSlot,
             focusable: false,
+            onRefsChange: ({ labelElements, descriptionElements }) => {
+                this.#labelElements = labelElements;
+                this.#descriptionElements = descriptionElements;
+            },
             onSync: () => this.#refreshLog(),
         });
         this.#ariaController.connect();
@@ -150,4 +136,4 @@ export class ProgressbarHostRefs extends HTMLElement {
     }
 }
 
-customElements.define('progressbar-host-refs', ProgressbarHostRefs);
+customElements.define('progressbar-slotted-refs', ProgressbarSlottedRefs);
