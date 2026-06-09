@@ -49,7 +49,7 @@ This is why shadow label/help “crosses a root” — but only through **`inter
 ### Patterns that worked reliably
 
 1. **Mirror shadow text on internals** — Set `internals.ariaLabel` / `ariaDescription` from shadow label/help text **in addition to** element refs. Element-ref readback and some AT/browser combinations are flaky; the mirrored string properties give a dependable accessible name/description.
-2. **Slotted label/help** — When consumers supply markup, project it through named slots. Slotted nodes stay in the light tree, so `host.ariaLabelledByElements` works without any cross-root shadow wiring. See the [slotted demo](./demo-host-slotted-label.html).
+2. **Slotted label/help** — When consumers supply markup, project it through named slots. Slotted nodes stay in the light tree, so `host.ariaLabelledByElements` works without any cross-root shadow wiring. On `slotchange`, re-collect assigned nodes, assign IDs when missing, and re-wire refs — see the [slotted demo](./demo-host-slotted-label.html) and [dynamic slotted demo](./demo-host-slotted-dynamic.html).
 3. **Listbox shell in shadow, options in light DOM** — `<ul role="listbox">` inside shadow; `<li slot="option">` authored in light DOM. Required for both `internals.ariaControlsElements` and host `aria-activedescendant`.
 4. **Widget role and state on internals** — When reflected element refs are supported, set `internals.role`, `internals.ariaChecked`, and progress value properties on internals instead of duplicating host attributes.
 5. **Re-sync on change** — Use `MutationObserver` on label/help nodes and `slotchange` on slotted refs when content is dynamic ([`watchRefTargets`](./form-field-base.js), [`watchSlottedFieldRefs`](./form-field-base.js)).
@@ -88,6 +88,7 @@ All demos live at the repo root and are linked from [`index.html`](./index.html)
 | [Combobox — mixed label/help](./demo-combobox-mixed-label.html) | Q3 split-surface wiring with both shadow and light targets |
 | [Host-role textfield, checkbox, progress bar — shadow labels](./demo-host-shadow-label.html) | Q2 host roles + Q3 shadow label/help via internals |
 | [Host-role textfield — slotted label and help](./demo-host-slotted-label.html) | Q3 slotted light label/help via host refs (no cross-root shadow link) |
+| [Host-role textfield — dynamic slotted ID refs](./demo-host-slotted-dynamic.html) | Q3 slotchange re-collects assigned nodes and updates ID / element refs |
 | [Host-role textfield and checkbox — light labels](./demo-host-light-label.html) | Q3 light label/help on host-role controls |
 | [Host-role textfield](./demo-host-textfield-shadow.html) | Q2 internals `role="textbox"` |
 | [Host-role checkbox](./demo-host-checkbox-shadow.html) | Q2 internals `role="checkbox"` |
@@ -153,7 +154,7 @@ Implementation pattern: [`syncAriaElementRefs`](./combobox-base.js) in the combo
 | Pattern | Demo | Result |
 | ------- | ---- | ------ |
 | Shadow label/help → internals | [Combobox shadow label](./demo-combobox-shadow-label.html), [host shadow labels](./demo-host-shadow-label.html) | `internals.ariaLabelledByElements` / `ariaDescribedByElements` plus mirrored `ariaLabel` / `ariaDescription` |
-| Slotted label/help → host | [Textfield slotted label](./demo-host-slotted-label.html) | `host.ariaLabelledByElements` / `ariaDescribedByElements`; no inward cross-root link |
+| Slotted label/help → host | [Textfield slotted label](./demo-host-slotted-label.html), [dynamic slotted refs](./demo-host-slotted-dynamic.html) | `host.ariaLabelledByElements` / `ariaDescribedByElements`; IDs assigned on sync; updates on `slotchange` |
 | Light label/help → host | [Combobox light label](./demo-combobox-light-label.html), [host light labels](./demo-host-light-label.html) | `host.ariaLabelledByElements` / `ariaDescribedByElements` read back correctly |
 | Mixed shadow + light label/help | [Combobox mixed label](./demo-combobox-mixed-label.html) | Each target wired on its own surface |
 | Host combobox → shadow listbox | Combobox (all variants) | `internals.ariaControlsElements` succeeds; host assignment does not |
@@ -180,7 +181,7 @@ Shadow-resident label and help nodes **cannot** be linked from the host via `hos
 | **Slotted label/help** | Consumers supply label markup | Project light DOM nodes through named slots; wire with `host.ariaLabelledByElements` — see [slotted demo](./demo-host-slotted-label.html) |
 | **Light DOM label/help** | Page-level labels | External `<label>` / help nodes; wire with `host.ariaLabelledByElements` — see [light label demo](./demo-host-light-label.html) |
 
-Shared helpers: [`mirrorShadowAccessibleName`](./form-field-base.js), [`watchRefTargets`](./form-field-base.js), [`watchSlottedFieldRefs`](./form-field-base.js).
+Shared helpers: [`mirrorShadowAccessibleName`](./form-field-base.js), [`watchRefTargets`](./form-field-base.js), [`watchSlottedFieldRefs`](./form-field-base.js), [`establishSlottedFieldAriaSync`](./form-field-base.js).
 
 ---
 

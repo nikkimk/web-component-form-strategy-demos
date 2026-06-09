@@ -121,6 +121,30 @@ h2 {
     margin-bottom: 0.75rem;
 }
 
+.demo-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.demo-controls button {
+    font: inherit;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 0.375rem;
+    background: #fff;
+    padding: 0.375rem 0.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    .demo-controls button {
+        border-color: #555;
+        background: #333;
+        color: #f2f2f2;
+    }
+}
+
 .mixed-note {
     font-size: 0.875rem;
     font-style: italic;

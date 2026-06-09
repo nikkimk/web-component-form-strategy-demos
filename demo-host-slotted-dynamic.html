@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Slotted label and description — dynamic ID refs</title>
+        <link rel="stylesheet" href="./page.css" />
+    </head>
+    <body>
+        <main class="page">
+            <p>
+                <a href="./index.html">← All demos</a> ·
+                <a href="https://github.com/nikkimk/web-component-form-strategy-demos/blob/main/README.md"
+                    >Q2 & Q3 recommendations</a
+                >
+            </p>
+
+            <h1>Slotted label and description — dynamic ID refs</h1>
+            <p class="lead">
+                Label and description are projected through named slots. On every
+                <code>slotchange</code>, the component re-collects assigned nodes, assigns stable
+                IDs when missing, and updates
+                <code>host.ariaLabelledByElements</code> /
+                <code>host.ariaDescribedByElements</code> (or
+                <code>aria-labelledby</code> / <code>aria-describedby</code> in fallback mode).
+                Use the buttons below to swap slotted content and watch the ID refs update.
+            </p>
+
+            <div id="support-status" class="status" aria-live="polite"></div>
+
+            <section class="demo-card" aria-labelledby="slotted-dynamic-heading">
+                <h2 id="slotted-dynamic-heading">Textfield with slotted label and description</h2>
+
+                <textfield-slotted-refs
+                    id="dynamic-field"
+                    data-aria-log="slotted-dynamic"
+                    label-slot="label"
+                    description-slot="description"
+                >
+                    <label slot="label" class="field-label">Work email</label>
+                    <span slot="description" class="field-help" data-help>
+                        Enter your company email address.
+                    </span>
+                </textfield-slotted-refs>
+
+                <div class="demo-controls" aria-label="Swap slotted label and description">
+                    <button type="button" data-preset="work">Work email (no author IDs)</button>
+                    <button type="button" data-preset="personal">Personal email (author IDs)</button>
+                    <button type="button" data-preset="nickname">Nickname only</button>
+                    <button type="button" data-preset="with-error">Label + help + error</button>
+                    <button type="button" data-preset="label-only">Label only (remove description)</button>
+                </div>
+
+                <h3>Resolved ARIA references</h3>
+                <pre class="log" data-aria-log="slotted-dynamic" aria-live="polite"></pre>
+            </section>
+        </main>
+
+        <script type="module">
+            import { renderSupportStatus } from './form-field-base.js';
+            import './textfield-slotted-refs.js';
+
+            renderSupportStatus(document.getElementById('support-status'));
+
+            const field = document.getElementById('dynamic-field');
+
+            /** @type {Record<string, { labels: Array<{ tag: string, text: string, id?: string }>, descriptions: Array<{ tag: string, text: string, id?: string }> }>} */
+            const presets = {
+                work: {
+                    labels: [{ tag: 'label', text: 'Work email' }],
+                    descriptions: [
+                        { tag: 'span', text: 'Enter your company email address.' },
+                    ],
+                },
+                personal: {
+                    labels: [{ tag: 'label', text: 'Personal email', id: 'personal-label' }],
+                    descriptions: [
+                        {
+                            tag: 'span',
+                            text: 'Used for account recovery only.',
+                            id: 'personal-help',
+                        },
+                    ],
+                },
+                nickname: {
+                    labels: [{ tag: 'span', text: 'Display name' }],
+                    descriptions: [{ tag: 'span', text: 'Shown on your public profile.' }],
+                },
+                'with-error': {
+                    labels: [{ tag: 'label', text: 'Email address' }],
+                    descriptions: [
+                        { tag: 'span', text: 'Must be a valid email format.' },
+                        { tag: 'span', text: 'Error: email is required.', id: 'email-error' },
+                    ],
+                },
+                'label-only': {
+                    labels: [{ tag: 'label', text: 'Username' }],
+                    descriptions: [],
+                },
+            };
+
+            /**
+             * @param {string} slotName
+             */
+            function clearSlot(slotName) {
+                field.querySelectorAll(`[slot="${slotName}"]`).forEach((node) => node.remove());
+            }
+
+            /**
+             * @param {string} slotName
+             * @param {Array<{ tag: string, text: string, id?: string }>} nodes
+             */
+            function assignSlot(slotName, nodes) {
+                clearSlot(slotName);
+
+                nodes.forEach((config) => {
+                    const element = document.createElement(config.tag);
+                    element.slot = slotName;
+                    element.className = slotName === 'label' ? 'field-label' : 'field-help';
+                    element.textContent = config.text;
+
+                    if (config.id) {
+                        element.id = config.id;
+                    }
+
+                    if (slotName === 'description') {
+                        element.setAttribute('data-help', '');
+                    }
+
+                    field.append(element);
+                });
+            }
+
+            /**
+             * @param {keyof typeof presets} presetKey
+             */
+            function applyPreset(presetKey) {
+                const preset = presets[presetKey];
+                assignSlot('label', preset.labels);
+                assignSlot('description', preset.descriptions);
+            }
+
+            document.querySelectorAll('[data-preset]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    applyPreset(button.getAttribute('data-preset'));
+                });
+            });
+        </script>
+    </body>
+</html>

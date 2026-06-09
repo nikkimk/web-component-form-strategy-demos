@@ -1,14 +1,13 @@
 import {
-    collectSlottedFieldRefs,
     createLogRefresher,
+    establishSlottedFieldAriaSync,
     logHostFieldAriaRefs,
-    syncHostFieldAriaRefs,
-    watchSlottedFieldRefs,
 } from './form-field-base.js';
 
 /**
- * Text field with label and help slotted from Light DOM.
- * Slotted nodes stay in the light tree and wire through host element refs — no cross-root shadow link.
+ * Text field with label and description slotted from Light DOM.
+ * Re-collects assigned nodes on slotchange, assigns IDs when missing, and
+ * updates host element refs (or aria-labelledby / aria-describedby fallback).
  */
 export class TextfieldSlottedRefs extends HTMLElement {
     #internals = null;
@@ -16,7 +15,7 @@ export class TextfieldSlottedRefs extends HTMLElement {
     #value = '';
     #labelElements = [];
     #descriptionElements = [];
-    #unwatchSlots = () => {};
+    #disconnectAria = () => {};
     #refreshLog = () => {};
 
     constructor() {
@@ -26,14 +25,17 @@ export class TextfieldSlottedRefs extends HTMLElement {
     }
 
     connectedCallback() {
+        const labelSlot = this.getAttribute('label-slot') ?? 'label';
+        const descriptionSlot = this.getAttribute('description-slot') ?? 'help-text';
+
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="field-host" part="host">
                 <div class="field-label-slot" part="label-slot">
-                    <slot name="label"></slot>
+                    <slot name="${labelSlot}"></slot>
                 </div>
-                <div class="field-help-slot" part="help-slot">
-                    <slot name="help-text"></slot>
+                <div class="field-help-slot" part="description-slot">
+                    <slot name="${descriptionSlot}"></slot>
                 </div>
                 <div class="control-surface textfield-surface" part="control">
                     <input
@@ -50,22 +52,6 @@ export class TextfieldSlottedRefs extends HTMLElement {
 
         this.#inputEl = this.shadowRoot.querySelector('.textfield-input');
 
-        const resyncAria = syncHostFieldAriaRefs(this, this.#internals, 'textbox', [], [], {
-            resolveRefs: () => {
-                const refs = collectSlottedFieldRefs(this);
-                this.#labelElements = refs.labelElements;
-                this.#descriptionElements = refs.descriptionElements;
-                return refs;
-            },
-        });
-
-        this.#unwatchSlots = watchSlottedFieldRefs(this, () => {
-            resyncAria();
-            this.#refreshLog();
-        });
-
-        this.#syncDisplay();
-
         const logKey = this.getAttribute('data-aria-log') ?? 'textfield-slotted';
         this.#refreshLog = createLogRefresher(logKey, (logEl) => {
             logHostFieldAriaRefs(
@@ -77,12 +63,25 @@ export class TextfieldSlottedRefs extends HTMLElement {
             );
         });
 
+        const ariaSync = establishSlottedFieldAriaSync(this, this.#internals, 'textbox', {
+            labelSlot,
+            helpSlot: descriptionSlot,
+            onRefsChange: ({ labelElements, descriptionElements }) => {
+                this.#labelElements = labelElements;
+                this.#descriptionElements = descriptionElements;
+                this.#refreshLog();
+            },
+        });
+
+        this.#disconnectAria = ariaSync.disconnect;
+
+        this.#syncDisplay();
         this.addEventListener('keydown', this.#onKeyDown);
         this.addEventListener('click', this.#onClick);
     }
 
     disconnectedCallback() {
-        this.#unwatchSlots();
+        this.#disconnectAria();
         this.removeEventListener('keydown', this.#onKeyDown);
         this.removeEventListener('click', this.#onClick);
     }

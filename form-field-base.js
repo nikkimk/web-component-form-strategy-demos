@@ -267,6 +267,65 @@ export function watchSlottedFieldRefs(host, resync, options = {}) {
 }
 
 /**
+ * Collect slotted label/description nodes, assign stable IDs, and keep host refs in sync
+ * when slot assignments or slotted text change.
+ *
+ * @param {HTMLElement} host
+ * @param {ElementInternals} internals
+ * @param {string} role
+ * @param {{
+ *   labelSlot?: string,
+ *   helpSlot?: string,
+ *   focusable?: boolean,
+ *   onRefsChange?: (refs: { labelElements: HTMLElement[], descriptionElements: HTMLElement[] }) => void
+ * }} [options]
+ */
+export function establishSlottedFieldAriaSync(host, internals, role, options = {}) {
+    const {
+        labelSlot = 'label',
+        helpSlot = 'help-text',
+        focusable = true,
+        onRefsChange,
+    } = options;
+
+    let unwatchSlots = () => {};
+    let unwatchTargets = () => {};
+    let labelElements = [];
+    let descriptionElements = [];
+
+    const resync = () => {
+        unwatchTargets();
+
+        const refs = collectSlottedFieldRefs(host, { labelSlot, helpSlot });
+        labelElements = refs.labelElements;
+        descriptionElements = refs.descriptionElements;
+
+        syncHostFieldAriaRefs(host, internals, role, labelElements, descriptionElements, {
+            focusable,
+        })();
+
+        unwatchTargets = watchRefTargets(
+            [...labelElements, ...descriptionElements],
+            resync
+        );
+
+        onRefsChange?.({ labelElements, descriptionElements });
+    };
+
+    unwatchSlots = watchSlottedFieldRefs(host, resync, { labelSlot, helpSlot });
+    resync();
+
+    return {
+        disconnect: () => {
+            unwatchSlots();
+            unwatchTargets();
+        },
+        getRefs: () => ({ labelElements, descriptionElements }),
+        resync,
+    };
+}
+
+/**
  * @param {HTMLElement} statusEl
  */
 export function renderSupportStatus(statusEl) {
@@ -308,6 +367,14 @@ export function logHostFieldAriaRefs(logEl, host, internals, labels, description
 
         if ('ariaDescription' in internals && internals.ariaDescription) {
             lines.push(`internals.ariaDescription="${internals.ariaDescription}"`);
+        }
+
+        if (labels.length) {
+            lines.push(`label ID refs → ${labels.map((el) => el.id).join(' ')}`);
+        }
+
+        if (descriptions.length) {
+            lines.push(`description ID refs → ${descriptions.map((el) => el.id).join(' ')}`);
         }
     } else {
         lines.push(`aria-labelledby="${host.getAttribute('aria-labelledby') ?? ''}"`);
