@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Mixed Light and Shadow DOM — combobox demo</title>
+        <link rel="stylesheet" href="./styles.css" />
+    </head>
+    <body>
+        <main class="page">
+            <p><a href="./index.html">← All demos</a></p>
+
+            <h1>Mixed Light DOM and Shadow DOM associations</h1>
+            <p class="lead">
+                Light DOM label/help refs are set on the host; Shadow DOM supplements and the
+                listbox use <code>ElementInternals</code>
+                (<code>ariaLabelledByElements</code>, <code>ariaDescribedByElements</code>,
+                <code>ariaControlsElements</code>). Options are slotted from Light DOM; the host
+                uses <code>aria-activedescendant</code> for the active option.
+            </p>
+
+            <div id="support-status" class="status" aria-live="polite"></div>
+
+            <section class="demo-card" aria-labelledby="mixed-demo-heading">
+                <h2 id="mixed-demo-heading">Demo</h2>
+                <div class="demo-layout">
+                    <label class="field-label" id="mixed-fruit-label">
+                        Favorite fruit
+                    </label>
+
+                    <combobox-mixed-refs
+                        label-target="mixed-fruit-label"
+                        help-target="mixed-fruit-help"
+                    >
+                        <li slot="option" id="mixed-apple">Apple</li>
+                        <li slot="option" id="mixed-banana">Banana</li>
+                        <li slot="option" id="mixed-cherry">Cherry</li>
+                        <li slot="option" id="mixed-date">Date</li>
+                        <li slot="option" id="mixed-elderberry">Elderberry</li>
+                    </combobox-mixed-refs>
+
+                    <span class="field-help" id="mixed-fruit-help">
+                        External help: pick one option from the popup list.
+                    </span>
+                </div>
+
+                <h3>Resolved ARIA element references</h3>
+                <pre class="log" data-aria-log="mixed" aria-live="polite"></pre>
+            </section>
+        </main>
+
+        <script type="module">
+            import { renderSupportStatus } from './combobox-base.js';
+            import './combobox-mixed-refs.js';
+
+            renderSupportStatus(document.getElementById('support-status'));
+        </script>
+    </body>
+</html>

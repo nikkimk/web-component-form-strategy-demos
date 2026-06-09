@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Shadow DOM label and help — combobox demo</title>
+        <link rel="stylesheet" href="./styles.css" />
+    </head>
+    <body>
+        <main class="page">
+            <p><a href="./index.html">← All demos</a></p>
+
+            <h1>Shadow DOM label and help text</h1>
+            <p class="lead">
+                The combobox host carries <code>role="combobox"</code>. Shadow DOM label and help
+                are referenced through <code>ElementInternals.ariaLabelledByElements</code> and
+                <code>ElementInternals.ariaDescribedByElements</code>. The listbox shell is linked
+                with <code>ElementInternals.ariaControlsElements</code>. Options are slotted from
+                Light DOM; the host uses <code>aria-activedescendant</code> for the active option.
+            </p>
+
+            <div id="support-status" class="status" aria-live="polite"></div>
+
+            <section class="demo-card" aria-labelledby="shadow-demo-heading">
+                <h2 id="shadow-demo-heading">Demo</h2>
+                <div class="demo-layout">
+                    <combobox-shadow-refs>
+                        <li slot="option" id="shadow-apple">Apple</li>
+                        <li slot="option" id="shadow-banana">Banana</li>
+                        <li slot="option" id="shadow-cherry">Cherry</li>
+                        <li slot="option" id="shadow-date">Date</li>
+                        <li slot="option" id="shadow-elderberry">Elderberry</li>
+                    </combobox-shadow-refs>
+                </div>
+
+                <h3>Resolved ARIA element references</h3>
+                <pre class="log" data-aria-log="shadow" aria-live="polite"></pre>
+            </section>
+        </main>
+
+        <script type="module">
+            import { renderSupportStatus } from './combobox-base.js';
+            import './combobox-shadow-refs.js';
+
+            renderSupportStatus(document.getElementById('support-status'));
+        </script>
+    </body>
+</html>
