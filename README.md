@@ -73,7 +73,8 @@ This is why shadow label/help “crosses a root” — but only through **`inter
 | -------------------- | ------------------ |
 | In shadow (component-owned) | `internals.ariaLabelledByElements` + mirrored `ariaLabel` / `ariaDescription` |
 | Slotted from consumer markup | `host.ariaLabelledByElements` / `ariaDescribedByElements` |
-| External in page Light DOM | `host.ariaLabelledByElements` / `ariaDescribedByElements` (or native `<label for>` + `delegatesFocus` for production textfields) |
+| External in page Light DOM (host-role PoC) | `host.ariaLabelledByElements` / `ariaDescribedByElements` |
+| External in page Light DOM (production inner control) | `inner.ariaLabelledByElements` / `ariaDescribedByElements` — [cross-root demo](./demo-cross-root-fields.html) |
 
 **Production default for textfields and checkboxes** remains native inner controls with `delegatesFocus` — the host-role demos exist to validate the split-surface model for composite widgets and edge cases, not to replace native semantics for simple fields.
 
@@ -98,6 +99,156 @@ All demos live at the repo root and are linked from [`index.html`](./index.html)
 | [Cross-root inner surface — textfield, checkbox, progress bar](./demo-cross-root-fields.html) | CodePen pattern: inner shadow control → light DOM label/help via element refs |
 
 Related baseline: [Cross-root ARIA element refs CodePen](https://codepen.io/spectrum-css/pen/pvNEVda?editors=0010) (NVDA + VoiceOver described-by validation). The [cross-root fields demo](./demo-cross-root-fields.html) applies the same shadow → light wiring to form controls.
+
+---
+
+## Learnings by demo
+
+Each PoC taught something specific. Use this section to pick the right reference implementation for a given authoring pattern.
+
+### Combobox
+
+#### [Combobox — shadow label/help](./demo-combobox-shadow-label.html)
+
+| | |
+| --- | --- |
+| **Pattern** | Composite widget with component-owned label and help in shadow |
+| **Role** | `internals.role = "combobox"` (fallback: host attribute) |
+| **Focus** | Host `tabindex="0"`; trigger is visual only |
+| **Label/help** | `internals.ariaLabelledByElements` / `ariaDescribedByElements` + mirrored `ariaLabel` / `ariaDescription` |
+| **Listbox** | `internals.ariaControlsElements = [shadowListbox]` — **host assignment is silently ignored** |
+| **Options** | Light DOM `<li slot="option">`; host `aria-activedescendant` points at option IDs |
+
+**What we learned:** Shadow-resident label, help, and listbox all wire through **`ElementInternals`**, not the host. Shadow `<span>` labels work; shadow `<label>` does not when the focus target is outside shadow. Mirroring label/help text on `internals.ariaLabel` / `ariaDescription` improved AT reliability beyond element-ref readback alone.
+
+#### [Combobox — light label/help](./demo-combobox-light-label.html)
+
+| | |
+| --- | --- |
+| **Pattern** | Page-level label and help; combobox shadow contains trigger + listbox only |
+| **Label/help** | `host.ariaLabelledByElements` / `ariaDescribedByElements` → external light DOM nodes |
+| **Listbox / options** | Same shadow listbox + light slotted options split as the shadow-label variant |
+
+**What we learned:** When label and help live in Light DOM, the **host** is the correct wiring surface. The listbox split (shadow shell, light options) is unchanged — only label/help placement differs. `label-target` / `help-target` attributes resolve external nodes by ID.
+
+#### [Combobox — mixed label/help](./demo-combobox-mixed-label.html)
+
+| | |
+| --- | --- |
+| **Pattern** | Supplemental shadow label/help **and** external light label/help on one control |
+| **Label/help** | Light targets → host element refs; shadow targets → internals element refs + mirror |
+| **Partition rule** | Tree root determines surface — not authoring preference |
+
+**What we learned:** Both surfaces can be active on one component. Do not merge light and shadow targets onto a single API — partition first, then assign each group to host or internals. This is the canonical illustration of the split-surface model.
+
+---
+
+### Cross-root inner surface ([CodePen POC](https://codepen.io/spectrum-css/pen/pvNEVda))
+
+#### [Textfield, checkbox, and progress bar — shadow → light refs](./demo-cross-root-fields.html)
+
+| | |
+| --- | --- |
+| **Pattern** | Inner shadow control is the ARIA surface; label/help stay in Light DOM |
+| **Textfield / checkbox** | Native `<input>` in shadow with `delegatesFocus` |
+| **Progress bar** | `<div role="progressbar">` in shadow |
+| **Label/help** | `inner.ariaLabelledByElements` / `ariaDescribedByElements` → external nodes |
+| **APIs not used** | No host refs, no `ElementInternals`, no string `aria-labelledby` / `aria-describedby` |
+
+**What we learned:** **Shadow → light** cross-root works on the **inner interactive element** — the same direction validated in the CodePen (inner button → light tooltip). This is the best fit for **production textfields and checkboxes** with external or page-level labels. **Light → shadow does not work**; string ID attributes from shadow cannot cross roots either, so there is no fallback when element refs are unavailable. Element refs do not write `aria-describedby` to the DOM — AT must read the reflected association.
+
+---
+
+### Host-role form controls (PoC — not production default)
+
+These demos put widget semantics on the custom element host (via `internals` when element refs are supported). Inner markup is presentational. They validate the split-surface model for composite-like edge cases; **production textfields and checkboxes should use native inner controls** ([cross-root demo](./demo-cross-root-fields.html)).
+
+#### [Textfield, checkbox, and progress bar — shadow labels](./demo-host-shadow-label.html)
+
+| | |
+| --- | --- |
+| **Pattern** | All three control types with shadow-resident label and help |
+| **Role / state** | `internals.role`, `internals.ariaChecked`, progress value properties |
+| **Label/help** | `internals` element refs + mirrored `ariaLabel` / `ariaDescription` |
+| **Focus** | Host `tabindex="0"` for textfield and checkbox; progress bar not focusable |
+
+**What we learned:** The same shadow-label wiring as the combobox applies to simple host-role fields. Combining all three on one page exposed log-panel and ID-assignment bugs that also affected the individual demos (see pitfalls table above).
+
+#### [Textfield — slotted label and help](./demo-host-slotted-label.html)
+
+| | |
+| --- | --- |
+| **Pattern** | Consumer-authored label/help projected through named slots |
+| **Tree location** | Slotted nodes remain in the **light tree** even though visually inside the component |
+| **Label/help** | `host.ariaLabelledByElements` / `ariaDescribedByElements` |
+
+**What we learned:** Slotted label/help avoids inward cross-root wiring entirely. Prefer this over shadow-resident labels when consumers supply markup. No `ElementInternals` label refs needed.
+
+#### [Textfield — dynamic slotted ID refs](./demo-host-slotted-dynamic.html)
+
+| | |
+| --- | --- |
+| **Pattern** | Same as slotted label, plus runtime slot content changes |
+| **Sync triggers** | `slotchange` re-collects assigned nodes; `MutationObserver` on text changes |
+| **IDs** | Component assigns stable IDs when author omits them; preserves author IDs when provided |
+| **Multi-ref** | Supports multiple description nodes (e.g. help + error) |
+
+**What we learned:** Ref wiring must be **re-entrant** — disconnect and re-attach watchers when slot assignments change. Interactive preset buttons proved refs update correctly when slotted nodes are replaced, added, or removed. Author IDs and auto-assigned IDs both work.
+
+#### [Textfield and checkbox — light DOM labels](./demo-host-light-label.html)
+
+| | |
+| --- | --- |
+| **Pattern** | External `<label>` and help `<span>` siblings; host-role widget semantics |
+| **Label/help** | `host.ariaLabelledByElements` / `ariaDescribedByElements` via `label-target` / `help-target` |
+| **Contrast** | Host is focus target and owns role — differs from cross-root inner-surface pattern |
+
+**What we learned:** Light DOM label/help on a **host-role** PoC uses host element refs, not inner input refs. Compare with [cross-root fields](./demo-cross-root-fields.html): production-shaped controls should wire refs on the **inner native control**, not the host.
+
+#### [Host-role textfield](./demo-host-textfield-shadow.html)
+
+| | |
+| --- | --- |
+| **Pattern** | `internals.role = "textbox"`; inner `<input aria-hidden>` |
+| **Input** | Host handles keyboard; inner input is decorative |
+| **Label/help** | Shadow → internals refs + mirror |
+
+**What we learned:** Host-role textbox is viable for PoC but duplicates native input semantics. Useful for understanding split-surface wiring, not recommended for production textfields.
+
+#### [Host-role checkbox](./demo-host-checkbox-shadow.html)
+
+| | |
+| --- | --- |
+| **Pattern** | `internals.role = "checkbox"`; `internals.ariaChecked` |
+| **Interaction** | Space and click on host toggle state |
+| **Label/help** | Shadow → internals refs + mirror |
+
+**What we learned:** Checkbox state belongs on **`internals.ariaChecked`** when element refs are supported (not duplicated on host attributes). Same shadow-label constraints as other host-role demos.
+
+#### [Host-role progress bar](./demo-host-progressbar-shadow.html)
+
+| | |
+| --- | --- |
+| **Pattern** | `internals.role = "progressbar"`; value on `internals.ariaValueNow` / `ariaValueText` |
+| **Focus** | Not in tab order (`tabindex` omitted) |
+| **Visual track** | Presentational (`aria-hidden`) |
+
+**What we learned:** Static indicators can live entirely on internals with shadow label/help via internals refs + mirror. Value animation updates internals properties, not host attributes.
+
+---
+
+### Quick reference — which demo for which question?
+
+| Question | Start here |
+| -------- | ---------- |
+| Where should combobox role and listbox wiring live? | [Combobox shadow label](./demo-combobox-shadow-label.html) |
+| External page label for a combobox? | [Combobox light label](./demo-combobox-light-label.html) |
+| Both shadow and light label/help on one field? | [Combobox mixed label](./demo-combobox-mixed-label.html) |
+| Production textfield/checkbox with external label? | [Cross-root fields](./demo-cross-root-fields.html) |
+| Consumer-supplied label through slots? | [Slotted label](./demo-host-slotted-label.html) |
+| Dynamic slot content / error messages? | [Dynamic slotted refs](./demo-host-slotted-dynamic.html) |
+| Shadow-resident label inside the component? | [Host shadow labels](./demo-host-shadow-label.html) or combobox shadow variant |
+| Why can't host refs reach shadow labels? | [What we learned → split-surface model](#the-split-surface-mental-model) + [Fixing cross-root shadow label wiring](#fixing-cross-root-shadow-label-wiring) |
 
 ---
 
@@ -219,6 +370,8 @@ inner.ariaDescribedByElements = [help];
 Shared helper: [`wireInnerCrossRootAriaRefs`](./cross-root-field-base.js).
 
 ---
+
+## Applying Q2 + Q3 together
 
 | Component | Q2 (role) | Q3 (relationships) |
 | --------- | --------- | ------------------ |
