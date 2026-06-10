@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Shadow role &#8212; light DOM label and description siblings</title>
+        <link rel="stylesheet" href="./page.css" />
+    </head>
+    <body>
+        <main class="page">
+            <p><a href="./index.html">&#8592; All demos</a></p>
+
+            <h1>Shadow role &#8212; light DOM label &amp; description siblings</h1>
+            <p class="lead">
+                The ARIA role lives on an inner shadow DOM element. The label and description are
+                plain light DOM siblings &#8212; no slots, no shadow markup for them. Each custom
+                element reads its host's <code>aria-labelledby</code> and
+                <code>aria-describedby</code> attributes, resolves the referenced elements in the
+                document, and wires them to the inner role element using
+                <code>Element.ariaLabelledByElements</code> and
+                <code>Element.ariaDescribedByElements</code> (element reference API, works
+                cross-root). The combobox additionally uses
+                <code>Element.ariaActiveDescendantElement</code> for its active option.
+            </p>
+
+            <div class="demo-grid">
+
+                <section class="demo-card" aria-labelledby="tf-heading">
+                    <h2 id="tf-heading">Textfield</h2>
+                    <label id="tf-label" class="field-label-standalone">Email address</label>
+                    <textfield-light
+                        aria-labelledby="tf-label"
+                        aria-describedby="tf-desc"
+                    ></textfield-light>
+                    <p id="tf-desc" class="field-help-standalone">We'll never share your email.</p>
+                </section>
+
+                <section class="demo-card" aria-labelledby="cb-heading">
+                    <h2 id="cb-heading">Checkbox</h2>
+                    <span id="cb-label" class="field-label-standalone">Subscribe to newsletter</span>
+                    <checkbox-light
+                        aria-labelledby="cb-label"
+                        aria-describedby="cb-desc"
+                    ></checkbox-light>
+                    <p id="cb-desc" class="field-help-standalone">You can unsubscribe at any time.</p>
+                </section>
+
+                <section class="demo-card" aria-labelledby="pb-heading">
+                    <h2 id="pb-heading">Progress bar</h2>
+                    <span id="pb-label" class="field-label-standalone">Upload progress</span>
+                    <progressbar-light
+                        aria-labelledby="pb-label"
+                        aria-describedby="pb-desc"
+                    ></progressbar-light>
+                    <p id="pb-desc" class="field-help-standalone">Uploading your files to the server.</p>
+                </section>
+
+                <section class="demo-card" aria-labelledby="cmb-heading">
+                    <h2 id="cmb-heading">Combobox</h2>
+                    <span id="cmb-label" class="field-label-standalone">Favorite fruit</span>
+                    <combobox-light
+                        aria-labelledby="cmb-label"
+                        aria-describedby="cmb-desc"
+                    >
+                        <li role="option" aria-selected="false">Apple</li>
+                        <li role="option" aria-selected="false">Banana</li>
+                        <li role="option" aria-selected="false">Cherry</li>
+                        <li role="option" aria-selected="false">Date</li>
+                        <li role="option" aria-selected="false">Elderberry</li>
+                    </combobox-light>
+                    <p id="cmb-desc" class="field-help-standalone">Arrow keys navigate, Enter or Space selects.</p>
+                </section>
+
+            </div>
+        </main>
+
+        <script type="module">
+            import './textfield-light.js';
+            import './checkbox-light.js';
+            import './progressbar-light.js';
+            import './combobox-light.js';
+        </script>
+    </body>
+</html>
