@@ -13,7 +13,7 @@
                 Interactive PoCs exploring how label and description connect across Shadow DOM
                 boundaries for <strong>textfield</strong>, <strong>checkbox</strong>,
                 <strong>progress bar</strong>, and <strong>combobox</strong> components.
-                In both demos the ARIA role lives on an inner shadow DOM element, not the
+                In all demos the ARIA role lives on an inner shadow DOM element, not the
                 custom element host.
             </p>
 
@@ -41,7 +41,7 @@
                 <ul class="nav-list">
                     <li>
                         <a href="./demo-shadow-role.html"
-                            >Shadow role &#8212; shadow DOM label and description (all four controls)</a
+                            >Shadow role &#8212; shadow DOM label and description</a
                         >
                     </li>
                 </ul>
@@ -51,17 +51,37 @@
                 <h2 id="light-label-heading">Light DOM label and description siblings</h2>
                 <p>
                     Label and description are plain light DOM siblings of the custom element &#8212;
-                    no slots, no shadow markup for them. Each component reads its host&#8217;s
-                    <code>aria-labelledby</code> and <code>aria-describedby</code> attributes,
-                    resolves the referenced elements in the document, and wires them to the inner
-                    role element using <code>Element.ariaLabelledByElements</code> and
-                    <code>Element.ariaDescribedByElements</code>. These element reference APIs
-                    work cross-root (shadow source &#8594; light DOM target).
+                    no slots, no shadow markup for them. Each component exposes
+                    <code>labelledby</code> and <code>describedby</code> properties that accept
+                    element ID strings. Setting them resolves the referenced elements in the
+                    document and updates <code>Element.ariaLabelledByElements</code> and
+                    <code>Element.ariaDescribedByElements</code> on the inner role element,
+                    crossing the shadow boundary via the element reference API.
                 </p>
                 <ul class="nav-list">
                     <li>
                         <a href="./demo-light-siblings.html"
-                            >Shadow role &#8212; light DOM label and description siblings (all four controls)</a
+                            >Shadow role &#8212; light DOM label and description siblings</a
+                        >
+                    </li>
+                </ul>
+            </section>
+
+            <section class="demo-section" aria-labelledby="hybrid-heading">
+                <h2 id="hybrid-heading">Hybrid &#8212; slotted with light DOM fallback</h2>
+                <p>
+                    Each component has shadow DOM label and description spans with named slots.
+                    When slot content is present, <code>ariaLabelledByElements</code> points
+                    at the shadow span (same-root element reference). When slots are empty,
+                    it falls back to <code>ariaLabelledByElements</code> pointing at light DOM
+                    siblings via the <code>labelledby</code> / <code>describedby</code>
+                    properties. A toggle button on the demo page switches between the two modes
+                    live so you can inspect the difference.
+                </p>
+                <ul class="nav-list">
+                    <li>
+                        <a href="./demo-hybrid.html"
+                            >Shadow role &#8212; hybrid shadow/light label and description</a
                         >
                     </li>
                 </ul>
