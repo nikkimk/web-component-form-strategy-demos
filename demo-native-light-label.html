@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Shadow role — light DOM label and help</title>
+        <link rel="stylesheet" href="./page.css" />
+    </head>
+    <body>
+        <main class="page">
+            <p>
+                <a href="./index.html">&#8592; All demos</a> &#183;
+                <a href="./demo-native-shadow-label.html">Shadow DOM label version &#8594;</a>
+            </p>
+
+            <h1>Shadow role &#8212; light DOM label and help</h1>
+            <p class="lead">
+                The ARIA role lives on an <strong>inner shadow DOM element</strong>, not the host.
+                For textfield and checkbox that element is a native
+                <code>&lt;input&gt;</code>; for progressbar and combobox it is a
+                <code>&lt;div role="..."&gt;</code>.
+                Label and help are <strong>light DOM siblings</strong> to the component.
+                They are wired by setting <code>ariaLabelledByElements</code> and
+                <code>ariaDescribedByElements</code> directly on the shadow element &#8212;
+                source is in shadow DOM, target is in the lighter parent DOM, so the element
+                reference API accepts the assignment.
+            </p>
+            <p>
+                Note: <code>&lt;label for="id"&gt;</code> cannot target an input inside a shadow
+                root because shadow IDs are not globally accessible. The element reference API
+                is the correct wiring mechanism even for native inputs.
+            </p>
+
+            <div id="support-status" class="status" aria-live="polite"></div>
+
+            <div class="demo-grid">
+                <section class="demo-card" aria-labelledby="textfield-heading">
+                    <h2 id="textfield-heading">Textfield</h2>
+                    <div class="demo-layout">
+                        <label class="field-label" id="light-tf-label">Email address</label>
+                        <textfield-native
+                            data-aria-log="textfield-native-light"
+                            label-target="light-tf-label"
+                            help-target="light-tf-help"
+                        ></textfield-native>
+                        <span class="field-help" id="light-tf-help" data-help>
+                            Light DOM help for the textfield.
+                        </span>
+                    </div>
+                    <h3>Resolved ARIA references</h3>
+                    <pre class="log" data-aria-log="textfield-native-light" aria-live="polite"></pre>
+                </section>
+
+                <section class="demo-card" aria-labelledby="checkbox-heading">
+                    <h2 id="checkbox-heading">Checkbox</h2>
+                    <div class="demo-layout">
+                        <label class="field-label" id="light-cb-label">Subscribe to newsletter</label>
+                        <checkbox-native
+                            data-aria-log="checkbox-native-light"
+                            label-target="light-cb-label"
+                            help-target="light-cb-help"
+                        ></checkbox-native>
+                        <span class="field-help" id="light-cb-help" data-help>
+                            Light DOM help for the checkbox.
+                        </span>
+                    </div>
+                    <h3>Resolved ARIA references</h3>
+                    <pre class="log" data-aria-log="checkbox-native-light" aria-live="polite"></pre>
+                </section>
+
+                <section class="demo-card" aria-labelledby="progressbar-heading">
+                    <h2 id="progressbar-heading">Progress bar</h2>
+                    <div class="demo-layout">
+                        <label class="field-label" id="light-pb-label">Upload progress</label>
+                        <progressbar-shadow-role
+                            data-aria-log="progressbar-native-light"
+                            label-target="light-pb-label"
+                            help-target="light-pb-help"
+                        ></progressbar-shadow-role>
+                        <span class="field-help" id="light-pb-help" data-help>
+                            Light DOM help for the progress bar.
+                        </span>
+                    </div>
+                    <h3>Resolved ARIA references</h3>
+                    <pre class="log" data-aria-log="progressbar-native-light" aria-live="polite"></pre>
+                </section>
+
+                <section class="demo-card" aria-labelledby="combobox-heading">
+                    <h2 id="combobox-heading">Combobox</h2>
+                    <div class="demo-layout">
+                        <label class="field-label" id="light-cmb-label">Favorite fruit</label>
+                        <combobox-shadow-role
+                            data-aria-log="combobox-native-light"
+                            label-target="light-cmb-label"
+                            help-target="light-cmb-help"
+                        >
+                            <li slot="option" id="light-apple">Apple</li>
+                            <li slot="option" id="light-banana">Banana</li>
+                            <li slot="option" id="light-cherry">Cherry</li>
+                            <li slot="option" id="light-date">Date</li>
+                            <li slot="option" id="light-elderberry">Elderberry</li>
+                        </combobox-shadow-role>
+                        <span class="field-help" id="light-cmb-help" data-help>
+                            Light DOM help for the combobox.
+                        </span>
+                    </div>
+                    <h3>Resolved ARIA references</h3>
+                    <pre class="log" data-aria-log="combobox-native-light" aria-live="polite"></pre>
+                </section>
+            </div>
+        </main>
+
+        <script type="module">
+            import { renderSupportStatus } from './form-field-base.js';
+            import './textfield-native.js';
+            import './checkbox-native.js';
+            import './progressbar-shadow-role.js';
+            import './combobox-shadow-role.js';
+
+            renderSupportStatus(document.getElementById('support-status'));
+        </script>
+    </body>
+</html>
