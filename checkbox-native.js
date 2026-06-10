@@ -91,19 +91,22 @@ export class CheckboxNative extends HTMLElement {
             this.#inputEl.removeAttribute('aria-describedby');
             this.#inputEl.removeAttribute('aria-label');
         } else {
-            if (lightLabels.length) {
-                lightLabels.forEach((el) => ensureFallbackId(el, 'label'));
-                this.#inputEl.setAttribute('aria-labelledby', lightLabels.map((el) => el.id).join(' '));
-            } else if (shadowLabels.length) {
-                this.#inputEl.setAttribute(
-                    'aria-label',
-                    shadowLabels.map((el) => el.textContent?.trim()).join(' ')
-                );
+            const allLabels = [...shadowLabels, ...lightLabels];
+            const allDescs = [...shadowDescs, ...lightDescs];
+
+            if (allLabels.length) {
+                allLabels.forEach((el) => ensureFallbackId(el, 'label'));
+                this.#inputEl.setAttribute('aria-labelledby', allLabels.map((el) => el.id).join(' '));
+            } else {
+                this.#inputEl.removeAttribute('aria-labelledby');
             }
-            if (lightDescs.length) {
-                lightDescs.forEach((el) => ensureFallbackId(el, 'desc'));
-                this.#inputEl.setAttribute('aria-describedby', lightDescs.map((el) => el.id).join(' '));
+            if (allDescs.length) {
+                allDescs.forEach((el) => ensureFallbackId(el, 'desc'));
+                this.#inputEl.setAttribute('aria-describedby', allDescs.map((el) => el.id).join(' '));
+            } else {
+                this.#inputEl.removeAttribute('aria-describedby');
             }
+            this.#inputEl.removeAttribute('aria-label');
         }
 
         this.#unwatchTargets = watchRefTargets(
@@ -126,7 +129,6 @@ export class CheckboxNative extends HTMLElement {
             lines.push(`input.checked = ${this.#inputEl.checked}`);
         } else {
             lines.push(`input[aria-labelledby]="${this.#inputEl.getAttribute('aria-labelledby') ?? ''}" (fallback)`);
-            lines.push(`input[aria-label]="${this.#inputEl.getAttribute('aria-label') ?? ''}" (fallback)`);
             lines.push(`input[aria-describedby]="${this.#inputEl.getAttribute('aria-describedby') ?? ''}" (fallback)`);
             lines.push(`input.checked = ${this.#inputEl.checked}`);
         }
