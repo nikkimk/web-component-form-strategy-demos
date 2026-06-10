@@ -21,7 +21,7 @@
                 <a href="https://github.com/nikkimk/web-component-form-strategy-demos/blob/main/README.md"
                     >Project README</a
                 >
-                ·
+                &#183;
                 <a href="https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos"
                     >Open in StackBlitz</a
                 >
@@ -29,22 +29,49 @@
 
             <div id="support-status" class="status" aria-live="polite"></div>
 
-            <section class="demo-section" aria-labelledby="demos-heading">
-                <h2 id="demos-heading">Label and help wiring (Q3)</h2>
+            <section class="demo-section" aria-labelledby="host-role-heading">
+                <h2 id="host-role-heading">Role on the host via <code>ElementInternals</code></h2>
+                <p>
+                    <code>internals.role</code> sets the ARIA role on the custom element host.
+                    Label and help wire through the host or internals depending on where they live.
+                </p>
                 <ul class="nav-list">
                     <li>
                         <a href="./demo-light-label.html"
-                            >Light DOM label and help — all four controls</a
+                            >Light DOM label and help &#8212; all four controls</a
                         >
                     </li>
                     <li>
                         <a href="./demo-shadow-label.html"
-                            >Shadow DOM label and help — all four controls</a
+                            >Shadow DOM label and help &#8212; all four controls</a
                         >
                     </li>
                     <li>
                         <a href="./demo-slotted-label.html"
-                            >Slotted label and help — all four controls</a
+                            >Slotted label and help &#8212; all four controls</a
+                        >
+                    </li>
+                </ul>
+            </section>
+
+            <section class="demo-section" aria-labelledby="shadow-role-heading">
+                <h2 id="shadow-role-heading">Role on an inner shadow DOM element</h2>
+                <p>
+                    The ARIA role lives on a native <code>&lt;input&gt;</code> (textfield,
+                    checkbox) or a <code>&lt;div role="..."&gt;</code> (progressbar, combobox)
+                    inside the shadow root. <code>ariaLabelledByElements</code> and
+                    <code>ariaDescribedByElements</code> are set directly on that shadow element.
+                    No <code>ElementInternals</code> is used for ARIA wiring.
+                </p>
+                <ul class="nav-list">
+                    <li>
+                        <a href="./demo-native-light-label.html"
+                            >Shadow role &#8212; light DOM label and help</a
+                        >
+                    </li>
+                    <li>
+                        <a href="./demo-native-shadow-label.html"
+                            >Shadow role &#8212; shadow DOM label and help</a
                         >
                     </li>
                 </ul>
@@ -57,40 +84,54 @@
                         <tr>
                             <th scope="col">Control</th>
                             <th scope="col">
-                                <a href="./demo-light-label.html">Light</a>
+                                <a href="./demo-light-label.html">Host role / light</a>
                             </th>
                             <th scope="col">
-                                <a href="./demo-shadow-label.html">Shadow</a>
+                                <a href="./demo-shadow-label.html">Host role / shadow</a>
                             </th>
                             <th scope="col">
-                                <a href="./demo-slotted-label.html">Slotted</a>
+                                <a href="./demo-slotted-label.html">Host role / slotted</a>
+                            </th>
+                            <th scope="col">
+                                <a href="./demo-native-light-label.html">Shadow role / light</a>
+                            </th>
+                            <th scope="col">
+                                <a href="./demo-native-shadow-label.html">Shadow role / shadow</a>
                             </th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <th scope="row">Textfield</th>
-                            <td>✓</td>
-                            <td>✓</td>
-                            <td>✓</td>
+                            <td>&#10003;</td>
+                            <td>&#10003;</td>
+                            <td>&#10003;</td>
+                            <td>&#10003; native</td>
+                            <td>&#10003; native</td>
                         </tr>
                         <tr>
                             <th scope="row">Checkbox</th>
-                            <td>✓</td>
-                            <td>✓</td>
-                            <td>✓</td>
+                            <td>&#10003;</td>
+                            <td>&#10003;</td>
+                            <td>&#10003;</td>
+                            <td>&#10003; native</td>
+                            <td>&#10003; native</td>
                         </tr>
                         <tr>
                             <th scope="row">Progress bar</th>
-                            <td>✓</td>
-                            <td>✓</td>
-                            <td>✓</td>
+                            <td>&#10003;</td>
+                            <td>&#10003;</td>
+                            <td>&#10003;</td>
+                            <td>&#10003;</td>
+                            <td>&#10003;</td>
                         </tr>
                         <tr>
                             <th scope="row">Combobox</th>
-                            <td>✓</td>
-                            <td>✓</td>
-                            <td>✓</td>
+                            <td>&#10003;</td>
+                            <td>&#10003;</td>
+                            <td>&#10003;</td>
+                            <td>&#10003;</td>
+                            <td>&#10003;</td>
                         </tr>
                     </tbody>
                 </table>
