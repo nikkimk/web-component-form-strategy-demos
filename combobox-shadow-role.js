@@ -1,12 +1,11 @@
 import {
-    SUPPORTS_ELEMENT_REFS,
     createLogRefresher,
     shadowLabelHelpMarkup,
     watchRefTargets,
     watchSlottedFieldRefs,
     resolveSplitSurfaceFieldRefs,
 } from './form-field-base.js';
-import { ensureFallbackId, partitionByRoot, prepareRefTargets } from './aria-ref-utils.js';
+import { ensureFallbackId } from './aria-ref-utils.js';
 import { watchSlottedOptions } from './combobox-base.js';
 
 /**
@@ -14,9 +13,15 @@ import { watchSlottedOptions } from './combobox-base.js';
  * The shadow listbox (<ul role="listbox">) is also in shadow DOM.
  * Options are slotted from light DOM into the shadow listbox.
  *
- * ariaLabelledByElements / ariaDescribedByElements → set on the shadow trigger div.
- * ariaControlsElements → trigger (shadow) to listbox (same shadow root) — always works.
- * aria-activedescendant → attribute on trigger, referencing option IDs in light DOM — works.
+ * aria-labelledby / aria-describedby — set as attributes on the shadow trigger div.
+ *   Same-root IDs (shadow label → trigger) work reliably.
+ *   Cross-root light DOM IDs also work in most browsers via the attribute.
+ *
+ * aria-controls — set as attribute on trigger, referencing the shadow listbox ID.
+ *   Same shadow root: always works via attribute.
+ *
+ * aria-activedescendant — set as attribute on trigger, referencing option IDs in light DOM.
+ *   Cross-root ID attribute reference: works in most browsers.
  *
  * No ElementInternals used: role is an HTML attribute on the shadow element.
  */
@@ -77,6 +82,10 @@ export class ComboboxShadowRole extends HTMLElement {
             this.#helpEl.hidden = true;
         }
 
+        // aria-controls points to the listbox — same shadow root, always works via attribute.
+        ensureFallbackId(this.#listboxEl, 'listbox');
+        this.#triggerEl.setAttribute('aria-controls', this.#listboxEl.id);
+
         const logKey = this.getAttribute('data-aria-log') ?? 'combobox-shadow-role';
         this.#refreshLog = createLogRefresher(logKey, (logEl) => {
             logEl.textContent = this.#buildLog();
@@ -118,36 +127,18 @@ export class ComboboxShadowRole extends HTMLElement {
         this.#labelElements = labelElements.filter(Boolean);
         this.#descriptionElements = descriptionElements.filter(Boolean);
 
-        const { shadow: shadowLabels, light: lightLabels } = partitionByRoot(this.#labelElements);
-        const { shadow: shadowDescs, light: lightDescs } = partitionByRoot(this.#descriptionElements);
-
-        if (SUPPORTS_ELEMENT_REFS) {
-            this.#triggerEl.ariaLabelledByElements = prepareRefTargets([...shadowLabels, ...lightLabels]);
-            this.#triggerEl.ariaDescribedByElements = prepareRefTargets([...shadowDescs, ...lightDescs]);
-            // Same shadow root: trigger → listbox. No cross-root restriction applies.
-            this.#triggerEl.ariaControlsElements = [this.#listboxEl];
-            this.#triggerEl.removeAttribute('aria-labelledby');
-            this.#triggerEl.removeAttribute('aria-describedby');
-            this.#triggerEl.removeAttribute('aria-label');
+        if (this.#labelElements.length) {
+            this.#labelElements.forEach((el) => ensureFallbackId(el, 'label'));
+            this.#triggerEl.setAttribute('aria-labelledby', this.#labelElements.map((el) => el.id).join(' '));
         } else {
-            const allLabels = [...shadowLabels, ...lightLabels];
-            const allDescs = [...shadowDescs, ...lightDescs];
+            this.#triggerEl.removeAttribute('aria-labelledby');
+        }
 
-            if (allLabels.length) {
-                allLabels.forEach((el) => ensureFallbackId(el, 'label'));
-                this.#triggerEl.setAttribute('aria-labelledby', allLabels.map((el) => el.id).join(' '));
-            } else {
-                this.#triggerEl.removeAttribute('aria-labelledby');
-            }
-            if (allDescs.length) {
-                allDescs.forEach((el) => ensureFallbackId(el, 'desc'));
-                this.#triggerEl.setAttribute('aria-describedby', allDescs.map((el) => el.id).join(' '));
-            } else {
-                this.#triggerEl.removeAttribute('aria-describedby');
-            }
-            this.#triggerEl.removeAttribute('aria-label');
-            ensureFallbackId(this.#listboxEl, 'listbox');
-            this.#triggerEl.setAttribute('aria-controls', this.#listboxEl.id);
+        if (this.#descriptionElements.length) {
+            this.#descriptionElements.forEach((el) => ensureFallbackId(el, 'desc'));
+            this.#triggerEl.setAttribute('aria-describedby', this.#descriptionElements.map((el) => el.id).join(' '));
+        } else {
+            this.#triggerEl.removeAttribute('aria-describedby');
         }
 
         this.#unwatchTargets = watchRefTargets(
@@ -263,21 +254,13 @@ export class ComboboxShadowRole extends HTMLElement {
 
         const lines = [
             '<div role="combobox"> in shadow DOM — role is an HTML attribute on the shadow div',
-            'ariaLabelledByElements, ariaDescribedByElements, ariaControlsElements set on the shadow trigger',
+            'aria-labelledby / aria-describedby / aria-controls set as attributes on the shadow trigger',
+            `trigger[aria-labelledby]="${trigger.getAttribute('aria-labelledby') ?? ''}"`,
+            `trigger[aria-describedby]="${trigger.getAttribute('aria-describedby') ?? ''}"`,
+            `trigger[aria-controls]="${trigger.getAttribute('aria-controls') ?? ''}"`,
+            `aria-expanded="${trigger.getAttribute('aria-expanded') ?? ''}"`,
+            `aria-activedescendant="${trigger.getAttribute('aria-activedescendant') ?? ''}"`,
         ];
-
-        if (SUPPORTS_ELEMENT_REFS) {
-            lines.push(`trigger.ariaLabelledByElements → ${fmtEls(trigger.ariaLabelledByElements)}`);
-            lines.push(`trigger.ariaDescribedByElements → ${fmtEls(trigger.ariaDescribedByElements)}`);
-            lines.push(`trigger.ariaControlsElements → ${fmtEls(trigger.ariaControlsElements)}`);
-        } else {
-            lines.push(`trigger[aria-labelledby]="${trigger.getAttribute('aria-labelledby') ?? ''}" (fallback)`);
-            lines.push(`trigger[aria-describedby]="${trigger.getAttribute('aria-describedby') ?? ''}" (fallback)`);
-            lines.push(`trigger[aria-controls]="${trigger.getAttribute('aria-controls') ?? ''}" (fallback)`);
-        }
-
-        lines.push(`aria-expanded="${trigger.getAttribute('aria-expanded') ?? ''}"`);
-        lines.push(`aria-activedescendant="${trigger.getAttribute('aria-activedescendant') ?? ''}"`);
 
         this.#labelElements.forEach((el, i) =>
             lines.push(`label[${i}]: ${fmtEl(el)} ("${el.textContent?.trim()}")`)
@@ -291,11 +274,6 @@ export class ComboboxShadowRole extends HTMLElement {
 
         return lines.join('\n');
     }
-}
-
-function fmtEls(elements) {
-    if (!elements?.length) return '[]';
-    return `[${elements.map(fmtEl).join(', ')}]`;
 }
 
 function fmtEl(el) {
