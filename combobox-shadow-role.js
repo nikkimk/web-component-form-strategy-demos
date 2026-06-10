@@ -126,20 +126,26 @@ export class ComboboxShadowRole extends HTMLElement {
             this.#triggerEl.ariaDescribedByElements = prepareRefTargets([...shadowDescs, ...lightDescs]);
             // Same shadow root: trigger → listbox. No cross-root restriction applies.
             this.#triggerEl.ariaControlsElements = [this.#listboxEl];
+            this.#triggerEl.removeAttribute('aria-labelledby');
+            this.#triggerEl.removeAttribute('aria-describedby');
+            this.#triggerEl.removeAttribute('aria-label');
         } else {
-            if (lightLabels.length) {
-                lightLabels.forEach((el) => ensureFallbackId(el, 'label'));
-                this.#triggerEl.setAttribute('aria-labelledby', lightLabels.map((el) => el.id).join(' '));
-            } else if (shadowLabels.length) {
-                this.#triggerEl.setAttribute(
-                    'aria-label',
-                    shadowLabels.map((el) => el.textContent?.trim()).join(' ')
-                );
+            const allLabels = [...shadowLabels, ...lightLabels];
+            const allDescs = [...shadowDescs, ...lightDescs];
+
+            if (allLabels.length) {
+                allLabels.forEach((el) => ensureFallbackId(el, 'label'));
+                this.#triggerEl.setAttribute('aria-labelledby', allLabels.map((el) => el.id).join(' '));
+            } else {
+                this.#triggerEl.removeAttribute('aria-labelledby');
             }
-            if (lightDescs.length) {
-                lightDescs.forEach((el) => ensureFallbackId(el, 'desc'));
-                this.#triggerEl.setAttribute('aria-describedby', lightDescs.map((el) => el.id).join(' '));
+            if (allDescs.length) {
+                allDescs.forEach((el) => ensureFallbackId(el, 'desc'));
+                this.#triggerEl.setAttribute('aria-describedby', allDescs.map((el) => el.id).join(' '));
+            } else {
+                this.#triggerEl.removeAttribute('aria-describedby');
             }
+            this.#triggerEl.removeAttribute('aria-label');
             ensureFallbackId(this.#listboxEl, 'listbox');
             this.#triggerEl.setAttribute('aria-controls', this.#listboxEl.id);
         }
@@ -266,7 +272,7 @@ export class ComboboxShadowRole extends HTMLElement {
             lines.push(`trigger.ariaControlsElements → ${fmtEls(trigger.ariaControlsElements)}`);
         } else {
             lines.push(`trigger[aria-labelledby]="${trigger.getAttribute('aria-labelledby') ?? ''}" (fallback)`);
-            lines.push(`trigger[aria-label]="${trigger.getAttribute('aria-label') ?? ''}" (fallback)`);
+            lines.push(`trigger[aria-describedby]="${trigger.getAttribute('aria-describedby') ?? ''}" (fallback)`);
             lines.push(`trigger[aria-controls]="${trigger.getAttribute('aria-controls') ?? ''}" (fallback)`);
         }
 
