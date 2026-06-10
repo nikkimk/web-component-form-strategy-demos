@@ -1,22 +1,26 @@
 import {
+    SUPPORTS_ELEMENT_REFS,
     createLogRefresher,
     shadowLabelHelpMarkup,
     watchRefTargets,
     watchSlottedFieldRefs,
     resolveSplitSurfaceFieldRefs,
 } from './form-field-base.js';
-import { ensureFallbackId } from './aria-ref-utils.js';
+import { ensureFallbackId, partitionByRoot, prepareRefTargets } from './aria-ref-utils.js';
 
 /**
  * Textfield with a native <input type="text"> in shadow DOM.
  * Role (implicit textbox) lives on the shadow input, not the host.
  *
- * aria-labelledby and aria-describedby are set as attributes on the shadow input,
- * referencing element IDs. Same-root IDs (shadow label → shadow input) work reliably.
- * Cross-root light DOM IDs also work in most browsers via the attribute.
+ * Cross-root association (light DOM label → shadow input):
+ *   aria-labelledby IDs do NOT work across shadow boundaries.
+ *   ariaLabelledByElements does work: source is shadow, target is lighter parent DOM.
+ *
+ * Same-root association (shadow label → shadow input):
+ *   aria-labelledby IDs work within the same shadow root.
  *
  * Note: <label for="id"> cannot target a shadow DOM input — IDs inside shadow roots
- * are not globally accessible. aria-labelledby is the correct wiring mechanism here.
+ * are not globally accessible.
  */
 export class TextfieldNative extends HTMLElement {
     #inputEl = null;
@@ -41,7 +45,7 @@ export class TextfieldNative extends HTMLElement {
             <div class="field-host" part="host">
                 ${useShadowLabels ? shadowLabelHelpMarkup({
                     labelDefault: 'Email address',
-                    helpDefault: 'Native input in shadow DOM. aria-labelledby is set on the input via element IDs.',
+                    helpDefault: 'Shadow label and input are in the same root — aria-labelledby IDs work.',
                 }) : ''}
                 <input type="text" class="textfield-input-native" part="input" />
             </div>
@@ -76,18 +80,35 @@ export class TextfieldNative extends HTMLElement {
         this.#labelElements = labelElements.filter(Boolean);
         this.#descriptionElements = descriptionElements.filter(Boolean);
 
-        if (this.#labelElements.length) {
-            this.#labelElements.forEach((el) => ensureFallbackId(el, 'label'));
-            this.#inputEl.setAttribute('aria-labelledby', this.#labelElements.map((el) => el.id).join(' '));
+        const { shadow: shadowLabels, light: lightLabels } = partitionByRoot(this.#labelElements);
+        const { shadow: shadowDescs, light: lightDescs } = partitionByRoot(this.#descriptionElements);
+
+        // Labels
+        if (lightLabels.length && SUPPORTS_ELEMENT_REFS) {
+            // Cross-root: light DOM label → shadow input. Requires element refs API.
+            this.#inputEl.ariaLabelledByElements = prepareRefTargets(lightLabels);
+            this.#inputEl.removeAttribute('aria-labelledby');
+        } else if (shadowLabels.length) {
+            // Same-root: shadow label → shadow input. ID attribute works.
+            shadowLabels.forEach((el) => ensureFallbackId(el, 'label'));
+            this.#inputEl.setAttribute('aria-labelledby', shadowLabels.map((el) => el.id).join(' '));
+            if (SUPPORTS_ELEMENT_REFS) this.#inputEl.ariaLabelledByElements = [];
         } else {
             this.#inputEl.removeAttribute('aria-labelledby');
+            if (SUPPORTS_ELEMENT_REFS) this.#inputEl.ariaLabelledByElements = [];
         }
 
-        if (this.#descriptionElements.length) {
-            this.#descriptionElements.forEach((el) => ensureFallbackId(el, 'desc'));
-            this.#inputEl.setAttribute('aria-describedby', this.#descriptionElements.map((el) => el.id).join(' '));
+        // Descriptions
+        if (lightDescs.length && SUPPORTS_ELEMENT_REFS) {
+            this.#inputEl.ariaDescribedByElements = prepareRefTargets(lightDescs);
+            this.#inputEl.removeAttribute('aria-describedby');
+        } else if (shadowDescs.length) {
+            shadowDescs.forEach((el) => ensureFallbackId(el, 'desc'));
+            this.#inputEl.setAttribute('aria-describedby', shadowDescs.map((el) => el.id).join(' '));
+            if (SUPPORTS_ELEMENT_REFS) this.#inputEl.ariaDescribedByElements = [];
         } else {
             this.#inputEl.removeAttribute('aria-describedby');
+            if (SUPPORTS_ELEMENT_REFS) this.#inputEl.ariaDescribedByElements = [];
         }
 
         this.#unwatchTargets = watchRefTargets(
@@ -99,12 +120,22 @@ export class TextfieldNative extends HTMLElement {
     }
 
     #buildLog() {
+        const { shadow: shadowLabels, light: lightLabels } = partitionByRoot(this.#labelElements);
+        const { shadow: shadowDescs, light: lightDescs } = partitionByRoot(this.#descriptionElements);
         const lines = [
             '<input type="text"> (shadow DOM) — implicit role: textbox',
-            'aria-labelledby / aria-describedby set as attributes on the shadow input',
-            `input[aria-labelledby]="${this.#inputEl.getAttribute('aria-labelledby') ?? ''}"`,
-            `input[aria-describedby]="${this.#inputEl.getAttribute('aria-describedby') ?? ''}"`,
         ];
+
+        if (lightLabels.length && SUPPORTS_ELEMENT_REFS) {
+            lines.push(`input.ariaLabelledByElements → ${fmtEls(this.#inputEl.ariaLabelledByElements)}`);
+        } else {
+            lines.push(`input[aria-labelledby]="${this.#inputEl.getAttribute('aria-labelledby') ?? ''}"`);
+        }
+        if (lightDescs.length && SUPPORTS_ELEMENT_REFS) {
+            lines.push(`input.ariaDescribedByElements → ${fmtEls(this.#inputEl.ariaDescribedByElements)}`);
+        } else {
+            lines.push(`input[aria-describedby]="${this.#inputEl.getAttribute('aria-describedby') ?? ''}"`);
+        }
 
         this.#labelElements.forEach((el, i) =>
             lines.push(`label[${i}]: ${fmtEl(el)} ("${el.textContent?.trim()}")`)
@@ -115,6 +146,11 @@ export class TextfieldNative extends HTMLElement {
 
         return lines.join('\n');
     }
+}
+
+function fmtEls(elements) {
+    if (!elements?.length) return '[]';
+    return `[${elements.map(fmtEl).join(', ')}]`;
 }
 
 function fmtEl(el) {
