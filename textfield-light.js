@@ -1,14 +1,38 @@
 const SUPPORTS_ELEMENT_REFS = 'ariaLabelledByElements' in Element.prototype;
+
+function resolveIds(ids) {
+    return (ids ?? '').split(/\s+/).filter(Boolean)
+        .map(id => document.getElementById(id)).filter(Boolean);
+}
 class TextfieldLight extends HTMLElement {
-    #inputEl = null;
+    #inputEl     = null;
+    #labelledby  = '';
+    #describedby = '';
 
     constructor() {
         super();
         this.attachShadow({ mode: 'open', delegatesFocus: true });
     }
 
-    static get observedAttributes() { return ['aria-labelledby', 'aria-describedby']; }
-    attributeChangedCallback() { this.#wireAria(); }
+    static get observedAttributes() { return ['labelledby', 'describedby']; }
+
+    attributeChangedCallback(name, _, val) {
+        if (name === 'labelledby')  this.labelledby  = val ?? '';
+        if (name === 'describedby') this.describedby = val ?? '';
+    }
+
+    get labelledby()  { return this.#labelledby; }
+    get describedby() { return this.#describedby; }
+
+    set labelledby(val) {
+        this.#labelledby = val ?? '';
+        this.#wireAria();
+    }
+
+    set describedby(val) {
+        this.#describedby = val ?? '';
+        this.#wireAria();
+    }
 
     connectedCallback() {
         this.shadowRoot.innerHTML = `
@@ -18,9 +42,9 @@ class TextfieldLight extends HTMLElement {
                 <div class="debug" part="debug">
                     <p class="debug-heading">Debug</p>
                     <dl class="debug-list">
-                        <dt>Host aria-labelledby</dt><dd id="db-host-labelledby"></dd>
+                        <dt>labelledby</dt><dd id="db-labelledby"></dd>
                         <dt>Label text</dt><dd id="db-label-text"></dd>
-                        <dt>Host aria-describedby</dt><dd id="db-host-describedby"></dd>
+                        <dt>describedby</dt><dd id="db-describedby"></dd>
                         <dt>Description text</dt><dd id="db-desc-text"></dd>
                         <dt>Association API</dt><dd id="db-api"></dd>
                     </dl>
@@ -31,15 +55,10 @@ class TextfieldLight extends HTMLElement {
         this.#wireAria();
     }
 
-    #resolveIds(attr) {
-        return (this.getAttribute(attr) ?? '').split(/\s+/).filter(Boolean)
-            .map(id => document.getElementById(id)).filter(Boolean);
-    }
-
     #wireAria() {
         if (!this.#inputEl) return;
-        const labelEls = this.#resolveIds('aria-labelledby');
-        const descEls  = this.#resolveIds('aria-describedby');
+        const labelEls = resolveIds(this.#labelledby);
+        const descEls  = resolveIds(this.#describedby);
 
         if (SUPPORTS_ELEMENT_REFS) {
             this.#inputEl.ariaLabelledByElements  = labelEls;
@@ -47,22 +66,20 @@ class TextfieldLight extends HTMLElement {
         } else {
             const labelText = labelEls.map(el => el.textContent.trim()).join(' ');
             const descText  = descEls.map(el => el.textContent.trim()).join(' ');
-            labelText
-                ? this.#inputEl.setAttribute('aria-label', labelText)
-                : this.#inputEl.removeAttribute('aria-label');
-            descText
-                ? this.#inputEl.setAttribute('aria-description', descText)
-                : this.#inputEl.removeAttribute('aria-description');
+            labelText ? this.#inputEl.setAttribute('aria-label', labelText)
+                      : this.#inputEl.removeAttribute('aria-label');
+            descText  ? this.#inputEl.setAttribute('aria-description', descText)
+                      : this.#inputEl.removeAttribute('aria-description');
         }
         this.#updateDebug(labelEls, descEls);
     }
 
     #updateDebug(labelEls, descEls) {
         const set = (sel, val) => { const el = this.shadowRoot.querySelector(sel); if (el) el.textContent = val; };
-        set('#db-host-labelledby', this.getAttribute('aria-labelledby') ?? '');
-        set('#db-label-text',      labelEls.map(e => e.textContent.trim()).join(', '));
-        set('#db-host-describedby',this.getAttribute('aria-describedby') ?? '');
-        set('#db-desc-text',       descEls.map(e => e.textContent.trim()).join(', '));
+        set('#db-labelledby',  this.#labelledby);
+        set('#db-label-text',  labelEls.map(e => e.textContent.trim()).join(', '));
+        set('#db-describedby', this.#describedby);
+        set('#db-desc-text',   descEls.map(e => e.textContent.trim()).join(', '));
         set('#db-api', SUPPORTS_ELEMENT_REFS
             ? 'ariaLabelledByElements / ariaDescribedByElements'
             : 'aria-label / aria-description (fallback)');

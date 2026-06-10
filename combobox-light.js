@@ -1,4 +1,9 @@
 const SUPPORTS_ELEMENT_REFS = 'ariaLabelledByElements' in Element.prototype;
+
+function resolveIds(ids) {
+    return (ids ?? '').split(/\s+/).filter(Boolean)
+        .map(id => document.getElementById(id)).filter(Boolean);
+}
 const SUPPORTS_ACTIVE_DESCENDANT_ELEMENT = 'ariaActiveDescendantElement' in Element.prototype;
 
 class ComboboxLight extends HTMLElement {
@@ -8,14 +13,33 @@ class ComboboxLight extends HTMLElement {
     #options     = [];
     #open        = false;
     #activeIndex = -1;
+    #labelledby  = '';
+    #describedby = '';
 
     constructor() {
         super();
         this.attachShadow({ mode: 'open', delegatesFocus: true });
     }
 
-    static get observedAttributes() { return ['aria-labelledby', 'aria-describedby']; }
-    attributeChangedCallback() { this.#wireAria(); }
+    static get observedAttributes() { return ['labelledby', 'describedby']; }
+
+    attributeChangedCallback(name, _, val) {
+        if (name === 'labelledby')  this.labelledby  = val ?? '';
+        if (name === 'describedby') this.describedby = val ?? '';
+    }
+
+    get labelledby()  { return this.#labelledby; }
+    get describedby() { return this.#describedby; }
+
+    set labelledby(val) {
+        this.#labelledby = val ?? '';
+        this.#wireAria();
+    }
+
+    set describedby(val) {
+        this.#describedby = val ?? '';
+        this.#wireAria();
+    }
 
     connectedCallback() {
         this.shadowRoot.innerHTML = `
@@ -40,9 +64,9 @@ class ComboboxLight extends HTMLElement {
                 <div class="debug" part="debug">
                     <p class="debug-heading">Debug</p>
                     <dl class="debug-list">
-                        <dt>Host aria-labelledby</dt><dd id="db-host-labelledby"></dd>
+                        <dt>labelledby</dt><dd id="db-labelledby"></dd>
                         <dt>Label text</dt><dd id="db-label-text"></dd>
-                        <dt>Host aria-describedby</dt><dd id="db-host-describedby"></dd>
+                        <dt>describedby</dt><dd id="db-describedby"></dd>
                         <dt>Description text</dt><dd id="db-desc-text"></dd>
                         <dt>aria-controls</dt><dd id="db-controls"></dd>
                         <dt>aria-expanded</dt><dd id="db-expanded"></dd>
@@ -81,15 +105,10 @@ class ComboboxLight extends HTMLElement {
         this.#options.forEach(o => o.removeEventListener('click', this.#onOptionClick));
     }
 
-    #resolveIds(attr) {
-        return (this.getAttribute(attr) ?? '').split(/\s+/).filter(Boolean)
-            .map(id => document.getElementById(id)).filter(Boolean);
-    }
-
     #wireAria() {
         if (!this.#triggerEl) return;
-        const labelEls = this.#resolveIds('aria-labelledby');
-        const descEls  = this.#resolveIds('aria-describedby');
+        const labelEls = resolveIds(this.#labelledby);
+        const descEls  = resolveIds(this.#describedby);
 
         if (SUPPORTS_ELEMENT_REFS) {
             this.#triggerEl.ariaLabelledByElements  = labelEls;
@@ -97,12 +116,10 @@ class ComboboxLight extends HTMLElement {
         } else {
             const labelText = labelEls.map(el => el.textContent.trim()).join(' ');
             const descText  = descEls.map(el => el.textContent.trim()).join(' ');
-            labelText
-                ? this.#triggerEl.setAttribute('aria-label', labelText)
-                : this.#triggerEl.removeAttribute('aria-label');
-            descText
-                ? this.#triggerEl.setAttribute('aria-description', descText)
-                : this.#triggerEl.removeAttribute('aria-description');
+            labelText ? this.#triggerEl.setAttribute('aria-label', labelText)
+                      : this.#triggerEl.removeAttribute('aria-label');
+            descText  ? this.#triggerEl.setAttribute('aria-description', descText)
+                      : this.#triggerEl.removeAttribute('aria-description');
         }
         this.#updateDebug(labelEls, descEls);
     }
@@ -206,21 +223,21 @@ class ComboboxLight extends HTMLElement {
     };
 
     #updateDebug(labelEls, descEls) {
-        labelEls ??= this.#resolveIds('aria-labelledby');
-        descEls  ??= this.#resolveIds('aria-describedby');
+        labelEls ??= resolveIds(this.#labelledby);
+        descEls  ??= resolveIds(this.#describedby);
         const set = (sel, val) => { const el = this.shadowRoot.querySelector(sel); if (el) el.textContent = val; };
         const t = this.#triggerEl;
-        set('#db-host-labelledby', this.getAttribute('aria-labelledby') ?? '');
-        set('#db-label-text',      labelEls.map(e => e.textContent.trim()).join(', '));
-        set('#db-host-describedby',this.getAttribute('aria-describedby') ?? '');
-        set('#db-desc-text',       descEls.map(e => e.textContent.trim()).join(', '));
+        set('#db-labelledby',  this.#labelledby);
+        set('#db-label-text',  labelEls.map(e => e.textContent.trim()).join(', '));
+        set('#db-describedby', this.#describedby);
+        set('#db-desc-text',   descEls.map(e => e.textContent.trim()).join(', '));
         set('#db-controls', t?.getAttribute('aria-controls') ?? '');
         set('#db-expanded', t?.getAttribute('aria-expanded') ?? '');
         if (SUPPORTS_ACTIVE_DESCENDANT_ELEMENT) {
             const active = t?.ariaActiveDescendantElement;
             set('#db-active', active
-                ? `ariaActiveDescendantElement → ${active.tagName.toLowerCase()}${active.id ? '#' + active.id : ''} ("${active.textContent.trim()}")`
-                : 'ariaActiveDescendantElement → null');
+                ? `ariaActiveDescendantElement \u2192 ${active.tagName.toLowerCase()}${active.id ? '#' + active.id : ''} ("${active.textContent.trim()}")`
+                : 'ariaActiveDescendantElement \u2192 null');
         } else {
             set('#db-active', `aria-activedescendant="${t?.getAttribute('aria-activedescendant') ?? ''}" (fallback)`);
         }

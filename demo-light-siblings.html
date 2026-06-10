@@ -13,14 +13,13 @@
             <h1>Shadow role &#8212; light DOM label &amp; description siblings</h1>
             <p class="lead">
                 The ARIA role lives on an inner shadow DOM element. The label and description are
-                plain light DOM siblings &#8212; no slots, no shadow markup for them. Each custom
-                element reads its host's <code>aria-labelledby</code> and
-                <code>aria-describedby</code> attributes, resolves the referenced elements in the
-                document, and wires them to the inner role element using
+                plain light DOM siblings &#8212; no slots, no shadow markup for them. Each
+                component exposes <code>labelledby</code> and <code>describedby</code> properties
+                (also available as attributes) that accept element ID references. Setting them
+                resolves the referenced elements in the document and updates
                 <code>Element.ariaLabelledByElements</code> and
-                <code>Element.ariaDescribedByElements</code> (element reference API, works
-                cross-root). The combobox additionally uses
-                <code>Element.ariaActiveDescendantElement</code> for its active option.
+                <code>Element.ariaDescribedByElements</code> on the inner role element,
+                crossing the shadow boundary via the element reference API.
             </p>
 
             <div class="demo-grid">
@@ -29,8 +28,8 @@
                     <h2 id="tf-heading">Textfield</h2>
                     <label id="tf-label" class="field-label-standalone">Email address</label>
                     <textfield-light
-                        aria-labelledby="tf-label"
-                        aria-describedby="tf-desc"
+                        labelledby="tf-label"
+                        describedby="tf-desc"
                     ></textfield-light>
                     <p id="tf-desc" class="field-help-standalone">We'll never share your email.</p>
                 </section>
@@ -39,8 +38,8 @@
                     <h2 id="cb-heading">Checkbox</h2>
                     <span id="cb-label" class="field-label-standalone">Subscribe to newsletter</span>
                     <checkbox-light
-                        aria-labelledby="cb-label"
-                        aria-describedby="cb-desc"
+                        labelledby="cb-label"
+                        describedby="cb-desc"
                     ></checkbox-light>
                     <p id="cb-desc" class="field-help-standalone">You can unsubscribe at any time.</p>
                 </section>
@@ -49,8 +48,8 @@
                     <h2 id="pb-heading">Progress bar</h2>
                     <span id="pb-label" class="field-label-standalone">Upload progress</span>
                     <progressbar-light
-                        aria-labelledby="pb-label"
-                        aria-describedby="pb-desc"
+                        labelledby="pb-label"
+                        describedby="pb-desc"
                     ></progressbar-light>
                     <p id="pb-desc" class="field-help-standalone">Uploading your files to the server.</p>
                 </section>
@@ -59,8 +58,8 @@
                     <h2 id="cmb-heading">Combobox</h2>
                     <span id="cmb-label" class="field-label-standalone">Favorite fruit</span>
                     <combobox-light
-                        aria-labelledby="cmb-label"
-                        aria-describedby="cmb-desc"
+                        labelledby="cmb-label"
+                        describedby="cmb-desc"
                     >
                         <li role="option" aria-selected="false">Apple</li>
                         <li role="option" aria-selected="false">Banana</li>
