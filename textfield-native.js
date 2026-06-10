@@ -34,25 +34,22 @@ export class TextfieldNative extends HTMLElement {
     }
 
     connectedCallback() {
+        const useShadowLabels = !this.hasAttribute('label-target');
+
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="field-host" part="host">
-                ${shadowLabelHelpMarkup({
+                ${useShadowLabels ? shadowLabelHelpMarkup({
                     labelDefault: 'Email address',
                     helpDefault: 'Native input in shadow DOM. aria-labelledby is set on the input via element IDs.',
-                })}
+                }) : ''}
                 <input type="text" class="textfield-input-native" part="input" />
             </div>
         `;
 
         this.#inputEl = this.shadowRoot.querySelector('.textfield-input-native');
-        this.#labelEl = this.shadowRoot.querySelector('.field-label');
-        this.#helpEl = this.shadowRoot.querySelector('.field-help');
-
-        if (this.hasAttribute('label-target')) {
-            this.#labelEl.hidden = true;
-            this.#helpEl.hidden = true;
-        }
+        this.#labelEl = useShadowLabels ? this.shadowRoot.querySelector('.field-label') : null;
+        this.#helpEl = useShadowLabels ? this.shadowRoot.querySelector('.field-help') : null;
 
         const logKey = this.getAttribute('data-aria-log') ?? 'textfield-native';
         this.#refreshLog = createLogRefresher(logKey, (logEl) => {
