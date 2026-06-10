@@ -1,16 +1,19 @@
 import {
-    SUPPORTS_ELEMENT_REFS,
     createLogRefresher,
     shadowLabelHelpMarkup,
     watchRefTargets,
     watchSlottedFieldRefs,
     resolveSplitSurfaceFieldRefs,
 } from './form-field-base.js';
-import { ensureFallbackId, partitionByRoot, prepareRefTargets } from './aria-ref-utils.js';
+import { ensureFallbackId } from './aria-ref-utils.js';
 
 /**
  * Progress bar with role="progressbar" on an inner shadow DOM div.
- * ariaLabelledByElements / ariaDescribedByElements are set on that shadow div.
+ *
+ * aria-labelledby and aria-describedby are set as attributes on the shadow div,
+ * referencing element IDs. Same-root IDs (shadow label → shadow div) work reliably.
+ * Cross-root light DOM IDs also work in most browsers via the attribute.
+ *
  * aria-value* attributes are also set directly on the shadow div.
  */
 export class ProgressbarShadowRole extends HTMLElement {
@@ -41,7 +44,7 @@ export class ProgressbarShadowRole extends HTMLElement {
             <div class="field-host" part="host">
                 ${shadowLabelHelpMarkup({
                     labelDefault: 'Upload progress',
-                    helpDefault: 'role="progressbar" is on a shadow div. ariaLabelledByElements is set on that div.',
+                    helpDefault: 'role="progressbar" is on a shadow div. aria-labelledby is set on that div via element IDs.',
                 })}
                 <div
                     class="progressbar-surface"
@@ -98,32 +101,18 @@ export class ProgressbarShadowRole extends HTMLElement {
         this.#labelElements = labelElements.filter(Boolean);
         this.#descriptionElements = descriptionElements.filter(Boolean);
 
-        const { shadow: shadowLabels, light: lightLabels } = partitionByRoot(this.#labelElements);
-        const { shadow: shadowDescs, light: lightDescs } = partitionByRoot(this.#descriptionElements);
-
-        if (SUPPORTS_ELEMENT_REFS) {
-            this.#progressbarEl.ariaLabelledByElements = prepareRefTargets([...shadowLabels, ...lightLabels]);
-            this.#progressbarEl.ariaDescribedByElements = prepareRefTargets([...shadowDescs, ...lightDescs]);
-            this.#progressbarEl.removeAttribute('aria-labelledby');
-            this.#progressbarEl.removeAttribute('aria-describedby');
-            this.#progressbarEl.removeAttribute('aria-label');
+        if (this.#labelElements.length) {
+            this.#labelElements.forEach((el) => ensureFallbackId(el, 'label'));
+            this.#progressbarEl.setAttribute('aria-labelledby', this.#labelElements.map((el) => el.id).join(' '));
         } else {
-            const allLabels = [...shadowLabels, ...lightLabels];
-            const allDescs = [...shadowDescs, ...lightDescs];
+            this.#progressbarEl.removeAttribute('aria-labelledby');
+        }
 
-            if (allLabels.length) {
-                allLabels.forEach((el) => ensureFallbackId(el, 'label'));
-                this.#progressbarEl.setAttribute('aria-labelledby', allLabels.map((el) => el.id).join(' '));
-            } else {
-                this.#progressbarEl.removeAttribute('aria-labelledby');
-            }
-            if (allDescs.length) {
-                allDescs.forEach((el) => ensureFallbackId(el, 'desc'));
-                this.#progressbarEl.setAttribute('aria-describedby', allDescs.map((el) => el.id).join(' '));
-            } else {
-                this.#progressbarEl.removeAttribute('aria-describedby');
-            }
-            this.#progressbarEl.removeAttribute('aria-label');
+        if (this.#descriptionElements.length) {
+            this.#descriptionElements.forEach((el) => ensureFallbackId(el, 'desc'));
+            this.#progressbarEl.setAttribute('aria-describedby', this.#descriptionElements.map((el) => el.id).join(' '));
+        } else {
+            this.#progressbarEl.removeAttribute('aria-describedby');
         }
 
         this.#unwatchTargets = watchRefTargets(
@@ -170,21 +159,14 @@ export class ProgressbarShadowRole extends HTMLElement {
         const el = this.#progressbarEl;
         const lines = [
             '<div role="progressbar"> in shadow DOM',
-            'ariaLabelledByElements / ariaDescribedByElements set on the shadow div',
+            'aria-labelledby / aria-describedby set as attributes on the shadow div',
+            `progressbar[aria-labelledby]="${el.getAttribute('aria-labelledby') ?? ''}"`,
+            `progressbar[aria-describedby]="${el.getAttribute('aria-describedby') ?? ''}"`,
+            `aria-valuenow="${el.getAttribute('aria-valuenow') ?? ''}"`,
+            `aria-valuemin="${el.getAttribute('aria-valuemin') ?? ''}"`,
+            `aria-valuemax="${el.getAttribute('aria-valuemax') ?? ''}"`,
+            `aria-valuetext="${el.getAttribute('aria-valuetext') ?? ''}"`,
         ];
-
-        if (SUPPORTS_ELEMENT_REFS) {
-            lines.push(`progressbar.ariaLabelledByElements → ${fmtEls(el.ariaLabelledByElements)}`);
-            lines.push(`progressbar.ariaDescribedByElements → ${fmtEls(el.ariaDescribedByElements)}`);
-        } else {
-            lines.push(`progressbar[aria-labelledby]="${el.getAttribute('aria-labelledby') ?? ''}" (fallback)`);
-            lines.push(`progressbar[aria-describedby]="${el.getAttribute('aria-describedby') ?? ''}" (fallback)`);
-        }
-
-        lines.push(`aria-valuenow="${el.getAttribute('aria-valuenow') ?? ''}"`);
-        lines.push(`aria-valuemin="${el.getAttribute('aria-valuemin') ?? ''}"`);
-        lines.push(`aria-valuemax="${el.getAttribute('aria-valuemax') ?? ''}"`);
-        lines.push(`aria-valuetext="${el.getAttribute('aria-valuetext') ?? ''}"`);
 
         this.#labelElements.forEach((el, i) =>
             lines.push(`label[${i}]: ${fmtEl(el)} ("${el.textContent?.trim()}")`)
@@ -195,11 +177,6 @@ export class ProgressbarShadowRole extends HTMLElement {
 
         return lines.join('\n');
     }
-}
-
-function fmtEls(elements) {
-    if (!elements?.length) return '[]';
-    return `[${elements.map(fmtEl).join(', ')}]`;
 }
 
 function fmtEl(el) {
