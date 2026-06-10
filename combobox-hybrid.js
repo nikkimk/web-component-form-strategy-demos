@@ -1,47 +1,34 @@
-const SUPPORTS_ELEMENT_REFS = 'ariaLabelledByElements' in Element.prototype;
+import { LabellingController, LABELLING_DEBUG_HTML, applyLabellingDebug } from './labelling-controller.js';
 
-function resolveIds(ids) {
-    return (ids ?? '').split(/\s+/).filter(Boolean)
-        .map(id => document.getElementById(id)).filter(Boolean);
-}
 const SUPPORTS_ACTIVE_DESCENDANT_ELEMENT = 'ariaActiveDescendantElement' in Element.prototype;
 
 class ComboboxHybrid extends HTMLElement {
+    #labelling   = new LabellingController({ onUpdate: () => this.#updateDebug() });
     #triggerEl   = null;
     #listboxEl   = null;
-    #labelEl     = null;
-    #descEl      = null;
     #valueEl     = null;
     #options     = [];
     #open        = false;
     #activeIndex = -1;
-    #labelledby  = '';
-    #describedby = '';
 
-    constructor() {
-        super();
-        this.attachShadow({ mode: 'open', delegatesFocus: true });
-    }
+    constructor() { super(); this.attachShadow({ mode: 'open', delegatesFocus: true }); }
 
     static get observedAttributes() { return ['labelledby', 'describedby']; }
-
     attributeChangedCallback(name, _, val) {
         if (name === 'labelledby')  this.labelledby  = val ?? '';
         if (name === 'describedby') this.describedby = val ?? '';
     }
 
-    get labelledby()  { return this.#labelledby; }
-    get describedby() { return this.#describedby; }
-    set labelledby(val)  { this.#labelledby  = val ?? ''; this.#wireAria(); }
-    set describedby(val) { this.#describedby = val ?? ''; this.#wireAria(); }
+    get labelledby()  { return this.#labelling.labelledby; }
+    get describedby() { return this.#labelling.describedby; }
+    set labelledby(val)  { this.#labelling.labelledby  = val; }
+    set describedby(val) { this.#labelling.describedby = val; }
 
     connectedCallback() {
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="field-host">
-                <span id="label" class="field-label" hidden>
-                    <slot name="label"></slot>
-                </span>
+                <span id="label" class="field-label" hidden><slot name="label"></slot></span>
                 <div
                     id="role"
                     class="combobox-trigger"
@@ -58,21 +45,14 @@ class ComboboxHybrid extends HTMLElement {
                 <ul id="listbox" class="combobox-listbox" role="listbox" part="listbox" hidden>
                     <slot name="options"></slot>
                 </ul>
-                <span id="description" class="field-help" hidden>
-                    <slot name="description"></slot>
-                </span>
+                <span id="description" class="field-help" hidden><slot name="description"></slot></span>
                 <div class="debug" part="debug">
                     <p class="debug-heading">Debug</p>
                     <dl class="debug-list">
-                        <dt>Mode</dt><dd id="db-mode"></dd>
-                        <dt>labelledby prop</dt><dd id="db-labelledby"></dd>
-                        <dt>Label text</dt><dd id="db-label-text"></dd>
-                        <dt>describedby prop</dt><dd id="db-describedby"></dd>
-                        <dt>Description text</dt><dd id="db-desc-text"></dd>
+                        ${LABELLING_DEBUG_HTML}
                         <dt>aria-controls</dt><dd id="db-controls"></dd>
                         <dt>aria-expanded</dt><dd id="db-expanded"></dd>
                         <dt>Active descendant</dt><dd id="db-active"></dd>
-                        <dt>Association API</dt><dd id="db-api"></dd>
                     </dl>
                 </div>
             </div>
@@ -80,28 +60,21 @@ class ComboboxHybrid extends HTMLElement {
 
         this.#triggerEl = this.shadowRoot.querySelector('#role');
         this.#listboxEl = this.shadowRoot.querySelector('#listbox');
-        this.#labelEl   = this.shadowRoot.querySelector('#label');
-        this.#descEl    = this.shadowRoot.querySelector('#description');
         this.#valueEl   = this.shadowRoot.querySelector('.combobox-value');
 
         const optionSlot = this.shadowRoot.querySelector('slot[name="options"]');
         optionSlot?.addEventListener('slotchange', () => {
             this.#options.forEach(o => o.removeEventListener('click', this.#onOptionClick));
-            this.#options = optionSlot.assignedElements().filter(
-                el => el.getAttribute('role') === 'option'
-            );
+            this.#options = optionSlot.assignedElements().filter(el => el.getAttribute('role') === 'option');
             this.#options.forEach(o => o.addEventListener('click', this.#onOptionClick));
-            this.#updateDebug(this.#slotHasContent('label'), this.#slotHasContent('description'));
+            this.#updateDebug();
         });
-
-        this.shadowRoot.querySelectorAll('slot[name="label"], slot[name="description"]').forEach(s =>
-            s.addEventListener('slotchange', () => this.#wireAria())
-        );
 
         this.#triggerEl.addEventListener('keydown', this.#onKeyDown);
         this.#triggerEl.addEventListener('click',   this.#onTriggerClick);
         document.addEventListener('click', this.#onDocumentClick);
-        this.#wireAria();
+
+        this.#labelling.connect(this.shadowRoot);
     }
 
     disconnectedCallback() {
@@ -109,40 +82,6 @@ class ComboboxHybrid extends HTMLElement {
         this.#triggerEl?.removeEventListener('click',   this.#onTriggerClick);
         document.removeEventListener('click', this.#onDocumentClick);
         this.#options.forEach(o => o.removeEventListener('click', this.#onOptionClick));
-    }
-
-    #slotHasContent(name) {
-        const slot = this.shadowRoot.querySelector(`slot[name="${name}"]`);
-        return !!slot?.assignedNodes({ flatten: true }).some(n => n.textContent.trim());
-    }
-
-    #wireAria() {
-        if (!this.#triggerEl) return;
-        const hasLabel = this.#slotHasContent('label');
-        const hasDesc  = this.#slotHasContent('description');
-        this.#labelEl.hidden = !hasLabel;
-        this.#descEl.hidden  = !hasDesc;
-
-        if (SUPPORTS_ELEMENT_REFS) {
-            this.#triggerEl.ariaLabelledByElements  = hasLabel ? [this.#labelEl] : resolveIds(this.#labelledby);
-            this.#triggerEl.ariaDescribedByElements = hasDesc  ? [this.#descEl]  : resolveIds(this.#describedby);
-        } else {
-            if (hasLabel) {
-                this.#triggerEl.setAttribute('aria-labelledby', 'label');
-            } else {
-                const text = resolveIds(this.#labelledby).map(e => e.textContent.trim()).join(' ');
-                text ? this.#triggerEl.setAttribute('aria-label', text) : this.#triggerEl.removeAttribute('aria-label');
-                this.#triggerEl.removeAttribute('aria-labelledby');
-            }
-            if (hasDesc) {
-                this.#triggerEl.setAttribute('aria-describedby', 'description');
-            } else {
-                const text = resolveIds(this.#describedby).map(e => e.textContent.trim()).join(' ');
-                text ? this.#triggerEl.setAttribute('aria-description', text) : this.#triggerEl.removeAttribute('aria-description');
-                this.#triggerEl.removeAttribute('aria-describedby');
-            }
-        }
-        this.#updateDebug(hasLabel, hasDesc);
     }
 
     #setExpanded(open) {
@@ -168,7 +107,7 @@ class ComboboxHybrid extends HTMLElement {
             if (!active.id) active.id = `cbx-opt-${crypto.randomUUID()}`;
             this.#triggerEl.setAttribute('aria-activedescendant', active.id);
         }
-        this.#updateDebug(this.#slotHasContent('label'), this.#slotHasContent('description'));
+        this.#updateDebug();
     }
 
     #clearActive() {
@@ -178,7 +117,7 @@ class ComboboxHybrid extends HTMLElement {
         } else {
             this.#triggerEl.removeAttribute('aria-activedescendant');
         }
-        this.#updateDebug(this.#slotHasContent('label'), this.#slotHasContent('description'));
+        this.#updateDebug();
     }
 
     #selectOption(index) {
@@ -209,16 +148,10 @@ class ComboboxHybrid extends HTMLElement {
     #onOptionClick  = event => { event.stopPropagation(); const i = this.#options.indexOf(event.currentTarget); if (i >= 0) this.#selectOption(i); };
     #onDocumentClick = event => { if (this.#open && !event.composedPath().includes(this)) this.#setExpanded(false); };
 
-    #updateDebug(hasLabel, hasDesc) {
+    #updateDebug() {
+        applyLabellingDebug(this.shadowRoot, this.#labelling.debugInfo);
         const set = (sel, val) => { const el = this.shadowRoot.querySelector(sel); if (el) el.textContent = val; };
-        const labelEls = hasLabel ? [this.#labelEl] : resolveIds(this.#labelledby);
-        const descEls  = hasDesc  ? [this.#descEl]  : resolveIds(this.#describedby);
         const t = this.#triggerEl;
-        set('#db-mode',        hasLabel || hasDesc ? 'slotted' : 'light DOM siblings');
-        set('#db-labelledby',  this.#labelledby  || '(not set)');
-        set('#db-label-text',  labelEls.map(e => e.textContent.trim()).join(', '));
-        set('#db-describedby', this.#describedby || '(not set)');
-        set('#db-desc-text',   descEls.map(e => e.textContent.trim()).join(', '));
         set('#db-controls', t?.getAttribute('aria-controls') ?? '');
         set('#db-expanded', t?.getAttribute('aria-expanded') ?? '');
         if (SUPPORTS_ACTIVE_DESCENDANT_ELEMENT) {
@@ -229,9 +162,6 @@ class ComboboxHybrid extends HTMLElement {
         } else {
             set('#db-active', `aria-activedescendant="${t?.getAttribute('aria-activedescendant') ?? ''}" (fallback)`);
         }
-        set('#db-api', SUPPORTS_ELEMENT_REFS
-            ? (hasLabel || hasDesc ? 'ariaLabelledByElements \u2192 shadow span' : 'ariaLabelledByElements \u2192 light sibling')
-            : (hasLabel || hasDesc ? 'aria-labelledby (same-root)' : 'aria-label / aria-description (fallback)'));
     }
 }
 
