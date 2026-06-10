@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Shadow role &#8212; hybrid label and description</title>
+        <link rel="stylesheet" href="./page.css" />
+        <style>
+            .toggle-bar {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                margin-block: 1.5rem;
+                padding: 0.75rem 1rem;
+                background: #f0f4ff;
+                border: 1px solid #c7d7f5;
+                border-radius: 0.5rem;
+            }
+            @media (prefers-color-scheme: dark) {
+                .toggle-bar { background: #1a2035; border-color: #2d3f6b; }
+            }
+            .toggle-bar p { margin: 0; font-size: 0.9rem; }
+            .mode-badge {
+                font-weight: bold;
+                font-family: monospace;
+                color: #2680eb;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="page">
+            <p><a href="./index.html">&#8592; All demos</a></p>
+
+            <h1>Shadow role &#8212; hybrid label &amp; description</h1>
+            <p class="lead">
+                Each component has a shadow DOM label and description (with named slots). When
+                slot content is present the component uses <code>ariaLabelledByElements</code>
+                pointing at the shadow span. When slots are empty it falls back to
+                <code>ariaLabelledByElements</code> pointing at the light DOM sibling set via
+                the <code>labelledby</code> / <code>describedby</code> properties. Toggle the
+                button below to switch modes and watch the debug panels update.
+            </p>
+
+            <div class="toggle-bar">
+                <button id="toggle-btn" type="button">Switch to light DOM siblings</button>
+                <p>Current mode: <span class="mode-badge" id="mode-label">slotted</span></p>
+            </div>
+
+            <div class="demo-grid">
+
+                <section class="demo-card" aria-labelledby="tf-heading">
+                    <h2 id="tf-heading">Textfield</h2>
+                    <!-- sibling label/desc (hidden until sibling mode) -->
+                    <label id="tf-sib-label" class="field-label-standalone" hidden>Email address</label>
+                    <textfield-hybrid id="tf" labelledby="tf-sib-label" describedby="tf-sib-desc">
+                        <span slot="label">Email address</span>
+                        <span slot="description">We'll never share your email.</span>
+                    </textfield-hybrid>
+                    <p id="tf-sib-desc" class="field-help-standalone" hidden>We'll never share your email.</p>
+                </section>
+
+                <section class="demo-card" aria-labelledby="cb-heading">
+                    <h2 id="cb-heading">Checkbox</h2>
+                    <span id="cb-sib-label" class="field-label-standalone" hidden>Subscribe to newsletter</span>
+                    <checkbox-hybrid id="cb" labelledby="cb-sib-label" describedby="cb-sib-desc">
+                        <span slot="label">Subscribe to newsletter</span>
+                        <span slot="description">You can unsubscribe at any time.</span>
+                    </checkbox-hybrid>
+                    <p id="cb-sib-desc" class="field-help-standalone" hidden>You can unsubscribe at any time.</p>
+                </section>
+
+                <section class="demo-card" aria-labelledby="pb-heading">
+                    <h2 id="pb-heading">Progress bar</h2>
+                    <span id="pb-sib-label" class="field-label-standalone" hidden>Upload progress</span>
+                    <progressbar-hybrid id="pb" labelledby="pb-sib-label" describedby="pb-sib-desc">
+                        <span slot="label">Upload progress</span>
+                        <span slot="description">Uploading your files to the server.</span>
+                    </progressbar-hybrid>
+                    <p id="pb-sib-desc" class="field-help-standalone" hidden>Uploading your files to the server.</p>
+                </section>
+
+                <section class="demo-card" aria-labelledby="cmb-heading">
+                    <h2 id="cmb-heading">Combobox</h2>
+                    <span id="cmb-sib-label" class="field-label-standalone" hidden>Favorite fruit</span>
+                    <combobox-hybrid id="cmb" labelledby="cmb-sib-label" describedby="cmb-sib-desc">
+                        <span slot="label">Favorite fruit</span>
+                        <li slot="options" role="option" aria-selected="false">Apple</li>
+                        <li slot="options" role="option" aria-selected="false">Banana</li>
+                        <li slot="options" role="option" aria-selected="false">Cherry</li>
+                        <li slot="options" role="option" aria-selected="false">Date</li>
+                        <li slot="options" role="option" aria-selected="false">Elderberry</li>
+                        <span slot="description">Arrow keys navigate, Enter or Space selects.</span>
+                    </combobox-hybrid>
+                    <p id="cmb-sib-desc" class="field-help-standalone" hidden>Arrow keys navigate, Enter or Space selects.</p>
+                </section>
+
+            </div>
+        </main>
+
+        <script type="module">
+            import './textfield-hybrid.js';
+            import './checkbox-hybrid.js';
+            import './progressbar-hybrid.js';
+            import './combobox-hybrid.js';
+
+            const COMPONENTS = [
+                { id: 'tf',  slots: ['label', 'description'] },
+                { id: 'cb',  slots: ['label', 'description'] },
+                { id: 'pb',  slots: ['label', 'description'] },
+                { id: 'cmb', slots: ['label', 'description'] },
+            ];
+
+            let slotted = true;
+
+            document.getElementById('toggle-btn').addEventListener('click', () => {
+                slotted = !slotted;
+                document.getElementById('toggle-btn').textContent =
+                    slotted ? 'Switch to light DOM siblings' : 'Switch to slotted';
+                document.getElementById('mode-label').textContent =
+                    slotted ? 'slotted' : 'light DOM siblings';
+
+                for (const { id, slots } of COMPONENTS) {
+                    const el = document.getElementById(id);
+
+                    // Show/hide sibling elements
+                    const sibLabel = document.getElementById(`${id}-sib-label`);
+                    const sibDesc  = document.getElementById(`${id}-sib-desc`);
+                    if (sibLabel) sibLabel.hidden = slotted;
+                    if (sibDesc)  sibDesc.hidden  = slotted;
+
+                    // Add/remove slotted children
+                    if (slotted) {
+                        // Restore slotted content from data attributes on the component
+                        for (const slotName of slots) {
+                            const stored = el.dataset[slotName];
+                            if (stored) {
+                                const span = document.createElement('span');
+                                span.setAttribute('slot', slotName);
+                                span.textContent = stored;
+                                el.append(span);
+                            }
+                        }
+                    } else {
+                        // Save and remove slotted children
+                        for (const slotName of slots) {
+                            const child = el.querySelector(`[slot="${slotName}"]`);
+                            if (child) {
+                                el.dataset[slotName] = child.textContent.trim();
+                                child.remove();
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Seed dataset from initial slotted children so toggle can restore them
+            for (const { id, slots } of COMPONENTS) {
+                const el = document.getElementById(id);
+                for (const slotName of slots) {
+                    const child = el.querySelector(`[slot="${slotName}"]`);
+                    if (child) el.dataset[slotName] = child.textContent.trim();
+                }
+            }
+        </script>
+    </body>
+</html>
