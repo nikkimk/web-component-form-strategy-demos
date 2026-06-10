@@ -47,13 +47,15 @@ export class ComboboxShadowRole extends HTMLElement {
     }
 
     connectedCallback() {
+        const useShadowLabels = !this.hasAttribute('label-target');
+
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="combobox-host" part="host">
-                ${shadowLabelHelpMarkup({
+                ${useShadowLabels ? shadowLabelHelpMarkup({
                     labelDefault: 'Favorite fruit',
                     helpDefault: 'Arrow keys navigate; Enter or Space selects. role="combobox" is on the shadow trigger div.',
-                })}
+                }) : ''}
                 <div
                     class="combobox-trigger"
                     role="combobox"
@@ -73,14 +75,9 @@ export class ComboboxShadowRole extends HTMLElement {
 
         this.#triggerEl = this.shadowRoot.querySelector('.combobox-trigger');
         this.#listboxEl = this.shadowRoot.querySelector('.combobox-listbox');
-        this.#labelEl = this.shadowRoot.querySelector('.field-label');
-        this.#helpEl = this.shadowRoot.querySelector('.field-help');
+        this.#labelEl = useShadowLabels ? this.shadowRoot.querySelector('.field-label') : null;
+        this.#helpEl = useShadowLabels ? this.shadowRoot.querySelector('.field-help') : null;
         this.#valueEl = this.shadowRoot.querySelector('.combobox-value');
-
-        if (this.hasAttribute('label-target')) {
-            this.#labelEl.hidden = true;
-            this.#helpEl.hidden = true;
-        }
 
         // aria-controls points to the listbox — same shadow root, always works via attribute.
         ensureFallbackId(this.#listboxEl, 'listbox');
