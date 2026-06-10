@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Form-associated custom elements</title>
+        <link rel="stylesheet" href="./page.css" />
+        <style>
+            /* ── form layout ──────────────────────────────────────────────── */
+            .form-fields {
+                display: grid;
+                gap: 1.5rem;
+                margin-block-end: 1.5rem;
+            }
+
+            fieldset {
+                border: 1px solid #c7d7f5;
+                border-radius: 0.5rem;
+                padding: 1rem 1.25rem;
+                margin: 0;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                fieldset { border-color: #2d3f6b; }
+            }
+
+            legend {
+                font-weight: 600;
+                padding: 0 0.5rem;
+            }
+
+            .fieldset-fields {
+                display: grid;
+                gap: 1.25rem;
+            }
+
+            /* native field row */
+            .native-field {
+                display: grid;
+                gap: 0.25rem;
+                max-width: 24rem;
+            }
+
+            .native-field label { font-weight: 600; }
+
+            .native-field input[type="text"],
+            .native-field input[type="email"] {
+                display: block;
+                width: 100%;
+                min-height: 2.5rem;
+                padding: 0.5rem 0.75rem;
+                border: 1px solid #888;
+                border-radius: 0.375rem;
+                background: #fff;
+                font: inherit;
+                box-sizing: border-box;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .native-field input {
+                    background: #333;
+                    border-color: #666;
+                    color: #f2f2f2;
+                }
+            }
+
+            .native-field .field-help-standalone { font-size: 0.875rem; color: #666; margin: 0.25rem 0 0; }
+
+            /* button row */
+            .button-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                align-items: center;
+                margin-block-start: 0.5rem;
+            }
+
+            .button-row .divider {
+                width: 1px;
+                height: 1.5rem;
+                background: #ccc;
+                margin-inline: 0.25rem;
+            }
+
+            .button-row .label {
+                font-size: 0.8rem;
+                color: #666;
+            }
+
+            /* native buttons in the demo */
+            .button-row button {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.5rem 1.25rem;
+                border: none;
+                border-radius: 0.375rem;
+                font: inherit;
+                font-size: 0.95rem;
+                font-weight: 600;
+                cursor: pointer;
+                background: #2680eb;
+                color: #fff;
+            }
+
+            .button-row button[type="reset"] {
+                background: transparent;
+                color: #2680eb;
+                border: 1.5px solid #2680eb;
+            }
+
+            /* ── output section ───────────────────────────────────────────── */
+            .output-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin-block-start: 1rem;
+            }
+
+            @media (max-width: 600px) {
+                .output-grid { grid-template-columns: 1fr; }
+            }
+
+            .output-card {
+                padding: 0.75rem 1rem;
+                background: #f0f4ff;
+                border: 1px solid #c7d7f5;
+                border-radius: 0.5rem;
+                font-size: 0.875rem;
+                font-family: monospace;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .output-card { background: #1a2035; border-color: #2d3f6b; }
+            }
+
+            .output-card h3 {
+                margin: 0 0 0.5rem;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #5570a0;
+                font-family: monospace;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .output-card h3 { color: #7a9fd4; }
+            }
+
+            .output-list {
+                margin: 0;
+                display: grid;
+                grid-template-columns: auto 1fr;
+                gap: 0.2rem 1rem;
+            }
+
+            .output-list dt { color: #5570a0; white-space: nowrap; }
+            @media (prefers-color-scheme: dark) { .output-list dt { color: #7a9fd4; } }
+            .output-list dd { margin: 0; word-break: break-all; }
+
+            .output-empty { color: #888; font-style: italic; }
+
+            .event-log {
+                margin: 0;
+                padding: 0;
+                list-style: none;
+                max-height: 14rem;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 0.2rem;
+            }
+
+            .event-log-entry {
+                padding: 0.1rem 0;
+                border-bottom: 1px solid #e0e8ff;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .event-log-entry { border-color: #2d3f6b; }
+            }
+
+            .event-submit { color: #2a7c2a; font-weight: bold; }
+            .event-reset  { color: #a05000; font-weight: bold; }
+            .event-input  { color: #555; }
+
+            @media (prefers-color-scheme: dark) {
+                .event-submit { color: #6fcf6f; }
+                .event-reset  { color: #f0a060; }
+                .event-input  { color: #aaa; }
+            }
+
+            .badge {
+                display: inline-block;
+                background: #2680eb;
+                color: #fff;
+                border-radius: 999px;
+                padding: 0.1rem 0.5rem;
+                font-size: 0.7rem;
+                vertical-align: middle;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="page">
+            <p><a href="./index.html">&#8592; All demos</a></p>
+
+            <h1>Form-associated custom elements</h1>
+            <p class="lead">
+                <code>textfield-form</code> uses <code>ElementInternals</code> (via
+                <code>static formAssociated = true</code> and
+                <code>internals.setFormValue()</code>) to participate in form submission and
+                reset alongside native inputs. <code>button-form</code> calls
+                <code>internals.form.requestSubmit()</code> or
+                <code>internals.form.reset()</code> when activated. The output section below
+                shows <code>FormData</code> entries from both custom and native fields on
+                every submission.
+            </p>
+
+            <form id="demo-form" novalidate>
+                <div class="form-fields">
+
+                    <fieldset>
+                        <legend>Custom elements</legend>
+                        <div class="fieldset-fields">
+
+                            <div>
+                                <label id="custom-name-label" class="field-label-standalone"
+                                    >Full name</label
+                                >
+                                <textfield-form
+                                    name="custom_name"
+                                    labelledby="custom-name-label"
+                                    describedby="custom-name-desc"
+                                ></textfield-form>
+                                <p id="custom-name-desc" class="field-help-standalone">
+                                    Light DOM label via <code>labelledby</code> property
+                                </p>
+                            </div>
+
+                            <textfield-form name="custom_bio">
+                                <span slot="label">Bio</span>
+                                <span slot="description">Slotted label and description.</span>
+                            </textfield-form>
+
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Native inputs (for comparison)</legend>
+                        <div class="fieldset-fields">
+
+                            <div class="native-field">
+                                <label for="native-name">Full name</label>
+                                <input type="text" id="native-name" name="native_name" />
+                                <p class="field-help-standalone">Native <code>&lt;input&gt;</code></p>
+                            </div>
+
+                            <div class="native-field">
+                                <label for="native-bio">Bio</label>
+                                <input type="text" id="native-bio" name="native_bio" />
+                                <p class="field-help-standalone">Native <code>&lt;input&gt;</code></p>
+                            </div>
+
+                        </div>
+                    </fieldset>
+
+                </div>
+
+                <div class="button-row">
+                    <span class="label">Custom:</span>
+                    <button-form type="submit">Submit</button-form>
+                    <button-form type="reset">Reset</button-form>
+                    <span class="divider" aria-hidden="true"></span>
+                    <span class="label">Native:</span>
+                    <button type="submit">Submit</button>
+                    <button type="reset">Reset</button>
+                </div>
+            </form>
+
+            <section class="demo-section" aria-labelledby="output-heading">
+                <h2 id="output-heading">Output</h2>
+
+                <div class="output-grid">
+                    <div class="output-card">
+                        <h3>
+                            FormData on last submit
+                            <span class="badge" id="submit-badge" hidden></span>
+                        </h3>
+                        <p id="no-submit-msg" class="output-empty">
+                            No submission yet &#8212; fill the form and click Submit.
+                        </p>
+                        <dl id="submit-output" class="output-list" hidden></dl>
+                    </div>
+
+                    <div class="output-card">
+                        <h3>Event log</h3>
+                        <ul id="event-log" class="event-log">
+                            <li class="output-empty">Waiting for form events&#8230;</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <script type="module">
+            import './textfield-form.js';
+            import './button-form.js';
+
+            const form        = document.getElementById('demo-form');
+            const submitBadge = document.getElementById('submit-badge');
+            const noSubmitMsg = document.getElementById('no-submit-msg');
+            const submitOut   = document.getElementById('submit-output');
+            const eventLog    = document.getElementById('event-log');
+            let submitCount   = 0;
+
+            function log(text, cls) {
+                // Clear placeholder on first entry
+                const placeholder = eventLog.querySelector('.output-empty');
+                if (placeholder) placeholder.remove();
+
+                const li = document.createElement('li');
+                li.className = `event-log-entry ${cls}`;
+                li.textContent = `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} — ${text}`;
+                eventLog.prepend(li);
+                // Trim to 30 entries
+                [...eventLog.children].slice(30).forEach(el => el.remove());
+            }
+
+            form.addEventListener('submit', event => {
+                event.preventDefault();
+                submitCount++;
+
+                const data    = new FormData(event.target);
+                const entries = [...data.entries()];
+
+                submitBadge.textContent = `#${submitCount}`;
+                submitBadge.hidden = false;
+                noSubmitMsg.hidden = true;
+                submitOut.hidden   = false;
+                submitOut.innerHTML = entries.map(([k, v]) =>
+                    `<dt>${k}</dt><dd>${v === '' ? '<em>(empty)</em>' : v}</dd>`
+                ).join('');
+
+                log(
+                    `submit — ${entries.map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(', ')}`,
+                    'event-submit'
+                );
+            });
+
+            form.addEventListener('reset', () => {
+                submitBadge.hidden = true;
+                noSubmitMsg.hidden = false;
+                submitOut.hidden   = true;
+                submitOut.innerHTML = '';
+                log('reset — formResetCallback() fired on custom elements', 'event-reset');
+            });
+
+            form.addEventListener('input', event => {
+                const name = event.target.getAttribute('name') || event.target.id || '?';
+                log(`input on [name="${name}"] → ${JSON.stringify(event.target.value)}`, 'event-input');
+            });
+        </script>
+    </body>
+</html>

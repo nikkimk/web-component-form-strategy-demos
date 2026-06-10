@@ -361,3 +361,40 @@
 @media (prefers-color-scheme: dark) {
     .field-help-standalone { color: #aaa; }
 }
+
+/* ── Button component ───────────────────────────────────────────────────── */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    border: 1.5px solid transparent;
+    border-radius: 0.375rem;
+    background: #2680eb;
+    color: #fff;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.btn:hover:not(:disabled) { background: #1a6dcf; }
+.btn:focus-visible { outline: 2px solid #2680eb; outline-offset: 2px; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn[data-variant='secondary'] {
+    background: transparent;
+    color: #2680eb;
+    border-color: #2680eb;
+}
+
+.btn[data-variant='secondary']:hover:not(:disabled) {
+    background: #e8f0ff;
+}
+
+@media (prefers-color-scheme: dark) {
+    .btn[data-variant='secondary'] { color: #6baaff; border-color: #6baaff; }
+    .btn[data-variant='secondary']:hover:not(:disabled) { background: #1a2035; }
+}
