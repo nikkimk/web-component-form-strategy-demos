@@ -53,7 +53,11 @@ export class LabellingController {
         const hasLabel = this.#slotHasContent('label');
         const hasDesc  = this.#slotHasContent('description');
         const labelEls = hasLabel ? [this.#labelEl] : resolveIds(this.#labelledby);
-        const descEls  = hasDesc  ? [this.#descEl]  : resolveIds(this.#describedby);
+        // Description combines shadow span + light siblings when both are present
+        const descEls  = [
+            ...(hasDesc ? [this.#descEl] : []),
+            ...resolveIds(this.#describedby),
+        ];
         return {
             mode:        hasLabel || hasDesc ? 'slotted' : 'light DOM siblings',
             labelledby:  this.#labelledby  || '(not set)',
@@ -61,10 +65,10 @@ export class LabellingController {
             describedby: this.#describedby || '(not set)',
             descText:    descEls.map(e => e.textContent.trim()).join(', '),
             api: SUPPORTS_ELEMENT_REFS
-                ? (hasLabel || hasDesc
-                    ? 'ariaLabelledByElements \u2192 shadow span'
-                    : 'ariaLabelledByElements \u2192 light sibling')
-                : (hasLabel || hasDesc
+                ? (hasLabel
+                    ? 'ariaLabelledByElements → shadow span'
+                    : 'ariaLabelledByElements → light sibling')
+                : (hasLabel
                     ? 'aria-labelledby (same-root)'
                     : 'aria-label / aria-description (fallback)'),
         };
@@ -84,8 +88,15 @@ export class LabellingController {
         this.#descEl.hidden  = !hasDesc;
 
         if (SUPPORTS_ELEMENT_REFS) {
-            this.#roleEl.ariaLabelledByElements  = hasLabel ? [this.#labelEl] : resolveIds(this.#labelledby);
-            this.#roleEl.ariaDescribedByElements = hasDesc  ? [this.#descEl]  : resolveIds(this.#describedby);
+            this.#roleEl.ariaLabelledByElements = hasLabel
+                ? [this.#labelEl]
+                : resolveIds(this.#labelledby);
+
+            // Always combine shadow desc span + any light DOM siblings
+            this.#roleEl.ariaDescribedByElements = [
+                ...(hasDesc ? [this.#descEl] : []),
+                ...resolveIds(this.#describedby),
+            ];
         } else {
             if (hasLabel) {
                 this.#roleEl.setAttribute('aria-labelledby', 'label');
@@ -96,7 +107,12 @@ export class LabellingController {
                 this.#roleEl.removeAttribute('aria-labelledby');
             }
             if (hasDesc) {
+                // Same-root aria-describedby covers the shadow span.
+                // Append light sibling text via aria-description as best-effort fallback.
                 this.#roleEl.setAttribute('aria-describedby', 'description');
+                const sibText = resolveIds(this.#describedby).map(e => e.textContent.trim()).join(' ');
+                sibText ? this.#roleEl.setAttribute('aria-description', sibText)
+                        : this.#roleEl.removeAttribute('aria-description');
             } else {
                 const text = resolveIds(this.#describedby).map(e => e.textContent.trim()).join(' ');
                 text ? this.#roleEl.setAttribute('aria-description', text)
