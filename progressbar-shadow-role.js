@@ -105,27 +105,25 @@ export class ProgressbarShadowRole extends HTMLElement {
             this.#progressbarEl.ariaLabelledByElements = prepareRefTargets([...shadowLabels, ...lightLabels]);
             this.#progressbarEl.ariaDescribedByElements = prepareRefTargets([...shadowDescs, ...lightDescs]);
             this.#progressbarEl.removeAttribute('aria-labelledby');
+            this.#progressbarEl.removeAttribute('aria-describedby');
             this.#progressbarEl.removeAttribute('aria-label');
         } else {
-            if (lightLabels.length) {
-                lightLabels.forEach((el) => ensureFallbackId(el, 'label'));
-                this.#progressbarEl.setAttribute(
-                    'aria-labelledby',
-                    lightLabels.map((el) => el.id).join(' ')
-                );
-            } else if (shadowLabels.length) {
-                this.#progressbarEl.setAttribute(
-                    'aria-label',
-                    shadowLabels.map((el) => el.textContent?.trim()).join(' ')
-                );
+            const allLabels = [...shadowLabels, ...lightLabels];
+            const allDescs = [...shadowDescs, ...lightDescs];
+
+            if (allLabels.length) {
+                allLabels.forEach((el) => ensureFallbackId(el, 'label'));
+                this.#progressbarEl.setAttribute('aria-labelledby', allLabels.map((el) => el.id).join(' '));
+            } else {
+                this.#progressbarEl.removeAttribute('aria-labelledby');
             }
-            if (lightDescs.length) {
-                lightDescs.forEach((el) => ensureFallbackId(el, 'desc'));
-                this.#progressbarEl.setAttribute(
-                    'aria-describedby',
-                    lightDescs.map((el) => el.id).join(' ')
-                );
+            if (allDescs.length) {
+                allDescs.forEach((el) => ensureFallbackId(el, 'desc'));
+                this.#progressbarEl.setAttribute('aria-describedby', allDescs.map((el) => el.id).join(' '));
+            } else {
+                this.#progressbarEl.removeAttribute('aria-describedby');
             }
+            this.#progressbarEl.removeAttribute('aria-label');
         }
 
         this.#unwatchTargets = watchRefTargets(
@@ -180,7 +178,7 @@ export class ProgressbarShadowRole extends HTMLElement {
             lines.push(`progressbar.ariaDescribedByElements → ${fmtEls(el.ariaDescribedByElements)}`);
         } else {
             lines.push(`progressbar[aria-labelledby]="${el.getAttribute('aria-labelledby') ?? ''}" (fallback)`);
-            lines.push(`progressbar[aria-label]="${el.getAttribute('aria-label') ?? ''}" (fallback)`);
+            lines.push(`progressbar[aria-describedby]="${el.getAttribute('aria-describedby') ?? ''}" (fallback)`);
         }
 
         lines.push(`aria-valuenow="${el.getAttribute('aria-valuenow') ?? ''}"`);
