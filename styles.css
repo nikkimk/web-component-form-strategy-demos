@@ -277,3 +277,70 @@
         color: #ccc;
     }
 }
+
+/* ── Debug panel ────────────────────────────────────────────────────────── */
+.debug {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #f0f4ff;
+    border: 1px solid #c7d7f5;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    font-family: monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+    .debug {
+        background: #1a2035;
+        border-color: #2d3f6b;
+    }
+}
+
+.debug-heading {
+    margin: 0 0 0.5rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #5570a0;
+}
+
+@media (prefers-color-scheme: dark) {
+    .debug-heading { color: #7a9fd4; }
+}
+
+.debug-list {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.2rem 1rem;
+    align-items: baseline;
+}
+
+.debug-list dt {
+    color: #5570a0;
+    white-space: nowrap;
+}
+
+@media (prefers-color-scheme: dark) {
+    .debug-list dt { color: #7a9fd4; }
+}
+
+.debug-list dd {
+    margin: 0;
+    word-break: break-all;
+}
+
+/* ── Combobox active option ─────────────────────────────────────────────── */
+.combobox-listbox ::slotted([role='option'].is-active) {
+    background: #dbeafe;
+    outline: 2px solid #2680eb;
+    outline-offset: -2px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .combobox-listbox ::slotted([role='option'].is-active) {
+        background: #1e3a6e;
+        outline-color: #4d8fd9;
+    }
+}

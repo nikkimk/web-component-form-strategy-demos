@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Shadow role — shadow DOM label and description</title>
+        <link rel="stylesheet" href="./page.css" />
+    </head>
+    <body>
+        <main class="page">
+            <p><a href="./index.html">&#8592; All demos</a></p>
+
+            <h1>Shadow role &#8212; shadow DOM label &amp; description</h1>
+            <p class="lead">
+                The ARIA role lives on an inner shadow DOM element, not the custom element host.
+                Each component contains a <code>&lt;span id="label"&gt;</code> and
+                <code>&lt;span id="description"&gt;</code> in its shadow DOM, with named slots
+                (<code>slot="label"</code> and <code>slot="description"</code>) so consumers can
+                provide custom text. The role element is wired with
+                <code>aria-labelledby="label"</code> and <code>aria-describedby="description"</code>
+                — same shadow root, so ID references work reliably.
+            </p>
+            <p>
+                The combobox uses
+                <code>Element.ariaActiveDescendantElement</code> to associate the active option
+                (a slotted light DOM element) with the shadow combobox trigger, crossing the
+                shadow boundary via the element reference API.
+            </p>
+
+            <div class="demo-grid">
+
+                <section class="demo-card" aria-labelledby="tf-heading">
+                    <h2 id="tf-heading">Textfield</h2>
+                    <textfield-shadow>
+                        <span slot="label">Email address</span>
+                        <span slot="description">We'll never share your email.</span>
+                    </textfield-shadow>
+                </section>
+
+                <section class="demo-card" aria-labelledby="cb-heading">
+                    <h2 id="cb-heading">Checkbox</h2>
+                    <checkbox-shadow>
+                        <span slot="label">Subscribe to newsletter</span>
+                        <span slot="description">You can unsubscribe at any time.</span>
+                    </checkbox-shadow>
+                </section>
+
+                <section class="demo-card" aria-labelledby="pb-heading">
+                    <h2 id="pb-heading">Progress bar</h2>
+                    <progressbar-shadow>
+                        <span slot="label">Upload progress</span>
+                        <span slot="description">Uploading your files to the server.</span>
+                    </progressbar-shadow>
+                </section>
+
+                <section class="demo-card" aria-labelledby="cmb-heading">
+                    <h2 id="cmb-heading">Combobox</h2>
+                    <combobox-shadow>
+                        <span slot="label">Favorite fruit</span>
+                        <span slot="description">Arrow keys navigate, Enter or Space selects.</span>
+                        <li role="option" aria-selected="false">Apple</li>
+                        <li role="option" aria-selected="false">Banana</li>
+                        <li role="option" aria-selected="false">Cherry</li>
+                        <li role="option" aria-selected="false">Date</li>
+                        <li role="option" aria-selected="false">Elderberry</li>
+                    </combobox-shadow>
+                </section>
+
+            </div>
+        </main>
+
+        <script type="module">
+            import './textfield-shadow.js';
+            import './checkbox-shadow.js';
+            import './progressbar-shadow.js';
+            import './combobox-shadow.js';
+        </script>
+    </body>
+</html>
