@@ -38,14 +38,15 @@ export class ProgressbarShadowRole extends HTMLElement {
 
     connectedCallback() {
         this.#max = Number(this.getAttribute('max') ?? 100);
+        const useShadowLabels = !this.hasAttribute('label-target');
 
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./styles.css" />
             <div class="field-host" part="host">
-                ${shadowLabelHelpMarkup({
+                ${useShadowLabels ? shadowLabelHelpMarkup({
                     labelDefault: 'Upload progress',
                     helpDefault: 'role="progressbar" is on a shadow div. aria-labelledby is set on that div via element IDs.',
-                })}
+                }) : ''}
                 <div
                     class="progressbar-surface"
                     role="progressbar"
@@ -60,15 +61,10 @@ export class ProgressbarShadowRole extends HTMLElement {
         `;
 
         this.#progressbarEl = this.shadowRoot.querySelector('[role="progressbar"]');
-        this.#labelEl = this.shadowRoot.querySelector('.field-label');
-        this.#helpEl = this.shadowRoot.querySelector('.field-help');
+        this.#labelEl = useShadowLabels ? this.shadowRoot.querySelector('.field-label') : null;
+        this.#helpEl = useShadowLabels ? this.shadowRoot.querySelector('.field-help') : null;
         this.#fillEl = this.shadowRoot.querySelector('.progressbar-fill');
         this.#valueEl = this.shadowRoot.querySelector('.progressbar-value');
-
-        if (this.hasAttribute('label-target')) {
-            this.#labelEl.hidden = true;
-            this.#helpEl.hidden = true;
-        }
 
         const logKey = this.getAttribute('data-aria-log') ?? 'progressbar-shadow-role';
         this.#refreshLog = createLogRefresher(logKey, (logEl) => {
