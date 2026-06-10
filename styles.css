@@ -3,6 +3,10 @@
     outline: none;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 .combobox-field {
     display: grid;
     gap: 0.25rem;
@@ -65,10 +69,6 @@
         background: #333;
         border-color: #666;
     }
-}
-
-.combobox-listbox[hidden] {
-    display: none;
 }
 
 .combobox-listbox ::slotted([role='option']) {
