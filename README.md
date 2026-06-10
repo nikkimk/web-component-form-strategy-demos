@@ -1,242 +1,346 @@
 # Form fields strategy demos
 
-Live examples that help the team decide **where ARIA roles go** and **how labels and help text connect** across Shadow DOM and Light DOM.
+Live examples and a reference implementation for building accessible form field web components where the **ARIA role lives inside the shadow DOM**.
 
 **[Open in StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos)** · **[All demos](./index.html)**
 
-> **Not in this repo:** form submit values (Q1) and axe test rules (Q4). See [SWC-48](https://jira.corp.adobe.com/browse/SWC-48) for full context.
-
 ---
 
-## TL;DR — two answers
+## Recommendation: put the role in the shadow DOM
 
-| Question | Short answer |
-| -------- | ------------ |
-| **Q2 — Where do roles live?** | Use the **host**. |
-| **Q3 — How do labels and help connect?** | Use **two wiring spots**. Light DOM targets → **host**. Shadow DOM targets → **`ElementInternals`**. |
+Place the ARIA role on an **inner shadow DOM element** — not on the custom element host.
 
----
+- For **textfield** and **checkbox**, use a native `<input>`. The browser supplies the role, focus behavior, and keyboard semantics automatically.
+- For **progressbar**, **combobox**, and other non-native roles, use a `<div role="...">` inside the shadow root.
 
-## Start here — which demo do I need?
+This approach keeps ARIA semantics co-located with the element that actually manages them, avoids the limitations of `ElementInternals` for cross-root labelling, and lets the browser's accessibility tree see a real native element or a correctly-roled shadow element.
 
-Each demo page shows a **textfield**, **checkbox**, **progress bar**, and **combobox** using the same label wiring pattern. Role is always on the **host**.
+```html
+<!-- textfield -->
+<input id="role" type="text" aria-labelledby="label" aria-describedby="description" />
 
-| Label / help scenario | Demo page |
-| --------------------- | --------- |
-| Light DOM — label and help on the page | [All four controls — light label](./demo-light-label.html) |
-| Shadow DOM — label and help inside the component | [All four controls — shadow label](./demo-shadow-label.html) |
-| Slotted — label and help passed in by the app author | [All four controls — slotted label](./demo-slotted-label.html) |
-
-### Demo matrix
-
-| Control | [Light](./demo-light-label.html) | [Shadow](./demo-shadow-label.html) | [Slotted](./demo-slotted-label.html) |
-| ------- | -------------------------------- | ---------------------------------- | ------------------------------------ |
-| Textfield | ✓ | ✓ | ✓ |
-| Checkbox | ✓ | ✓ | ✓ |
-| Progress bar | ✓ | ✓ | ✓ |
-| Combobox | ✓ | ✓ | ✓ |
-
----
-
-## The big idea (plain language)
-
-Web components split markup into two trees:
-
-- **Light DOM** — nodes on the page (outside the component's shadow root).
-- **Shadow DOM** — nodes hidden inside the component.
-
-Screen readers need to know which label and help text belong to which control. **You cannot wire everything from one place.** Where the label lives decides where you wire it.
-
-### Two wiring spots
-
-| Label or help lives in… | Wire it on… |
-| ----------------------- | ----------- |
-| Light DOM (page, or slotted) | **Host** |
-| Shadow DOM (inside component) | **`ElementInternals`** |
-| Shadow listbox / popup | **`ElementInternals`** only |
-| List options (for combobox) | Light DOM + `aria-activedescendant` on host |
-
-### What works vs what does not
-
-| ✅ Works | ❌ Does not work |
-| -------- | ---------------- |
-| Host → Light DOM label | Light DOM → Shadow label |
-| Host → slotted label (light tree) | Host → Shadow label |
-| `internals` → Shadow label / listbox | `host.ariaControlsElements` → shadow listbox (Chrome ignores it) |
-
----
-
-## Seven rules (memorize these)
-
-1. **Match the tree.** Light targets use the host. Shadow targets use `ElementInternals`.
-2. **Call `attachInternals()`** in the constructor when wiring shadow-internal links.
-3. **Combobox listbox** lives in shadow; **options** live in light DOM and slot in.
-4. **Copy shadow label text** to `internals.ariaLabel` and `internals.ariaDescription` — not just element refs.
-5. **Give nodes IDs** before setting element refs.
-6. **Re-wire when content changes** — use `slotchange` or `MutationObserver`.
-7. **Put the role on the host** via `ElementInternals` (`internals.role`, state like `ariaChecked` / `ariaValueNow`).
-
----
-
-## All demos
-
-Each page has a **Resolved ARIA references** panel per control. Open [index.html](./index.html) for links.
-
-| Demo page | Controls shown | Key takeaway |
-| --------- | -------------- | ------------ |
-| [Light label](./demo-light-label.html) | Textfield, checkbox, progress bar, combobox | Page label/help → `host.ariaLabelledByElements` / `ariaDescribedByElements` |
-| [Shadow label](./demo-shadow-label.html) | Same four | Shadow label/help containers with slotted text → `internals` refs + mirrored strings |
-| [Slotted label](./demo-slotted-label.html) | Same four | Slotted nodes stay in light tree → host refs; re-sync on `slotchange` |
-
-**Combobox extras (all pages)**
-
-- Focus stays on the **host** (one tab stop).
-- Listbox link: `internals.ariaControlsElements = [listbox]` — never on the host.
-- Active option: `aria-activedescendant="option-id"` on the host.
-
----
-
-## Reusable controllers
-
-Demos share two controllers. Each handles connect/disconnect, ID assignment, ref wiring, and re-sync when label/help changes.
-
-**Full implementation guides:** [`docs/controllers/`](./docs/controllers/README.md)
-
-| Controller | Guide | Use when |
-| ---------- | ----- | -------- |
-| **`SplitSurfaceAriaController`** | [doc](./docs/controllers/split-surface-aria-controller.md) | Label/help split across host + `ElementInternals` (combobox, host-role fields) |
-| **`SlottedFieldAriaController`** | [doc](./docs/controllers/slotted-field-aria-controller.md) | Label/help slotted from the app author (textfield, checkbox, progress bar, combobox) |
-
-Shared utilities: [`aria-ref-utils.js`](./aria-ref-utils.js) · [`field-ref-watchers.js`](./field-ref-watchers.js)
-
-### Example — combobox (split surface + listbox)
-
-```javascript
-import { SplitSurfaceAriaController } from './split-surface-aria-controller.js';
-
-this.#ariaController = new SplitSurfaceAriaController({
-  host: this,
-  internals: this.#internals,
-  role: 'combobox',
-  controls: [this.#listbox],
-  labelElements: [shadowLabelEl],
-  descriptionElements: [shadowHelpEl],
-  onSync: () => this.#refreshLog(),
-});
-this.#ariaController.connect();
-// disconnectedCallback: this.#ariaController.disconnect();
+<!-- combobox -->
+<div id="role" role="combobox" aria-labelledby="label" aria-describedby="description"
+     aria-controls="listbox" aria-expanded="false" tabindex="0"></div>
 ```
 
-### Example — slotted label
+Use `delegatesFocus: true` when attaching the shadow root so a single tab stop on the host delegates focus to the inner role element automatically:
 
-```javascript
-import { SlottedFieldAriaController } from './slotted-field-aria-controller.js';
-
-this.#ariaController = new SlottedFieldAriaController({
-  host: this,
-  internals: this.#internals,
-  role: 'textbox',
-  labelSlot: 'label',
-  helpSlot: 'help-text',
-  onRefsChange: ({ labelElements, descriptionElements }) => { /* update log */ },
-});
-this.#ariaController.connect();
+```js
+this.attachShadow({ mode: 'open', delegatesFocus: true });
 ```
 
-Legacy function wrappers (`syncHostFieldAriaRefs`, `establishSlottedFieldAriaSync`, etc.) still exist but are deprecated — prefer the controllers above.
+---
+
+## Labelling strategy
+
+Two sources of label and description text are supported and can be combined.
+
+### 1. Shadow DOM slots (optional)
+
+Each component exposes two **named slots** that let consumers project label and description text into the shadow DOM:
+
+| Slot | Purpose |
+|------|---------|
+| `slot="label"` | Text rendered inside the shadow label span |
+| `slot="description"` | Text rendered inside the shadow description span |
+
+The shadow DOM structure wrapping these slots:
+
+```html
+<span id="label" class="field-label" hidden>
+    <slot name="label"></slot>
+</span>
+
+<input id="role" type="text" />
+
+<span id="description" class="field-help" hidden>
+    <slot name="description"></slot>
+</span>
+```
+
+The spans start `hidden`. The `LabellingController` shows them only when slot content is present, and wires the role element to them using `aria-labelledby="label"` / `aria-describedby="description"` — same-root ID references, which work reliably within a single shadow root.
+
+**Consumer usage:**
+
+```html
+<my-textfield>
+    <span slot="label">Email address</span>
+    <span slot="description">We'll never share your email.</span>
+</my-textfield>
+```
+
+### 2. Light DOM siblings via `labelledby` / `describedby` properties
+
+For cases where the label and description live as **plain siblings** on the page, each component exposes two JS properties (also reflected as HTML attributes):
+
+| Property / attribute | Accepts | Effect |
+|----------------------|---------|--------|
+| `labelledby` | Space-separated element IDs | Resolves those IDs in the document and sets `ariaLabelledByElements` on the inner role element |
+| `describedby` | Space-separated element IDs | Same, sets `ariaDescribedByElements` |
+
+These properties use the [element reference API](https://developer.mozilla.org/en-US/docs/Web/API/Element/ariaLabelledByElements) (`ariaLabelledByElements` / `ariaDescribedByElements`), which works **cross-root** — a shadow element can reference a light DOM element as its label source.
+
+**Consumer usage:**
+
+```html
+<label id="email-label">Email address</label>
+<my-textfield
+    labelledby="email-label"
+    describedby="email-desc"
+></my-textfield>
+<p id="email-desc">We'll never share your email.</p>
+```
+
+Or set the properties directly in JavaScript:
+
+```js
+const field = document.querySelector('my-textfield');
+field.labelledby  = 'email-label';
+field.describedby = 'email-desc';
+```
+
+### Combining both sources for description
+
+When `describedby` is set **and** slotted description content is present, the controller includes **both** in `ariaDescribedByElements` — the shadow description span comes first, followed by any resolved light DOM elements. This allows a component to provide a built-in contextual description while still accepting supplementary help text from the page.
 
 ---
 
-## Where to put the role (Q2)
+## The `LabellingController`
 
-| Control | Where role lives | Where focus goes | Demo |
-| ------- | ---------------- | ---------------- | ---- |
-| Textfield | Host (`ElementInternals`) | Host | [Shadow label demo](./demo-shadow-label.html) |
-| Checkbox | Host (`ElementInternals`) | Host | [Shadow label demo](./demo-shadow-label.html) |
-| Progress bar | Host (`ElementInternals`) | Usually not focusable | [Shadow label demo](./demo-shadow-label.html) |
-| Combobox / picker | Host (`ElementInternals`) | Host | [Shadow label demo](./demo-shadow-label.html) |
+[`labelling-controller.js`](./labelling-controller.js) is a plain JavaScript controller (no framework required) that encapsulates all labelling logic so it does not have to be duplicated across components.
 
----
+### What it does
 
-## How to wire label and help (Q3)
+- **Watches `slot[name="label"]` and `slot[name="description"]`** via `slotchange` and re-wires ARIA whenever content is added or removed.
+- **Shows or hides the shadow label/description spans** depending on whether their slot has content.
+- **Sets `ariaLabelledByElements`** on the inner role element, pointing at the shadow label span when slotted, or at resolved light DOM elements when not.
+- **Sets `ariaDescribedByElements`** combining both shadow and light DOM sources when both are present.
+- **Falls back gracefully** when `ariaLabelledByElements` is not supported: same-root `aria-labelledby` attribute is used for slotted content; `aria-label` / `aria-description` text-mirroring is used for light DOM siblings.
+- **Calls `onUpdate()`** after every re-wire so the host component can refresh its debug panel or any other derived state.
 
-**Rule of thumb:** where the node lives decides where you wire it — not where the role lives. Q2 always places the role on the **host** via `ElementInternals`.
+### Exports
 
-### Label and description by scenario
-
-| Label / help scenario | Label | Description (help text) | Role (Q2 — same for all) | Re-sync when | Controller |
-| --------------------- | ----- | ----------------------- | ------------------------ | ------------ | ---------- |
-| **Light DOM** — label and help on the page, outside the component | `host.ariaLabelledByElements = [labelEl]` | `host.ariaDescribedByElements = [helpEl]` | `internals.role = 'textbox'` (etc.) | Page nodes added/removed or text changes | [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) |
-| **Shadow DOM** — label and help containers inside the component; text slotted into inner `<slot name="label">` / `<slot name="help-text">` | `internals.ariaLabelledByElements = [shadowLabelEl]` | `internals.ariaDescribedByElements = [shadowHelpEl]` | Same | Slotted text or container content changes | [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) |
-| **Slotted** — whole label and help nodes passed in by the app author (`slot="label"`, `slot="help-text"`) | `host.ariaLabelledByElements = […assigned slot nodes]` | `host.ariaDescribedByElements = […assigned slot nodes]` | Same | `slotchange`, slotted node text changes | [`SlottedFieldAriaController`](./docs/controllers/slotted-field-aria-controller.md) |
-
-### Required extras by scenario
-
-| Scenario | Also do this | Do not do this |
-| -------- | ------------ | -------------- |
-| Light DOM | Give label/help stable **IDs** before setting element refs. Resolve page nodes via `getElementById`, attributes, or `resolveRefs`. | `host.ariaLabelledByElements` → shadow label nodes |
-| Shadow DOM | **Mirror text** from the shadow label/help containers to `internals.ariaLabel` / `ariaDescription`. Use `<span class="field-label"><slot name="label">…</slot></span>` — not `<label>`. Wire refs to the **container**, not the slotted text nodes. | `host.ariaLabelledByElements` → shadow nodes |
-| Slotted | Collect **whole** assigned label/help nodes from named slots; they stay in the light tree. | Assume slotted nodes are shadow-internal |
-
-### Combobox / picker add-on (any label scenario)
-
-When the popup/listbox lives in shadow, add this regardless of where label/help live:
-
-| Link | Property |
-| ---- | -------- |
-| Host → shadow listbox | `internals.ariaControlsElements = [listboxEl]` |
-| Host → active option | `host.setAttribute('aria-activedescendant', optionId)` |
-| Host popup hint | `host.setAttribute('aria-haspopup', 'listbox')` |
-
-Never set `host.ariaControlsElements` to a shadow listbox — Chromium ignores it.
-
-### Demos that match each scenario
-
-| Scenario | Demo |
-| -------- | ---- |
-| Light DOM | [All four controls — light label](./demo-light-label.html) |
-| Shadow DOM | [All four controls — shadow label](./demo-shadow-label.html) |
-| Slotted | [All four controls — slotted label](./demo-slotted-label.html) |
-
-**One-line summary:** Q2 is always the host; Q3 splits on **tree location** — light targets wire on `host`, shadow targets wire on `internals` (with text mirroring), and slotted content counts as light.
-
-**Controllers:** [guides](./docs/controllers/README.md) · [`SplitSurfaceAriaController`](./docs/controllers/split-surface-aria-controller.md) · [`SlottedFieldAriaController`](./docs/controllers/slotted-field-aria-controller.md)
+| Export | Purpose |
+|--------|---------|
+| `LabellingController` | The controller class |
+| `LABELLING_DEBUG_HTML` | A `<dt>`/`<dd>` HTML snippet to paste into a shadow debug panel |
+| `applyLabellingDebug(shadowRoot, info)` | Writes `controller.debugInfo` into those debug rows |
 
 ---
 
-## Label inside shadow? Pick one approach
+## Implementing a new component
 
-Shadow labels **cannot** link from the host. Choose:
+### 1. Shadow DOM structure
 
-| Approach | Best when |
-| -------- | --------- |
-| **`ElementInternals` + inner slots** | Component owns the label in shadow, and app author supplied label text (as prop or in light DOM) |
-| **Slots (whole nodes)** | App author supplies full label/help markup projected into the component |
-| **Page-level label** | Label sits next to the field on the page |
+The controller finds elements by the IDs `#role`, `#label`, and `#description`. Use exactly these IDs in the shadow template:
+
+```html
+<span id="label" class="field-label" hidden>
+    <slot name="label"></slot>
+</span>
+
+<!-- role element — native input or div with explicit role -->
+<input id="role" type="text" class="textfield-input" />
+
+<span id="description" class="field-help" hidden>
+    <slot name="description"></slot>
+</span>
+```
+
+> For combobox, also add the listbox in the shadow DOM and give the options their own slot:
+> ```html
+> <ul id="listbox" role="listbox" hidden>
+>     <slot name="options"></slot>
+> </ul>
+> ```
+
+### 2. Component class
+
+```js
+import {
+    LabellingController,
+    LABELLING_DEBUG_HTML,
+    applyLabellingDebug,
+} from './labelling-controller.js';
+
+class MyTextfield extends HTMLElement {
+    // Instantiate the controller in the class body
+    #labelling = new LabellingController({ onUpdate: () => this.#updateDebug() });
+
+    constructor() {
+        super();
+        // delegatesFocus forwards tab focus to the first focusable shadow element
+        this.attachShadow({ mode: 'open', delegatesFocus: true });
+    }
+
+    // Reflect labelledby and describedby as attributes so they can be set in HTML
+    static get observedAttributes() { return ['labelledby', 'describedby']; }
+    attributeChangedCallback(name, _, val) {
+        if (name === 'labelledby')  this.labelledby  = val ?? '';
+        if (name === 'describedby') this.describedby = val ?? '';
+    }
+
+    // Delegate property get/set to the controller
+    get labelledby()  { return this.#labelling.labelledby; }
+    get describedby() { return this.#labelling.describedby; }
+    set labelledby(val)  { this.#labelling.labelledby  = val; }
+    set describedby(val) { this.#labelling.describedby = val; }
+
+    connectedCallback() {
+        this.shadowRoot.innerHTML = `
+            <link rel="stylesheet" href="./styles.css" />
+            <div class="field-host">
+                <span id="label" class="field-label" hidden>
+                    <slot name="label"></slot>
+                </span>
+                <input id="role" type="text" class="textfield-input" part="input" />
+                <span id="description" class="field-help" hidden>
+                    <slot name="description"></slot>
+                </span>
+                <div class="debug">
+                    <p class="debug-heading">Debug</p>
+                    <dl class="debug-list">${LABELLING_DEBUG_HTML}</dl>
+                </div>
+            </div>
+        `;
+        // Connect the controller after innerHTML is set
+        this.#labelling.connect(this.shadowRoot);
+    }
+
+    #updateDebug() {
+        applyLabellingDebug(this.shadowRoot, this.#labelling.debugInfo);
+    }
+}
+
+customElements.define('my-textfield', MyTextfield);
+```
+
+### 3. Combobox extras
+
+For a combobox, the listbox lives in the shadow DOM alongside the trigger, so `aria-controls` can reference it by same-root ID. The active option is a slotted light DOM element, so use `ariaActiveDescendantElement` (cross-root element ref):
+
+```js
+// aria-controls works via same-root ID attribute — set it in HTML
+// <div id="role" role="combobox" aria-controls="listbox" ...>
+// <ul  id="listbox" role="listbox" ...>
+
+// Active descendant — cross-root, requires element ref API
+const SUPPORTS_ACTIVE_DESCENDANT = 'ariaActiveDescendantElement' in Element.prototype;
+
+#activateOption(optionEl) {
+    if (SUPPORTS_ACTIVE_DESCENDANT) {
+        this.#triggerEl.ariaActiveDescendantElement = optionEl;
+    } else {
+        // Fallback: give the option a stable ID, use the attribute
+        if (!optionEl.id) optionEl.id = `option-${crypto.randomUUID()}`;
+        this.#triggerEl.setAttribute('aria-activedescendant', optionEl.id);
+    }
+}
+```
 
 ---
 
-## Bugs we hit building these demos
+## Consumer usage examples
 
-| Problem | Cause | Fix |
-| ------- | ----- | --- |
-| Shadow label silent in screen reader | Wired on host instead of internals | Use `internals` refs + mirror `ariaLabel` |
-| Empty log panel | Wrong element selected | Query `.log[data-aria-log="…"]` only |
-| Log empty on first load | Log `<pre>` not in DOM yet | `queueMicrotask()` refresh |
-| Refs read as empty `[]` | Missing IDs on targets | Assign IDs before wiring |
-| Shadow `<label>` broken | Focus is on host, not inside shadow | Use `<span class="field-label">` |
-| Listbox not linked | Set `ariaControlsElements` on host | Set on **`internals`** |
+### Slotted label and description
+
+Slot `name="label"` and `name="description"` project text into the component's shadow label/description spans:
+
+```html
+<my-textfield>
+    <span slot="label">Email address</span>
+    <span slot="description">We'll never share your email.</span>
+</my-textfield>
+
+<my-checkbox>
+    <span slot="label">Subscribe to newsletter</span>
+    <span slot="description">You can unsubscribe at any time.</span>
+</my-checkbox>
+
+<my-combobox>
+    <span slot="label">Favorite fruit</span>
+    <span slot="description">Arrow keys navigate, Enter or Space selects.</span>
+    <li slot="options" role="option" aria-selected="false">Apple</li>
+    <li slot="options" role="option" aria-selected="false">Banana</li>
+    <li slot="options" role="option" aria-selected="false">Cherry</li>
+</my-combobox>
+```
+
+### Light DOM siblings via `labelledby` / `describedby`
+
+Place the label and description as siblings and point the component to them by ID:
+
+```html
+<label id="email-label">Email address</label>
+<my-textfield labelledby="email-label" describedby="email-desc"></my-textfield>
+<p id="email-desc">We'll never share your email.</p>
+
+<span id="fruit-label">Favorite fruit</span>
+<my-combobox labelledby="fruit-label" describedby="fruit-desc">
+    <li role="option" aria-selected="false">Apple</li>
+    <li role="option" aria-selected="false">Banana</li>
+</my-combobox>
+<p id="fruit-desc">Arrow keys navigate, Enter or Space selects.</p>
+```
+
+### Setting properties in JavaScript
+
+```js
+const field = document.querySelector('my-textfield');
+field.labelledby  = 'email-label';
+field.describedby = 'email-desc';
+```
+
+### Both sources together
+
+When both are provided, the slotted description and the light DOM description are **both** included in `ariaDescribedByElements`:
+
+```html
+<my-textfield describedby="global-error">
+    <span slot="label">Email address</span>
+    <span slot="description">We'll never share your email.</span>
+</my-textfield>
+<p id="global-error" role="alert">This field is required.</p>
+```
 
 ---
 
-## Cheat sheet — component → pattern
+## Rules for component authors
 
-| Component | Role | Label / help / popup |
-| --------- | ---- | -------------------- |
-| Textfield | Host textbox | See [demo matrix](#demo-matrix) |
-| Checkbox | Host checkbox | Same |
-| Progress bar | Host progressbar | Same |
-| Combobox | Host combobox | Internals → shadow listbox; split label/help; light options |
+1. **Role on the inner shadow element, never the host.** Use a native `<input>` for textfield and checkbox; use `<div role="...">` for progressbar, combobox, etc.
+
+2. **Attach shadow with `delegatesFocus: true`.** This makes the custom element a single tab stop that delegates focus to the first focusable shadow element.
+
+3. **Use the required IDs.** The controller expects `id="role"`, `id="label"`, and `id="description"` in the shadow DOM. Do not rename them.
+
+4. **Start label and description spans `hidden`.** The controller reveals them only when their slot has content. Never show them unconditionally.
+
+5. **Name slots exactly `"label"` and `"description"`.** The controller watches those exact slot names via `slotchange`.
+
+6. **Instantiate `LabellingController` in the class body**, not in `connectedCallback`. Call `controller.connect(this.shadowRoot)` from `connectedCallback` after `innerHTML` is set.
+
+7. **Delegate `labelledby` and `describedby` to the controller.** Getters and setters should proxy to `this.#labelling.labelledby` / `this.#labelling.describedby`. Reflect them as observed attributes so the properties work declaratively in HTML.
+
+8. **Do not use `aria-labelledby` / `aria-describedby` ID attributes to reference light DOM elements from a shadow element.** ID references do not cross shadow root boundaries. Use the element reference API (`ariaLabelledByElements`) instead — the controller does this for you.
+
+9. **Do not wire labelling through `ElementInternals`.** Same-root ID attributes and `ariaLabelledByElements` on the inner role element are sufficient. `ElementInternals` is only needed if the host itself must carry the role.
+
+10. **For combobox:** put `role="listbox"` in the shadow DOM and reference it with `aria-controls` by same-root ID (attribute, works). For the active option — which lives in the light DOM — use `ariaActiveDescendantElement` (element ref, works cross-root). Fall back to assigning a stable `id` and using `aria-activedescendant` attribute if the property is unavailable.
+
+11. **Re-check `describedby` + slot interactions.** The controller automatically merges both when both are present. If your component has custom re-wiring logic, ensure it follows the same merge pattern rather than treating the two sources as mutually exclusive.
+
+12. **Test with a screen reader.** Verify that the accessible name and description appear in the accessibility tree for every labelling mode the component is expected to support.
+
+---
+
+## Demos
+
+| Demo | Labelling pattern |
+|------|-------------------|
+| [Shadow DOM label and description](./demo-shadow-role.html) | Named slots — `ariaLabelledByElements` → shadow span (same-root element ref) |
+| [Light DOM siblings](./demo-light-siblings.html) | `labelledby` / `describedby` properties — `ariaLabelledByElements` → light DOM element (cross-root element ref) |
+| [Hybrid with toggle](./demo-hybrid.html) | Both patterns in one component; toggle button switches live between slotted and sibling mode |
 
 ---
 
@@ -253,40 +357,20 @@ Open [http://localhost:8080/index.html](http://localhost:8080/index.html).
 
 ## Further reading
 
-Two articles dig into the platform features and limitations that underpin the patterns in this repo.
-
 ### [Inside ElementInternals — an interactive field manual](https://plasticmind.github.io/elementinternals-a11y/) (plasticmind)
 
-An eight-module interactive curriculum built on Lit web components that teaches `attachInternals()` from the ground up. It starts by breaking a native `<fieldset>`/radio group into custom elements with no `ElementInternals` — making three failures vivid: tab order collapses, `FormData` comes up empty, and the accessibility tree sees unnamed generics. Each subsequent module adds one capability back:
-
-- **Form participation** — `setFormValue()`, `formAssociatedCallback`, `formResetCallback`, `static formAssociated = true`
-- **Constraint validation** — `setValidity(flags, message, anchor)`
-- **Accessibility semantics** — `internals.role`, `internals.ariaChecked`, `internals.ariaLabelledByElements` set from inside shadow DOM
-- **Real-world recipes** — four component archetypes (text input, switch, select, alert), each needing a different combination of the above
-- **Case study** — a before/after refactor of the NYSDS `nys-radiogroup`, showing the full blast radius of shared components
-
-The final module is a repair challenge: fix a broken switch so failing accessibility tests go green. Good companion reading before diving into the shadow-label wiring patterns in this repo.
+An eight-module interactive curriculum that teaches `attachInternals()` from the ground up — form participation, constraint validation, ARIA semantics, and real-world component archetypes. Useful context for understanding when `ElementInternals` is and is not the right tool.
 
 ### [Let Equals Equal Equals](https://bennypowers.dev/posts/let-equals-equal-equals/) (Benny Powers)
 
-An advocacy article arguing that the ARIA reflected element reference API — `ariaLabelledByElements`, `ariaDescribedByElements`, and siblings — has a critical, silent failure mode that harms assistive technology users.
-
-**The problem:** Assigning `input.ariaDescribedByElements = [helpText]` throws no error and looks correct, but if `helpText` lives in a sibling or child shadow root the getter silently returns `null` and screen readers receive nothing. The assignment only works when source and target share the same shadow root, or when the target is in a lighter (parent) DOM.
-
-**Why it was designed this way:** The spec added a "scope" rule to prevent encapsulation leaks — if a script sets `el.ariaActiveDescendantElement` to an internal shadow node, another script could read the property and traverse the shadow tree. Rather than nulling the JS getter while preserving the accessibility-tree relationship (one of two viable alternatives identified in the spec discussion), authors chose silent discard.
-
-**Why that's the wrong tradeoff:** The W3C Priority of Constituencies ranks users above spec purity. Closed shadow roots appear on roughly 5% of page loads; no major framework defaults to closed. The encapsulation argument also falls apart because holding a node reference already implies the boundary was crossed. The imperative ARIA API exists precisely to link elements that attribute-based `aria-describedby` cannot reach across shadow roots — silently discarding cross-root assignments defeats the API's primary use case.
-
-**What the author asks for:** Make the setter persist the accessibility-tree relationship regardless of shadow root topology; null out only the JS getter when the target is in a deeper or sibling shadow root. At minimum, emit a console warning when an assignment is silently dropped.
-
-**Relevance here:** This limitation is the reason the shadow-label scenario in this repo requires mirroring label text to `internals.ariaLabel` and `internals.ariaDescription` as a fallback — element references alone cannot be relied upon across shadow root boundaries in all browsers and AT combinations.
+An advocacy article on the silent failure mode of `ariaLabelledByElements` and friends: assigning a cross-root element reference succeeds without error but the getter returns `null` and screen readers receive nothing. The article explains why this pattern — placing the role on an **inner shadow element** and using same-root ID attributes or element refs that flow from shadow → lighter DOM — sidesteps the failure mode entirely.
 
 ---
 
 ## References
 
-- [Cross-root CodePen (original POC)](https://codepen.io/spectrum-css/pen/pvNEVda)
-- [ElementInternals.ariaControlsElements (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/ariaControlsElements)
-- [Reflected element references (MDN)](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Guides/Reflected_attributes)
-- [Semantic HTML and ARIA guide (SWC)](https://github.com/adobe/spectrum-web-components/blob/main/2nd-gen/packages/swc/.storybook/guides/accessibility-guides/semantic_html_aria.mdx)
-- [Focus management strategy RFC (SWC)](https://github.com/adobe/spectrum-web-components/blob/main/CONTRIBUTOR-DOCS/03_project-planning/05_strategies/focus-management-strategy-rfc.md)
+- [`Element.ariaLabelledByElements` (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Element/ariaLabelledByElements)
+- [`Element.ariaDescribedByElements` (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Element/ariaDescribedByElements)
+- [`Element.ariaActiveDescendantElement` (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Element/ariaActiveDescendantElement)
+- [Cross-root labelling CodePen (Spectrum CSS)](https://codepen.io/spectrum-css/pen/pvNEVda)
+- [Reflected ARIA attributes guide (MDN)](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Guides/Reflected_attributes)
