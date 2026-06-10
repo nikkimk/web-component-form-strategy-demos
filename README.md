@@ -42,7 +42,7 @@ Each demo page shows a **textfield**, **checkbox**, **progress bar**, and **comb
 
 Web components split markup into two trees:
 
-- **Light DOM** — nodes on the page (outside the component’s shadow root).
+- **Light DOM** — nodes on the page (outside the component's shadow root).
 - **Shadow DOM** — nodes hidden inside the component.
 
 Screen readers need to know which label and help text belong to which control. **You cannot wire everything from one place.** Where the label lives decides where you wire it.
@@ -248,6 +248,38 @@ npm start
 ```
 
 Open [http://localhost:8080/index.html](http://localhost:8080/index.html).
+
+---
+
+## Further reading
+
+Two articles dig into the platform features and limitations that underpin the patterns in this repo.
+
+### [Inside ElementInternals — an interactive field manual](https://plasticmind.github.io/elementinternals-a11y/) (plasticmind)
+
+An eight-module interactive curriculum built on Lit web components that teaches `attachInternals()` from the ground up. It starts by breaking a native `<fieldset>`/radio group into custom elements with no `ElementInternals` — making three failures vivid: tab order collapses, `FormData` comes up empty, and the accessibility tree sees unnamed generics. Each subsequent module adds one capability back:
+
+- **Form participation** — `setFormValue()`, `formAssociatedCallback`, `formResetCallback`, `static formAssociated = true`
+- **Constraint validation** — `setValidity(flags, message, anchor)`
+- **Accessibility semantics** — `internals.role`, `internals.ariaChecked`, `internals.ariaLabelledByElements` set from inside shadow DOM
+- **Real-world recipes** — four component archetypes (text input, switch, select, alert), each needing a different combination of the above
+- **Case study** — a before/after refactor of the NYSDS `nys-radiogroup`, showing the full blast radius of shared components
+
+The final module is a repair challenge: fix a broken switch so failing accessibility tests go green. Good companion reading before diving into the shadow-label wiring patterns in this repo.
+
+### [Let Equals Equal Equals](https://bennypowers.dev/posts/let-equals-equal-equals/) (Benny Powers)
+
+An advocacy article arguing that the ARIA reflected element reference API — `ariaLabelledByElements`, `ariaDescribedByElements`, and siblings — has a critical, silent failure mode that harms assistive technology users.
+
+**The problem:** Assigning `input.ariaDescribedByElements = [helpText]` throws no error and looks correct, but if `helpText` lives in a sibling or child shadow root the getter silently returns `null` and screen readers receive nothing. The assignment only works when source and target share the same shadow root, or when the target is in a lighter (parent) DOM.
+
+**Why it was designed this way:** The spec added a "scope" rule to prevent encapsulation leaks — if a script sets `el.ariaActiveDescendantElement` to an internal shadow node, another script could read the property and traverse the shadow tree. Rather than nulling the JS getter while preserving the accessibility-tree relationship (one of two viable alternatives identified in the spec discussion), authors chose silent discard.
+
+**Why that's the wrong tradeoff:** The W3C Priority of Constituencies ranks users above spec purity. Closed shadow roots appear on roughly 5% of page loads; no major framework defaults to closed. The encapsulation argument also falls apart because holding a node reference already implies the boundary was crossed. The imperative ARIA API exists precisely to link elements that attribute-based `aria-describedby` cannot reach across shadow roots — silently discarding cross-root assignments defeats the API's primary use case.
+
+**What the author asks for:** Make the setter persist the accessibility-tree relationship regardless of shadow root topology; null out only the JS getter when the target is in a deeper or sibling shadow root. At minimum, emit a console warning when an assignment is silently dropped.
+
+**Relevance here:** This limitation is the reason the shadow-label scenario in this repo requires mirroring label text to `internals.ariaLabel` and `internals.ariaDescription` as a fallback — element references alone cannot be relied upon across shadow root boundaries in all browsers and AT combinations.
 
 ---
 
