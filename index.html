@@ -32,58 +32,57 @@
                 <p>
                     Label and description live inside the shadow DOM with
                     <code>&lt;slot name="label"&gt;</code> and
-                    <code>&lt;slot name="description"&gt;</code> for consumer-provided text.
-                    The role element is wired via <code>aria-labelledby</code> and
-                    <code>aria-describedby</code> using same-root IDs &#8212; no cross-root
-                    ID references needed. The combobox uses
-                    <code>Element.ariaActiveDescendantElement</code> for its active option.
+                    <code>&lt;slot name="description"&gt;</code>.
+                    Same-root <code>aria-labelledby</code> / <code>aria-describedby</code> IDs
+                    wire the role element.
                 </p>
                 <ul class="nav-list">
-                    <li>
-                        <a href="./demo-shadow-role.html"
-                            >Shadow role &#8212; shadow DOM label and description</a
-                        >
-                    </li>
+                    <li><a href="./demo-shadow-role.html">Shadow role &#8212; shadow DOM label and description</a></li>
                 </ul>
             </section>
 
             <section class="demo-section" aria-labelledby="light-label-heading">
                 <h2 id="light-label-heading">Light DOM label and description siblings</h2>
                 <p>
-                    Label and description are plain light DOM siblings of the custom element &#8212;
-                    no slots, no shadow markup for them. Each component exposes
-                    <code>labelledby</code> and <code>describedby</code> properties that accept
-                    element ID strings. Setting them resolves the referenced elements in the
-                    document and updates <code>Element.ariaLabelledByElements</code> and
-                    <code>Element.ariaDescribedByElements</code> on the inner role element,
-                    crossing the shadow boundary via the element reference API.
+                    Label and description are plain light DOM siblings. Each component exposes
+                    <code>labelledby</code> / <code>describedby</code> properties that resolve
+                    element IDs and update <code>ariaLabelledByElements</code> /
+                    <code>ariaDescribedByElements</code> on the inner role element
+                    (cross-root element reference API).
                 </p>
                 <ul class="nav-list">
-                    <li>
-                        <a href="./demo-light-siblings.html"
-                            >Shadow role &#8212; light DOM label and description siblings</a
-                        >
-                    </li>
+                    <li><a href="./demo-light-siblings.html">Shadow role &#8212; light DOM label and description siblings</a></li>
                 </ul>
             </section>
 
             <section class="demo-section" aria-labelledby="hybrid-heading">
                 <h2 id="hybrid-heading">Hybrid &#8212; slotted with light DOM fallback</h2>
                 <p>
-                    Each component has shadow DOM label and description spans with named slots.
-                    When slot content is present, <code>ariaLabelledByElements</code> points
-                    at the shadow span (same-root element reference). When slots are empty,
-                    it falls back to <code>ariaLabelledByElements</code> pointing at light DOM
-                    siblings via the <code>labelledby</code> / <code>describedby</code>
-                    properties. A toggle button on the demo page switches between the two modes
-                    live so you can inspect the difference.
+                    Shadow label and description slots take priority when filled.
+                    When empty, the component falls back to
+                    <code>ariaLabelledByElements</code> pointing at light DOM siblings
+                    via the <code>labelledby</code> / <code>describedby</code> properties.
+                    A toggle button switches between modes live.
                 </p>
                 <ul class="nav-list">
-                    <li>
-                        <a href="./demo-hybrid.html"
-                            >Shadow role &#8212; hybrid shadow/light label and description</a
-                        >
-                    </li>
+                    <li><a href="./demo-hybrid.html">Shadow role &#8212; hybrid shadow/light label and description</a></li>
+                </ul>
+            </section>
+
+            <section class="demo-section" aria-labelledby="form-heading">
+                <h2 id="form-heading">Form-associated custom elements</h2>
+                <p>
+                    <code>textfield-form</code> uses <code>static formAssociated = true</code>
+                    and <code>ElementInternals.setFormValue()</code> to participate in form
+                    submission and reset alongside native inputs.
+                    <code>button-form</code> calls
+                    <code>internals.form.requestSubmit()</code> /
+                    <code>internals.form.reset()</code>.
+                    An output section shows <code>FormData</code> entries from both custom
+                    and native fields on every submission.
+                </p>
+                <ul class="nav-list">
+                    <li><a href="./demo-form.html">Form-associated custom elements</a></li>
                 </ul>
             </section>
         </main>
