@@ -3,18 +3,16 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Form fields strategy demos — Q2 & Q3</title>
+        <title>Form fields strategy demos</title>
         <link rel="stylesheet" href="./page.css" />
     </head>
     <body>
         <main class="page">
             <h1>Form fields strategy demos</h1>
             <p class="lead">
-                Interactive PoCs for <strong>Q2</strong> (role on the host) and
-                <strong>Q3</strong> (how label and help connect across Shadow DOM and Light DOM).
-                Each page shows a <strong>textfield</strong>, <strong>checkbox</strong>,
-                <strong>progress bar</strong>, and <strong>combobox</strong> using the same label
-                wiring pattern.
+                Interactive PoCs exploring how label and description connect across Shadow DOM
+                boundaries for <strong>textfield</strong>, <strong>checkbox</strong>,
+                <strong>progress bar</strong>, and <strong>combobox</strong> components.
             </p>
 
             <p>
@@ -27,121 +25,26 @@
                 >
             </p>
 
-            <div id="support-status" class="status" aria-live="polite"></div>
-
-            <section class="demo-section" aria-labelledby="host-role-heading">
-                <h2 id="host-role-heading">Role on the host via <code>ElementInternals</code></h2>
-                <p>
-                    <code>internals.role</code> sets the ARIA role on the custom element host.
-                    Label and help wire through the host or internals depending on where they live.
-                </p>
-                <ul class="nav-list">
-                    <li>
-                        <a href="./demo-light-label.html"
-                            >Light DOM label and help &#8212; all four controls</a
-                        >
-                    </li>
-                    <li>
-                        <a href="./demo-shadow-label.html"
-                            >Shadow DOM label and help &#8212; all four controls</a
-                        >
-                    </li>
-                    <li>
-                        <a href="./demo-slotted-label.html"
-                            >Slotted label and help &#8212; all four controls</a
-                        >
-                    </li>
-                </ul>
-            </section>
-
             <section class="demo-section" aria-labelledby="shadow-role-heading">
                 <h2 id="shadow-role-heading">Role on an inner shadow DOM element</h2>
                 <p>
                     The ARIA role lives on a native <code>&lt;input&gt;</code> (textfield,
                     checkbox) or a <code>&lt;div role="..."&gt;</code> (progressbar, combobox)
-                    inside the shadow root. <code>ariaLabelledByElements</code> and
-                    <code>ariaDescribedByElements</code> are set directly on that shadow element.
-                    No <code>ElementInternals</code> is used for ARIA wiring.
+                    inside the shadow root. Label and description are also in the shadow DOM,
+                    with <code>&lt;slot name="label"&gt;</code> and
+                    <code>&lt;slot name="description"&gt;</code> for consumer-provided text.
+                    The role element is wired with <code>aria-labelledby</code> and
+                    <code>aria-describedby</code> using same-root IDs. The combobox uses
+                    <code>Element.ariaActiveDescendantElement</code> for its active option.
                 </p>
                 <ul class="nav-list">
                     <li>
-                        <a href="./demo-native-light-label.html"
-                            >Shadow role &#8212; light DOM label and help</a
-                        >
-                    </li>
-                    <li>
-                        <a href="./demo-native-shadow-label.html"
-                            >Shadow role &#8212; shadow DOM label and help</a
+                        <a href="./demo-shadow-role.html"
+                            >Shadow role &#8212; shadow DOM label and description (all four controls)</a
                         >
                     </li>
                 </ul>
             </section>
-
-            <section class="demo-section" aria-labelledby="matrix-heading">
-                <h2 id="matrix-heading">Demo matrix</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th scope="col">Control</th>
-                            <th scope="col">
-                                <a href="./demo-light-label.html">Host role / light</a>
-                            </th>
-                            <th scope="col">
-                                <a href="./demo-shadow-label.html">Host role / shadow</a>
-                            </th>
-                            <th scope="col">
-                                <a href="./demo-slotted-label.html">Host role / slotted</a>
-                            </th>
-                            <th scope="col">
-                                <a href="./demo-native-light-label.html">Shadow role / light</a>
-                            </th>
-                            <th scope="col">
-                                <a href="./demo-native-shadow-label.html">Shadow role / shadow</a>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <th scope="row">Textfield</th>
-                            <td>&#10003;</td>
-                            <td>&#10003;</td>
-                            <td>&#10003;</td>
-                            <td>&#10003; native</td>
-                            <td>&#10003; native</td>
-                        </tr>
-                        <tr>
-                            <th scope="row">Checkbox</th>
-                            <td>&#10003;</td>
-                            <td>&#10003;</td>
-                            <td>&#10003;</td>
-                            <td>&#10003; native</td>
-                            <td>&#10003; native</td>
-                        </tr>
-                        <tr>
-                            <th scope="row">Progress bar</th>
-                            <td>&#10003;</td>
-                            <td>&#10003;</td>
-                            <td>&#10003;</td>
-                            <td>&#10003;</td>
-                            <td>&#10003;</td>
-                        </tr>
-                        <tr>
-                            <th scope="row">Combobox</th>
-                            <td>&#10003;</td>
-                            <td>&#10003;</td>
-                            <td>&#10003;</td>
-                            <td>&#10003;</td>
-                            <td>&#10003;</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </section>
         </main>
-
-        <script type="module">
-            import { renderSupportStatus } from './form-field-base.js';
-
-            renderSupportStatus(document.getElementById('support-status'));
-        </script>
     </body>
 </html>
