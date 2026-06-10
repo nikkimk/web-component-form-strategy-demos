@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Shadow role — shadow DOM label and help</title>
+        <link rel="stylesheet" href="./page.css" />
+    </head>
+    <body>
+        <main class="page">
+            <p>
+                <a href="./index.html">&#8592; All demos</a> &#183;
+                <a href="./demo-native-light-label.html">Light DOM label version &#8594;</a>
+            </p>
+
+            <h1>Shadow role &#8212; shadow DOM label and help</h1>
+            <p class="lead">
+                The ARIA role lives on an <strong>inner shadow DOM element</strong>.
+                Label and help containers are also in the <strong>same shadow root</strong>,
+                with their visible text slotted in from light DOM via
+                <code>&lt;slot name="label"&gt;</code> and
+                <code>&lt;slot name="help-text"&gt;</code>.
+                <code>ariaLabelledByElements</code> and <code>ariaDescribedByElements</code>
+                are set on the shadow role element, pointing to the shadow label and help spans.
+                Source and target share a shadow root, so no cross-root restriction applies.
+            </p>
+
+            <div id="support-status" class="status" aria-live="polite"></div>
+
+            <div class="demo-grid">
+                <section class="demo-card" aria-labelledby="textfield-heading">
+                    <h2 id="textfield-heading">Textfield</h2>
+                    <textfield-native data-aria-log="textfield-native-shadow">
+                        <span slot="label">Email address</span>
+                        <span slot="help-text">
+                            Shadow label span and native input share a shadow root &#8212;
+                            ariaLabelledByElements works without restriction.
+                        </span>
+                    </textfield-native>
+                    <h3>Resolved ARIA references</h3>
+                    <pre class="log" data-aria-log="textfield-native-shadow" aria-live="polite"></pre>
+                </section>
+
+                <section class="demo-card" aria-labelledby="checkbox-heading">
+                    <h2 id="checkbox-heading">Checkbox</h2>
+                    <checkbox-native data-aria-log="checkbox-native-shadow">
+                        <span slot="label">Subscribe to newsletter</span>
+                        <span slot="help-text">
+                            Native checkbox and shadow label span are in the same shadow root.
+                        </span>
+                    </checkbox-native>
+                    <h3>Resolved ARIA references</h3>
+                    <pre class="log" data-aria-log="checkbox-native-shadow" aria-live="polite"></pre>
+                </section>
+
+                <section class="demo-card" aria-labelledby="progressbar-heading">
+                    <h2 id="progressbar-heading">Progress bar</h2>
+                    <progressbar-shadow-role data-aria-log="progressbar-native-shadow">
+                        <span slot="label">Upload progress</span>
+                        <span slot="help-text">
+                            Shadow div with role="progressbar" and shadow label span are in the
+                            same shadow root.
+                        </span>
+                    </progressbar-shadow-role>
+                    <h3>Resolved ARIA references</h3>
+                    <pre class="log" data-aria-log="progressbar-native-shadow" aria-live="polite"></pre>
+                </section>
+
+                <section class="demo-card" aria-labelledby="combobox-heading">
+                    <h2 id="combobox-heading">Combobox</h2>
+                    <combobox-shadow-role data-aria-log="combobox-native-shadow">
+                        <span slot="label">Favorite fruit</span>
+                        <span slot="help-text">
+                            Shadow trigger div (role="combobox") and shadow label span share a root.
+                            ariaControlsElements to the shadow listbox also stays within that root.
+                        </span>
+                        <li slot="option" id="shadow-apple">Apple</li>
+                        <li slot="option" id="shadow-banana">Banana</li>
+                        <li slot="option" id="shadow-cherry">Cherry</li>
+                        <li slot="option" id="shadow-date">Date</li>
+                        <li slot="option" id="shadow-elderberry">Elderberry</li>
+                    </combobox-shadow-role>
+                    <h3>Resolved ARIA references</h3>
+                    <pre class="log" data-aria-log="combobox-native-shadow" aria-live="polite"></pre>
+                </section>
+            </div>
+        </main>
+
+        <script type="module">
+            import { renderSupportStatus } from './form-field-base.js';
+            import './textfield-native.js';
+            import './checkbox-native.js';
+            import './progressbar-shadow-role.js';
+            import './combobox-shadow-role.js';
+
+            renderSupportStatus(document.getElementById('support-status'));
+        </script>
+    </body>
+</html>
