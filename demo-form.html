@@ -6,12 +6,7 @@
         <title>Form-associated custom elements</title>
         <link rel="stylesheet" href="./page.css" />
         <style>
-            /* ── form layout ──────────────────────────────────────────────── */
-            .form-fields {
-                display: grid;
-                gap: 1.5rem;
-                margin-block-end: 1.5rem;
-            }
+            .form-fields   { display: grid; gap: 1.5rem; margin-block-end: 1.5rem; }
 
             fieldset {
                 border: 1px solid #c7d7f5;
@@ -19,184 +14,125 @@
                 padding: 1rem 1.25rem;
                 margin: 0;
             }
+            @media (prefers-color-scheme: dark) { fieldset { border-color: #2d3f6b; } }
 
-            @media (prefers-color-scheme: dark) {
-                fieldset { border-color: #2d3f6b; }
-            }
+            legend { font-weight: 600; padding: 0 0.5rem; }
 
-            legend {
-                font-weight: 600;
-                padding: 0 0.5rem;
-            }
+            .fieldset-fields { display: grid; gap: 1.25rem; }
 
-            .fieldset-fields {
-                display: grid;
-                gap: 1.25rem;
-            }
-
-            /* native field row */
-            .native-field {
-                display: grid;
-                gap: 0.25rem;
-                max-width: 24rem;
-            }
-
+            /* native field */
+            .native-field { display: grid; gap: 0.25rem; max-width: 24rem; }
             .native-field label { font-weight: 600; }
-
             .native-field input[type="text"],
-            .native-field input[type="email"] {
-                display: block;
-                width: 100%;
-                min-height: 2.5rem;
-                padding: 0.5rem 0.75rem;
-                border: 1px solid #888;
-                border-radius: 0.375rem;
-                background: #fff;
-                font: inherit;
+            .native-field input[type="email"],
+            .native-field select {
+                display: block; width: 100%; min-height: 2.5rem;
+                padding: 0.5rem 0.75rem; border: 1px solid #888;
+                border-radius: 0.375rem; background: #fff; font: inherit;
                 box-sizing: border-box;
             }
-
             @media (prefers-color-scheme: dark) {
-                .native-field input {
-                    background: #333;
-                    border-color: #666;
-                    color: #f2f2f2;
+                .native-field input, .native-field select {
+                    background: #333; border-color: #666; color: #f2f2f2;
                 }
             }
-
-            .native-field .field-help-standalone { font-size: 0.875rem; color: #666; margin: 0.25rem 0 0; }
+            .native-field .native-checkbox-row {
+                display: flex; align-items: center; gap: 0.5rem;
+            }
+            .native-field input[type="checkbox"] {
+                width: 1.125rem; height: 1.125rem; min-height: unset;
+                padding: 0; accent-color: #2680eb;
+            }
+            .native-field .field-help-standalone {
+                font-size: 0.875rem; color: #666; margin: 0.25rem 0 0;
+            }
+            @media (prefers-color-scheme: dark) {
+                .native-field .field-help-standalone { color: #aaa; }
+            }
 
             /* button row */
             .button-row {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.75rem;
-                align-items: center;
-                margin-block-start: 0.5rem;
+                display: flex; flex-wrap: wrap; gap: 0.75rem;
+                align-items: center; margin-block-start: 0.5rem;
             }
-
             .button-row .divider {
-                width: 1px;
-                height: 1.5rem;
-                background: #ccc;
-                margin-inline: 0.25rem;
+                width: 1px; height: 1.5rem; background: #ccc; margin-inline: 0.25rem;
             }
-
-            .button-row .label {
-                font-size: 0.8rem;
-                color: #666;
-            }
-
-            /* native buttons in the demo */
+            .button-row .label { font-size: 0.8rem; color: #666; }
             .button-row button {
-                display: inline-flex;
-                align-items: center;
-                padding: 0.5rem 1.25rem;
-                border: none;
-                border-radius: 0.375rem;
-                font: inherit;
-                font-size: 0.95rem;
-                font-weight: 600;
-                cursor: pointer;
-                background: #2680eb;
-                color: #fff;
+                display: inline-flex; align-items: center;
+                padding: 0.5rem 1.25rem; border: none; border-radius: 0.375rem;
+                font: inherit; font-size: 0.95rem; font-weight: 600;
+                cursor: pointer; background: #2680eb; color: #fff;
             }
-
             .button-row button[type="reset"] {
-                background: transparent;
-                color: #2680eb;
-                border: 1.5px solid #2680eb;
+                background: transparent; color: #2680eb; border: 1.5px solid #2680eb;
             }
 
-            /* ── output section ───────────────────────────────────────────── */
+            /* output */
             .output-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 1rem;
+                display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
                 margin-block-start: 1rem;
             }
-
-            @media (max-width: 600px) {
-                .output-grid { grid-template-columns: 1fr; }
-            }
+            @media (max-width: 640px) { .output-grid { grid-template-columns: 1fr; } }
 
             .output-card {
-                padding: 0.75rem 1rem;
-                background: #f0f4ff;
-                border: 1px solid #c7d7f5;
-                border-radius: 0.5rem;
-                font-size: 0.875rem;
-                font-family: monospace;
+                padding: 0.75rem 1rem; background: #f0f4ff;
+                border: 1px solid #c7d7f5; border-radius: 0.5rem;
+                font-size: 0.875rem; font-family: monospace;
             }
-
             @media (prefers-color-scheme: dark) {
                 .output-card { background: #1a2035; border-color: #2d3f6b; }
             }
-
             .output-card h3 {
-                margin: 0 0 0.5rem;
-                font-size: 0.75rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                color: #5570a0;
-                font-family: monospace;
+                margin: 0 0 0.5rem; font-size: 0.75rem;
+                text-transform: uppercase; letter-spacing: 0.05em;
+                color: #5570a0; font-family: monospace;
             }
-
-            @media (prefers-color-scheme: dark) {
-                .output-card h3 { color: #7a9fd4; }
-            }
+            @media (prefers-color-scheme: dark) { .output-card h3 { color: #7a9fd4; } }
 
             .output-list {
-                margin: 0;
-                display: grid;
-                grid-template-columns: auto 1fr;
-                gap: 0.2rem 1rem;
+                margin: 0; display: grid;
+                grid-template-columns: auto 1fr; gap: 0.2rem 1rem;
             }
-
             .output-list dt { color: #5570a0; white-space: nowrap; }
             @media (prefers-color-scheme: dark) { .output-list dt { color: #7a9fd4; } }
             .output-list dd { margin: 0; word-break: break-all; }
+            .output-list .tag {
+                font-size: 0.65rem; font-weight: bold; letter-spacing: 0.04em;
+                padding: 0.1rem 0.35rem; border-radius: 0.2rem;
+                vertical-align: middle; margin-inline-start: 0.35rem;
+            }
+            .tag-custom  { background: #dbeafe; color: #1d4ed8; }
+            .tag-native  { background: #dcfce7; color: #166534; }
+            @media (prefers-color-scheme: dark) {
+                .tag-custom { background: #1e3a6e; color: #7bb3f5; }
+                .tag-native { background: #1a4731; color: #6ee7b7; }
+            }
 
             .output-empty { color: #888; font-style: italic; }
 
             .event-log {
-                margin: 0;
-                padding: 0;
-                list-style: none;
-                max-height: 14rem;
-                overflow-y: auto;
-                display: flex;
-                flex-direction: column;
-                gap: 0.2rem;
+                margin: 0; padding: 0; list-style: none;
+                max-height: 14rem; overflow-y: auto;
+                display: flex; flex-direction: column; gap: 0.2rem;
             }
-
             .event-log-entry {
-                padding: 0.1rem 0;
-                border-bottom: 1px solid #e0e8ff;
+                padding: 0.1rem 0; border-bottom: 1px solid #e0e8ff;
             }
-
-            @media (prefers-color-scheme: dark) {
-                .event-log-entry { border-color: #2d3f6b; }
-            }
-
+            @media (prefers-color-scheme: dark) { .event-log-entry { border-color: #2d3f6b; } }
             .event-submit { color: #2a7c2a; font-weight: bold; }
             .event-reset  { color: #a05000; font-weight: bold; }
             .event-input  { color: #555; }
-
             @media (prefers-color-scheme: dark) {
                 .event-submit { color: #6fcf6f; }
                 .event-reset  { color: #f0a060; }
                 .event-input  { color: #aaa; }
             }
-
             .badge {
-                display: inline-block;
-                background: #2680eb;
-                color: #fff;
-                border-radius: 999px;
-                padding: 0.1rem 0.5rem;
-                font-size: 0.7rem;
-                vertical-align: middle;
+                display: inline-block; background: #2680eb; color: #fff;
+                border-radius: 999px; padding: 0.1rem 0.5rem;
+                font-size: 0.7rem; vertical-align: middle;
             }
         </style>
     </head>
@@ -206,23 +142,24 @@
 
             <h1>Form-associated custom elements</h1>
             <p class="lead">
-                <code>textfield-form</code> uses <code>ElementInternals</code> (via
-                <code>static formAssociated = true</code> and
-                <code>internals.setFormValue()</code>) to participate in form submission and
+                <code>textfield-form</code>, <code>checkbox-form</code>, and
+                <code>combobox-form</code> use <code>static formAssociated = true</code> and
+                <code>FieldAssociationController</code> to participate in form submission and
                 reset alongside native inputs. <code>button-form</code> calls
-                <code>internals.form.requestSubmit()</code> or
-                <code>internals.form.reset()</code> when activated. The output section below
-                shows <code>FormData</code> entries from both custom and native fields on
-                every submission.
+                <code>internals.form.requestSubmit()</code> /
+                <code>internals.form.reset()</code>. Submit the form to compare
+                <code>FormData</code> entries from custom and native fields side by side.
             </p>
 
             <form id="demo-form" novalidate>
                 <div class="form-fields">
 
+                    <!-- ── Custom elements ─────────────────────────────────── -->
                     <fieldset>
                         <legend>Custom elements</legend>
                         <div class="fieldset-fields">
 
+                            <!-- textfield — light DOM sibling label -->
                             <div>
                                 <label id="custom-name-label" class="field-label-standalone"
                                     >Full name</label
@@ -233,32 +170,72 @@
                                     describedby="custom-name-desc"
                                 ></textfield-form>
                                 <p id="custom-name-desc" class="field-help-standalone">
-                                    Light DOM label via <code>labelledby</code> property
+                                    textfield-form &#8212; light DOM sibling label
                                 </p>
                             </div>
 
+                            <!-- textfield — slotted label -->
                             <textfield-form name="custom_bio">
                                 <span slot="label">Bio</span>
-                                <span slot="description">Slotted label and description.</span>
+                                <span slot="description">textfield-form &#8212; slotted label</span>
                             </textfield-form>
+
+                            <!-- checkbox -->
+                            <checkbox-form name="custom_subscribe" value="yes">
+                                <span slot="label">Subscribe to newsletter</span>
+                                <span slot="description">checkbox-form &#8212; slotted label</span>
+                            </checkbox-form>
+
+                            <!-- combobox -->
+                            <combobox-form name="custom_fruit">
+                                <span slot="label">Favorite fruit</span>
+                                <span slot="description">combobox-form &#8212; Arrow keys navigate, Enter selects</span>
+                                <li slot="options" role="option" aria-selected="false" value="apple">Apple</li>
+                                <li slot="options" role="option" aria-selected="false" value="banana">Banana</li>
+                                <li slot="options" role="option" aria-selected="false" value="cherry">Cherry</li>
+                                <li slot="options" role="option" aria-selected="false" value="date">Date</li>
+                                <li slot="options" role="option" aria-selected="false" value="elderberry">Elderberry</li>
+                            </combobox-form>
 
                         </div>
                     </fieldset>
 
+                    <!-- ── Native elements ─────────────────────────────────── -->
                     <fieldset>
-                        <legend>Native inputs (for comparison)</legend>
+                        <legend>Native elements (for comparison)</legend>
                         <div class="fieldset-fields">
 
                             <div class="native-field">
                                 <label for="native-name">Full name</label>
                                 <input type="text" id="native-name" name="native_name" />
-                                <p class="field-help-standalone">Native <code>&lt;input&gt;</code></p>
+                                <p class="field-help-standalone">Native <code>&lt;input type="text"&gt;</code></p>
                             </div>
 
                             <div class="native-field">
                                 <label for="native-bio">Bio</label>
                                 <input type="text" id="native-bio" name="native_bio" />
-                                <p class="field-help-standalone">Native <code>&lt;input&gt;</code></p>
+                                <p class="field-help-standalone">Native <code>&lt;input type="text"&gt;</code></p>
+                            </div>
+
+                            <div class="native-field">
+                                <div class="native-checkbox-row">
+                                    <input type="checkbox" id="native-subscribe" name="native_subscribe" value="yes" />
+                                    <label for="native-subscribe">Subscribe to newsletter</label>
+                                </div>
+                                <p class="field-help-standalone">Native <code>&lt;input type="checkbox"&gt;</code></p>
+                            </div>
+
+                            <div class="native-field">
+                                <label for="native-fruit">Favorite fruit</label>
+                                <select id="native-fruit" name="native_fruit">
+                                    <option value="">Select an option</option>
+                                    <option value="apple">Apple</option>
+                                    <option value="banana">Banana</option>
+                                    <option value="cherry">Cherry</option>
+                                    <option value="date">Date</option>
+                                    <option value="elderberry">Elderberry</option>
+                                </select>
+                                <p class="field-help-standalone">Native <code>&lt;select&gt;</code></p>
                             </div>
 
                         </div>
@@ -279,8 +256,8 @@
 
             <section class="demo-section" aria-labelledby="output-heading">
                 <h2 id="output-heading">Output</h2>
-
                 <div class="output-grid">
+
                     <div class="output-card">
                         <h3>
                             FormData on last submit
@@ -298,13 +275,20 @@
                             <li class="output-empty">Waiting for form events&#8230;</li>
                         </ul>
                     </div>
+
                 </div>
             </section>
         </main>
 
         <script type="module">
             import './textfield-form.js';
+            import './checkbox-form.js';
+            import './combobox-form.js';
             import './button-form.js';
+
+            const CUSTOM_NAMES = new Set([
+                'custom_name', 'custom_bio', 'custom_subscribe', 'custom_fruit'
+            ]);
 
             const form        = document.getElementById('demo-form');
             const submitBadge = document.getElementById('submit-badge');
@@ -314,22 +298,18 @@
             let submitCount   = 0;
 
             function log(text, cls) {
-                // Clear placeholder on first entry
                 const placeholder = eventLog.querySelector('.output-empty');
                 if (placeholder) placeholder.remove();
-
                 const li = document.createElement('li');
                 li.className = `event-log-entry ${cls}`;
                 li.textContent = `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} — ${text}`;
                 eventLog.prepend(li);
-                // Trim to 30 entries
                 [...eventLog.children].slice(30).forEach(el => el.remove());
             }
 
             form.addEventListener('submit', event => {
                 event.preventDefault();
                 submitCount++;
-
                 const data    = new FormData(event.target);
                 const entries = [...data.entries()];
 
@@ -337,9 +317,12 @@
                 submitBadge.hidden = false;
                 noSubmitMsg.hidden = true;
                 submitOut.hidden   = false;
-                submitOut.innerHTML = entries.map(([k, v]) =>
-                    `<dt>${k}</dt><dd>${v === '' ? '<em>(empty)</em>' : v}</dd>`
-                ).join('');
+
+                submitOut.innerHTML = entries.map(([k, v]) => {
+                    const isCustom = CUSTOM_NAMES.has(k);
+                    const tag = `<span class="tag ${isCustom ? 'tag-custom' : 'tag-native'}">${isCustom ? 'custom' : 'native'}</span>`;
+                    return `<dt>${k}${tag}</dt><dd>${v === '' ? '<em>(empty)</em>' : v}</dd>`;
+                }).join('');
 
                 log(
                     `submit — ${entries.map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(', ')}`,
@@ -352,12 +335,22 @@
                 noSubmitMsg.hidden = false;
                 submitOut.hidden   = true;
                 submitOut.innerHTML = '';
-                log('reset — formResetCallback() fired on custom elements', 'event-reset');
+                log('reset — formResetCallback() fired on all custom elements', 'event-reset');
             });
 
             form.addEventListener('input', event => {
                 const name = event.target.getAttribute('name') || event.target.id || '?';
                 log(`input on [name="${name}"] → ${JSON.stringify(event.target.value)}`, 'event-input');
+            });
+
+            form.addEventListener('change', event => {
+                if (event.target.type === 'checkbox' || event.target.tagName === 'SELECT') {
+                    const name = event.target.getAttribute('name') || event.target.id || '?';
+                    const val  = event.target.type === 'checkbox'
+                        ? (event.target.checked ? event.target.value : '(unchecked)')
+                        : event.target.value;
+                    log(`change on [name="${name}"] → ${JSON.stringify(val)}`, 'event-input');
+                }
             });
         </script>
     </body>
