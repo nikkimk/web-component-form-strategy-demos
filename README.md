@@ -471,11 +471,11 @@ The following APIs underpin this approach. Browser support status as of mid-2026
 
 | Browser | Support |
 |---------|---------|
-| Chrome / Edge | ✅ 133+ |
-| Firefox | ✅ 144+ |
-| Safari | 🧪 Safari 26 (preview) |
+| Chrome / Edge | 🚩 133+ (enable `#enable-experimental-web-platform-features` in `chrome://flags`) |
+| Firefox | 🚩 144+ (enable `dom.shadowdom.referenceTarget.enabled` in `about:config`) |
+| Safari | 🚩 26+ (enable "referenceTarget" in Develop → Feature Flags) |
 
-`referenceTarget` (exposed as `ShadowRoot.referenceTarget` and `<template shadowrootreferencetarget>`) lets a custom element host declare which inner shadow element is the *canonical target* for IDREF resolution — so that `aria-labelledby="my-textfield"` on an external element correctly labels the inner `<input>` without any JS wiring. Chrome, Edge, and Firefox have shipped support; Safari 26 support is in preview and expected to ship with the macOS 26 release cycle. This would eliminate the entire cross-root problem for consumers who label by external element ID.
+`referenceTarget` (exposed as `ShadowRoot.referenceTarget` and `<template shadowrootreferencetarget>`) lets a custom element host declare which inner shadow element is the *canonical target* for IDREF resolution — so that `aria-labelledby="my-textfield"` on an external element correctly labels the inner `<input>` without any JS wiring. All three major browsers have implemented it behind a flag; none have enabled it by default yet. This would eliminate the entire cross-root problem for consumers who label by external element ID.
 
 ### `referenceTargetMap`
 
@@ -487,7 +487,7 @@ No Can I use page yet — this is a proposal / explainer stage.
 
 `referenceTargetMap` extends `referenceTarget` to a map of attribute → inner element pairs, enabling per-attribute targeting (`aria-labelledby` → one inner element, `aria-describedby` → another).
 
-**`referenceTarget` is now broadly available (Chrome/Edge 133+, Firefox 144+, Safari 26 preview).** Once Safari 26 reaches stable and your browser targets are updated, you should strongly consider adopting `referenceTarget` as the primary cross-root labelling mechanism. If consumers can label a custom element host with a plain `aria-labelledby` attribute and have it resolve correctly to the inner role element, the `labelledby`/`describedby` properties, element ref wiring, and many of the fallback paths described in this document become unnecessary. Revisit this approach when Safari 26 is in your supported browser range.
+**`referenceTarget` is implemented in all major browsers but is flag-gated everywhere — it is not yet on by default in any stable release.** Once browsers enable it by default and it reaches your supported browser range, it should become the primary cross-root labelling mechanism: consumers would be able to use a plain `aria-labelledby` attribute pointing at the custom element host, and the browser would resolve it to the inner role element automatically. At that point the `labelledby`/`describedby` properties, element ref wiring, and many of the fallback paths described in this document become unnecessary. Track the flags above and revisit this approach as browsers ship it unflagged.
 
 ---
 
