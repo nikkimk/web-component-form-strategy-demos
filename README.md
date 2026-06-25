@@ -50,7 +50,7 @@ Never use `aria-labelledby` attribute to point at a light DOM ID from inside a s
 
 **Recommendation: document exclusions at the story level with rationale; track upstream.**
 
-Until Deque ships full ElementInternals support (ARIA from internals, cross-root element refs, and extension-related behavior — currently targeted for mid–late 2025 tranches), axe-core will produce false positives and blind spots for FACE components. The correct response is:
+Deque has been shipping ElementInternals support in tranches (ARIA from internals, cross-root element refs, extension-related behavior — targeted through 2025). axe-core still produces false positives and blind spots for FACE components in many versions. Check the [elementInternals label](https://github.com/dequelabs/axe-core/issues?q=label%3AelementInternals) for current status and remove exclusions as fixes land. The correct response is:
 
 1. Exclude affected rules per component story with a `// reason:` comment.
 2. Log an upstream issue link alongside each exclusion.
@@ -427,7 +427,7 @@ Browsers do not expose a single standard path for axe-core to read accessibility
 
 ## Platform API support
 
-The following APIs underpin this approach. Browser support status as of mid-2025:
+The following APIs underpin this approach. Browser support status as of mid-2026:
 
 ### `ariaLabelledByElements` / `ariaDescribedByElements`
 
@@ -435,11 +435,11 @@ The following APIs underpin this approach. Browser support status as of mid-2025
 
 | Browser | Support |
 |---------|---------|
-| Chrome / Edge | ✅ 128+ |
-| Safari | ✅ 17.4+ |
-| Firefox | ❌ Not yet |
+| Chrome / Edge | ✅ 135+ |
+| Safari | ✅ 16.4+ |
+| Firefox | ✅ 136+ |
 
-**Current strategy:** use these as the primary wiring mechanism with a graceful fallback to same-root `aria-labelledby` attribute (for slotted content) or `aria-label` text mirroring (for light DOM siblings) when the property is unavailable.
+**Current strategy:** use these as the primary wiring mechanism. All major browsers now support the element reference properties (Baseline 2025). Keep graceful fallbacks in place for users on older browser versions: same-root `aria-labelledby` attribute (for slotted content) or `aria-label` text mirroring (for light DOM siblings).
 
 ### `ariaControlsElements`
 
@@ -447,9 +447,9 @@ The following APIs underpin this approach. Browser support status as of mid-2025
 
 | Browser | Support |
 |---------|---------|
-| Chrome / Edge | ✅ 128+ |
-| Safari | ✅ 17.4+ |
-| Firefox | ❌ Not yet |
+| Chrome / Edge | ✅ 135+ |
+| Safari | ✅ 16.4+ |
+| Firefox | ✅ 136+ |
 
 **Note:** The combobox uses the `aria-controls="listbox"` *attribute* (not the element ref property) because the listbox is in the same shadow root. The property is only needed when the target is in a different root.
 
@@ -459,9 +459,9 @@ The following APIs underpin this approach. Browser support status as of mid-2025
 
 | Browser | Support |
 |---------|---------|
-| Chrome / Edge | ✅ 128+ |
-| Safari | ✅ 17.4+ |
-| Firefox | ❌ Not yet |
+| Chrome / Edge | ✅ 135+ |
+| Safari | ✅ 16.4+ |
+| Firefox | ✅ 136+ |
 
 **Current strategy:** detect support with `'ariaActiveDescendantElement' in Element.prototype`; fall back to assigning a stable `id` and using `aria-activedescendant` attribute.
 
@@ -471,11 +471,11 @@ The following APIs underpin this approach. Browser support status as of mid-2025
 
 | Browser | Support |
 |---------|---------|
-| Chrome / Edge | 🧪 Behind flag / experimental |
-| Safari | ❌ Not yet |
-| Firefox | ❌ Not yet |
+| Chrome / Edge | ✅ 133+ |
+| Firefox | ✅ 144+ |
+| Safari | 🧪 Safari 26 (preview) |
 
-`referenceTarget` would let a custom element host declare which inner shadow element is the *canonical target* for IDREF resolution — so that `aria-labelledby="my-textfield"` on an external element correctly labels the inner `<input>` without any JS wiring. This would eliminate the entire cross-root problem for consumers who label by external element ID.
+`referenceTarget` (exposed as `ShadowRoot.referenceTarget` and `<template shadowrootreferencetarget>`) lets a custom element host declare which inner shadow element is the *canonical target* for IDREF resolution — so that `aria-labelledby="my-textfield"` on an external element correctly labels the inner `<input>` without any JS wiring. Chrome, Edge, and Firefox have shipped support; Safari 26 support is in preview and expected to ship with the macOS 26 release cycle. This would eliminate the entire cross-root problem for consumers who label by external element ID.
 
 ### `referenceTargetMap`
 
@@ -487,7 +487,7 @@ No Can I use page yet — this is a proposal / explainer stage.
 
 `referenceTargetMap` extends `referenceTarget` to a map of attribute → inner element pairs, enabling per-attribute targeting (`aria-labelledby` → one inner element, `aria-describedby` → another).
 
-**We recommend revisiting the entire labelling and form-association approach once `referenceTarget` — and potentially `referenceTargetMap` — achieve broad browser support.** If consumers can label a custom element host with a plain `aria-labelledby` attribute and have it resolve correctly to the inner role element, the `labelledby`/`describedby` properties, element ref wiring, and many of the fallback paths described in this document become unnecessary.
+**`referenceTarget` is now broadly available (Chrome/Edge 133+, Firefox 144+, Safari 26 preview).** Once Safari 26 reaches stable and your browser targets are updated, you should strongly consider adopting `referenceTarget` as the primary cross-root labelling mechanism. If consumers can label a custom element host with a plain `aria-labelledby` attribute and have it resolve correctly to the inner role element, the `labelledby`/`describedby` properties, element ref wiring, and many of the fallback paths described in this document become unnecessary. Revisit this approach when Safari 26 is in your supported browser range.
 
 ---
 
