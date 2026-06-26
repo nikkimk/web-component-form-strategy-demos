@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Button Activation Behaviors shim demo</title>
+        <link rel="stylesheet" href="./page.css" />
+        <style>
+            /* ── layout ── */
+            .demo-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+                margin-block: 1.5rem;
+            }
+            @media (max-width: 680px) { .demo-grid { grid-template-columns: 1fr; } }
+
+            .card {
+                padding: 1.25rem;
+                border: 1px solid #c7d7f5;
+                border-radius: 0.5rem;
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+            @media (prefers-color-scheme: dark) { .card { border-color: #2d3f6b; } }
+
+            .card h3 { margin: 0; font-size: 1rem; }
+            .card p  { margin: 0; font-size: 0.875rem; color: #555; }
+            @media (prefers-color-scheme: dark) { .card p { color: #aaa; } }
+
+            .button-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                align-items: center;
+            }
+
+            /* ── native-style reference buttons ── */
+            .btn-native {
+                display: inline-flex; align-items: center;
+                padding: 0.5rem 1.25rem; border: none; border-radius: 0.375rem;
+                font: inherit; font-size: 0.95rem; font-weight: 600;
+                cursor: pointer; background: #2680eb; color: #fff;
+            }
+            .btn-native.secondary {
+                background: transparent; color: #2680eb;
+                border: 1.5px solid #2680eb;
+            }
+
+            /* ── custom button-behaviors element ── */
+            button-behaviors {
+                display: inline-flex; align-items: center;
+                padding: 0.5rem 1.25rem; border-radius: 0.375rem;
+                font: inherit; font-size: 0.95rem; font-weight: 600;
+                background: #6f38c5; color: #fff;
+                position: relative;
+            }
+            button-behaviors[variant="secondary"] {
+                background: transparent; color: #6f38c5;
+                border: 1.5px solid #6f38c5;
+            }
+            button-behaviors:focus-visible { outline: 3px solid #6f38c5; outline-offset: 2px; }
+            button-behaviors[disabled]     { opacity: 0.45; cursor: not-allowed; }
+
+            /* ── dialog ── */
+            dialog {
+                border: 1px solid #c7d7f5; border-radius: 0.5rem;
+                padding: 1.5rem; min-width: 24rem; max-width: 90vw;
+                font: inherit;
+            }
+            dialog::backdrop { background: rgba(0,0,0,0.4); }
+            dialog h3 { margin: 0 0 0.75rem; }
+            dialog footer { display: flex; gap: 0.75rem; margin-block-start: 1rem; }
+
+            /* ── popover ── */
+            [popover] {
+                border: 1px solid #c7d7f5; border-radius: 0.5rem;
+                padding: 1rem 1.25rem; font: inherit;
+                position: absolute;
+            }
+
+            /* ── event log ── */
+            .log {
+                font-size: 0.8rem; font-family: monospace;
+                background: #f0f4ff; border: 1px solid #c7d7f5;
+                border-radius: 0.375rem; padding: 0.75rem 1rem;
+                max-height: 14rem; overflow-y: auto;
+            }
+            @media (prefers-color-scheme: dark) {
+                .log { background: #1a2035; border-color: #2d3f6b; }
+            }
+            .log ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.2rem; }
+            .log li { border-bottom: 1px solid #e0e8ff; padding-block: 0.1rem; }
+            @media (prefers-color-scheme: dark) { .log li { border-color: #2d3f6b; } }
+            .log .empty { color: #888; font-style: italic; }
+            .log .ev-command { color: #6f38c5; font-weight: bold; }
+            .log .ev-click   { color: #2680eb; }
+            .log .ev-cancel  { color: #c52020; }
+
+            /* ── support badge ── */
+            .support-badge {
+                display: inline-block; padding: 0.25rem 0.75rem;
+                border-radius: 999px; font-size: 0.75rem; font-weight: 700;
+            }
+            .support-badge.native { background: #dcfce7; color: #166534; }
+            .support-badge.shim   { background: #f5d5ff; color: #6f38c5; }
+            @media (prefers-color-scheme: dark) {
+                .support-badge.native { background: #1a4731; color: #6ee7b7; }
+                .support-badge.shim   { background: #3a1a5f; color: #c899ff; }
+            }
+
+            /* ── form scenario ── */
+            .form-scenario { display: grid; gap: 0.75rem; }
+            .form-scenario label { font-weight: 600; display: block; margin-block-end: 0.25rem; }
+            .form-scenario input[type="text"] {
+                display: block; width: 100%; max-width: 24rem;
+                padding: 0.5rem 0.75rem; border: 1px solid #888;
+                border-radius: 0.375rem; font: inherit; box-sizing: border-box;
+            }
+            @media (prefers-color-scheme: dark) {
+                .form-scenario input { background: #333; border-color: #666; color: #f2f2f2; }
+            }
+            .submit-output {
+                font-size: 0.875rem; font-family: monospace;
+                background: #f0f4ff; border: 1px solid #c7d7f5;
+                border-radius: 0.375rem; padding: 0.5rem 0.75rem;
+            }
+            @media (prefers-color-scheme: dark) {
+                .submit-output { background: #1a2035; border-color: #2d3f6b; }
+            }
+        </style>
+    </head>
+    <body>
+        <main class="page">
+            <p><a href="./index.html">&#8592; All demos</a></p>
+
+            <h1>Button Activation Behaviors &#8212; <code>FormBehaviorsController</code> shim</h1>
+            <p class="lead">
+                Demonstrates <code>FormBehaviorsController</code>, a shim for the
+                <a href="https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/ElementInternalsType/explainer.md"
+                   >Custom Elements with Button Activation Behaviors</a
+                > proposal. The <code>&lt;button-behaviors&gt;</code> component declares
+                <code>static buttonActivationBehaviors = true</code> and delegates to the
+                controller for keyboard activation, focusability, ARIA role,
+                <code>commandfor</code> / <code>command</code> attribute handling, and
+                <code>CommandEvent</code> dispatch.
+            </p>
+
+            <p id="support-msg">Detecting native support&#8230;</p>
+
+            <!-- ════════════════════════════════════════════════════════════════
+                 Scenario 1 — dialog (show-modal / close)
+            ═════════════════════════════════════════════════════════════════ -->
+            <section class="demo-section" aria-labelledby="dialog-heading">
+                <h2 id="dialog-heading">Dialog &#8212; <code>show-modal</code> / <code>close</code></h2>
+                <p>
+                    A <code>&lt;button-behaviors commandfor="my-dialog" command="show-modal"&gt;</code>
+                    fires a <code>CommandEvent</code> on <code>#my-dialog</code> and then
+                    calls <code>dialog.showModal()</code> as the built-in behavior.
+                    A second <code>&lt;button-behaviors&gt;</code> inside the dialog sends
+                    <code>command="close"</code> to dismiss it.
+                </p>
+
+                <div class="button-row">
+                    <button-behaviors id="open-dialog-btn" commandfor="my-dialog" command="show-modal">
+                        Open dialog (custom)
+                    </button-behaviors>
+                    <button class="btn-native" id="open-dialog-native" type="button">
+                        Open dialog (native, for comparison)
+                    </button>
+                </div>
+
+                <dialog id="my-dialog" aria-labelledby="dialog-title">
+                    <h3 id="dialog-title">Hello from a modal dialog</h3>
+                    <p>This dialog was opened via <code>commandfor="my-dialog" command="show-modal"</code>.</p>
+                    <footer>
+                        <button-behaviors commandfor="my-dialog" command="close">
+                            Close (custom)
+                        </button-behaviors>
+                        <button class="btn-native secondary" id="close-dialog-native" type="button">
+                            Close (native)
+                        </button>
+                    </footer>
+                </dialog>
+            </section>
+
+            <!-- ════════════════════════════════════════════════════════════════
+                 Scenario 2 — popover (toggle-popover)
+            ═════════════════════════════════════════════════════════════════ -->
+            <section class="demo-section" aria-labelledby="popover-heading">
+                <h2 id="popover-heading">Popover &#8212; <code>toggle-popover</code></h2>
+                <p>
+                    <code>command="toggle-popover"</code> calls <code>popover.togglePopover()</code>.
+                    The disabled variant shows that <code>aria-disabled</code> and tab removal
+                    are applied automatically by the shim.
+                </p>
+
+                <div class="button-row">
+                    <button-behaviors commandfor="my-popover" command="toggle-popover">
+                        Toggle popover
+                    </button-behaviors>
+                    <button-behaviors commandfor="my-popover" command="toggle-popover" disabled>
+                        Toggle popover (disabled)
+                    </button-behaviors>
+                </div>
+
+                <div id="my-popover" popover>
+                    <strong>Popover content</strong>
+                    <p style="margin:0.5rem 0 0">Opened via <code>command="toggle-popover"</code>.</p>
+                </div>
+            </section>
+
+            <!-- ════════════════════════════════════════════════════════════════
+                 Scenario 3 — form (request-submit / reset)
+            ═════════════════════════════════════════════════════════════════ -->
+            <section class="demo-section" aria-labelledby="form-heading">
+                <h2 id="form-heading">Form &#8212; <code>request-submit</code> / <code>reset</code></h2>
+                <p>
+                    <code>command="request-submit"</code> and <code>command="reset"</code>
+                    target a <code>&lt;form&gt;</code> element directly — no
+                    <code>static formAssociated</code> needed.
+                </p>
+
+                <form id="cmd-form" novalidate>
+                    <div class="form-scenario">
+                        <div>
+                            <label for="cmd-name">Name</label>
+                            <input type="text" id="cmd-name" name="name" placeholder="Your name" />
+                        </div>
+                        <div>
+                            <label for="cmd-email">Email</label>
+                            <input type="text" id="cmd-email" name="email" placeholder="you@example.com" />
+                        </div>
+
+                        <div class="button-row">
+                            <button-behaviors commandfor="cmd-form" command="request-submit">
+                                Submit (custom)
+                            </button-behaviors>
+                            <button-behaviors commandfor="cmd-form" command="reset" variant="secondary">
+                                Reset (custom)
+                            </button-behaviors>
+                        </div>
+
+                        <div id="form-output" class="submit-output" hidden></div>
+                    </div>
+                </form>
+            </section>
+
+            <!-- ════════════════════════════════════════════════════════════════
+                 Scenario 4 — custom CommandEvent handler
+            ═════════════════════════════════════════════════════════════════ -->
+            <section class="demo-section" aria-labelledby="custom-cmd-heading">
+                <h2 id="custom-cmd-heading">Custom command &#8212; cancellable <code>CommandEvent</code></h2>
+                <p>
+                    Any string can be used as a command. The target element listens for
+                    <code>command</code> events and handles custom values. Clicking
+                    "Increment" fires <code>command="my-increment"</code>; "Block" calls
+                    <code>event.preventDefault()</code> to cancel it.
+                </p>
+
+                <div class="demo-grid">
+                    <div class="card">
+                        <h3>Controls</h3>
+                        <div class="button-row">
+                            <button-behaviors commandfor="counter-target" command="my-increment">
+                                Increment
+                            </button-behaviors>
+                            <button-behaviors commandfor="counter-target" command="my-decrement">
+                                Decrement
+                            </button-behaviors>
+                            <button-behaviors commandfor="counter-target" command="my-reset" variant="secondary">
+                                Reset
+                            </button-behaviors>
+                        </div>
+                        <p>
+                            <button-behaviors id="block-btn" commandfor="counter-target" command="my-increment" variant="secondary">
+                                Increment (blocked)
+                            </button-behaviors>
+                            — this button's <code>CommandEvent</code> is cancelled by
+                            the target's listener.
+                        </p>
+                    </div>
+
+                    <div class="card" id="counter-target">
+                        <h3>Target element <code>#counter-target</code></h3>
+                        <p>Counter: <strong id="counter-value">0</strong></p>
+                        <p style="font-size:0.8rem;color:#888">
+                            Listens for <code>command</code> events; cancels when
+                            <code>event.source</code> is <code>#block-btn</code>.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ════════════════════════════════════════════════════════════════
+                 Event log (shared)
+            ═════════════════════════════════════════════════════════════════ -->
+            <section class="demo-section" aria-labelledby="log-heading">
+                <h2 id="log-heading">CommandEvent log</h2>
+                <div class="log">
+                    <ul id="event-log">
+                        <li class="empty">No events yet — interact with the demos above.</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <script type="module">
+            import './button-behaviors.js';
+            import { NATIVE_SUPPORT } from './form-behaviors-controller.js';
+
+            // ── Support badge ──────────────────────────────────────────────────
+            const supportMsg = document.getElementById('support-msg');
+            if (NATIVE_SUPPORT) {
+                supportMsg.innerHTML =
+                    '<span class="support-badge native">Native support detected</span> ' +
+                    'The controller no-ops; the browser handles activation behaviors directly.';
+            } else {
+                supportMsg.innerHTML =
+                    '<span class="support-badge shim">Shim active</span> ' +
+                    'Native <code>buttonActivationBehaviors</code> not detected — ' +
+                    '<code>FormBehaviorsController</code> polyfills keyboard activation, ' +
+                    'ARIA role, focusability, and <code>CommandEvent</code> dispatch.';
+            }
+
+            // ── Shared event logger ────────────────────────────────────────────
+            const log = document.getElementById('event-log');
+            function logEvent(text, cls) {
+                const placeholder = log.querySelector('.empty');
+                placeholder?.remove();
+                const li = document.createElement('li');
+                li.className = cls;
+                const time = new Date().toLocaleTimeString([], { hour12: false });
+                li.textContent = `${time} — ${text}`;
+                log.prepend(li);
+                [...log.children].slice(40).forEach(el => el.remove());
+            }
+
+            // ── Scenario 1: dialog ─────────────────────────────────────────────
+            const dialog = document.getElementById('my-dialog');
+            dialog.addEventListener('command', e => {
+                logEvent(
+                    `command "${e.command}" on #my-dialog from ${e.source?.tagName.toLowerCase()}#${e.source?.id || '(no id)'}`,
+                    'ev-command'
+                );
+            });
+            dialog.addEventListener('click', e => {
+                // close on backdrop click
+                if (e.target === dialog) dialog.close();
+            });
+            // Native fallback buttons for comparison
+            document.getElementById('open-dialog-native').addEventListener('click', () => {
+                logEvent('click on native button → dialog.showModal()', 'ev-click');
+                dialog.showModal();
+            });
+            document.getElementById('close-dialog-native').addEventListener('click', () => {
+                logEvent('click on native button → dialog.close()', 'ev-click');
+                dialog.close();
+            });
+
+            // ── Scenario 2: popover ────────────────────────────────────────────
+            const popover = document.getElementById('my-popover');
+            popover.addEventListener('command', e => {
+                logEvent(`command "${e.command}" on #my-popover`, 'ev-command');
+            });
+
+            // ── Scenario 3: form ───────────────────────────────────────────────
+            const cmdForm   = document.getElementById('cmd-form');
+            const formOutput = document.getElementById('form-output');
+            cmdForm.addEventListener('command', e => {
+                logEvent(`command "${e.command}" on #cmd-form`, 'ev-command');
+            });
+            cmdForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const data = Object.fromEntries(new FormData(e.target));
+                formOutput.hidden = false;
+                formOutput.textContent = `Submitted: ${JSON.stringify(data)}`;
+                logEvent(`form submitted — ${JSON.stringify(data)}`, 'ev-command');
+            });
+            cmdForm.addEventListener('reset', () => {
+                formOutput.hidden = true;
+            });
+
+            // ── Scenario 4: custom CommandEvent + cancellation ─────────────────
+            const counterTarget = document.getElementById('counter-target');
+            const counterValue  = document.getElementById('counter-value');
+            const blockBtn      = document.getElementById('block-btn');
+            let count = 0;
+
+            counterTarget.addEventListener('command', e => {
+                // Cancel events from the "blocked" button
+                if (e.source === blockBtn) {
+                    e.preventDefault();
+                    logEvent(
+                        `command "${e.command}" on #counter-target from #block-btn — CANCELLED`,
+                        'ev-cancel'
+                    );
+                    return;
+                }
+
+                logEvent(
+                    `command "${e.command}" on #counter-target from ${e.source?.tagName.toLowerCase()}`,
+                    'ev-command'
+                );
+
+                if (e.command === 'my-increment') count++;
+                if (e.command === 'my-decrement') count--;
+                if (e.command === 'my-reset')     count = 0;
+                counterValue.textContent = count;
+            });
+        </script>
+    </body>
+</html>
