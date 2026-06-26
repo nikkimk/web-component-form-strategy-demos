@@ -1,5 +1,5 @@
 /**
- * FormBehaviorsController
+ * ButtonAssociationController
  *
  * A shim for the proposed "Custom Elements with Button Activation Behaviors"
  * (https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/ElementInternalsType/explainer.md).
@@ -10,7 +10,7 @@
  *
  * The host element must:
  *   - declare  static buttonActivationBehaviors = true
- *   - call     new FormBehaviorsController(this, this.attachInternals())
+ *   - call     new ButtonAssociationController(this, this.attachInternals())
  *   - delegate connectedCallback    → controller.connect()
  *   - delegate disconnectedCallback → controller.disconnect()
  *   - observe  ['commandfor', 'command', 'disabled'] and call
@@ -70,7 +70,7 @@ const BUILT_IN_COMMANDS = new Map([
 
 // ── Controller ───────────────────────────────────────────────────────────────
 
-export class FormBehaviorsController {
+export class ButtonAssociationController {
     #host;
     #internals;
     #observer;

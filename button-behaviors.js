@@ -1,9 +1,9 @@
-import { FormBehaviorsController, NATIVE_SUPPORT } from './form-behaviors-controller.js';
+import { ButtonAssociationController, NATIVE_SUPPORT } from './button-association-controller.js';
 
 /**
  * <button-behaviors>
  *
- * Demo component exercising FormBehaviorsController — a shim for the proposed
+ * Demo component exercising ButtonAssociationController — a shim for the proposed
  * "Custom Elements with Button Activation Behaviors" spec.
  *
  * Attributes:
@@ -24,7 +24,7 @@ class ButtonBehaviors extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this.#behaviors = new FormBehaviorsController(this, this.#internals);
+        this.#behaviors = new ButtonAssociationController(this, this.#internals);
     }
 
     static get observedAttributes() {

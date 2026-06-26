@@ -427,7 +427,7 @@ customElements.define('my-button', MyButton);
 
 ---
 
-## Platform-Provided Behaviors — `FormBehaviorsController`
+## Platform-Provided Behaviors — `ButtonAssociationController`
 
 ### Background: the proposal
 
@@ -507,9 +507,9 @@ Two concerns raised in the WHATWG issue thread are worth tracking:
 
 ---
 
-### The `FormBehaviorsController`
+### The `ButtonAssociationController`
 
-[`form-behaviors-controller.js`](./form-behaviors-controller.js) is a plain-JavaScript shim that polyfills the behaviors reachable from JS while the spec works through the standards process. It covers the command-invocation surface (popover, dialog, form, custom commands) and the activation/ARIA wiring — but explicitly **cannot** reproduce the two things that require platform support.
+[`button-association-controller.js`](./button-association-controller.js) is a plain-JavaScript shim that polyfills the behaviors reachable from JS while the spec works through the standards process. It covers the command-invocation surface (popover, dialog, form, custom commands) and the activation/ARIA wiring — but explicitly **cannot** reproduce the two things that require platform support.
 
 #### What it polyfills
 
@@ -551,7 +551,7 @@ For components that must have these behaviors today, the only workaround is a hi
 
 The host element must:
 
-1. Create a `FormBehaviorsController` in the constructor, passing `this` and the result of `this.attachInternals()`.
+1. Create a `ButtonAssociationController` in the constructor, passing `this` and the result of `this.attachInternals()`.
 2. Call `controller.connect()` from `connectedCallback`.
 3. Call `controller.disconnect()` from `disconnectedCallback`.
 
@@ -562,13 +562,13 @@ The `static buttonActivationBehaviors = true` declaration (from the MSEdge expla
 #### Usage example
 
 ```js
-import { FormBehaviorsController } from './form-behaviors-controller.js';
+import { ButtonAssociationController } from './button-association-controller.js';
 
 class MyButton extends HTMLElement {
     static buttonActivationBehaviors = true; // intent marker
 
     #internals = this.attachInternals();
-    #behaviors = new FormBehaviorsController(this, this.#internals);
+    #behaviors = new ButtonAssociationController(this, this.#internals);
 
     connectedCallback() {
         this.shadowRoot ?? this.attachShadow({ mode: 'open' });
@@ -1028,7 +1028,7 @@ field.describedby = 'email-desc';
 | [Light DOM siblings](./demo-light-siblings.html) | `labelledby` / `describedby` properties — `ariaLabelledByElements` cross-root element refs |
 | [Hybrid with toggle](./demo-hybrid.html) | Both patterns in one component; toggle button switches live between slotted and sibling mode |
 | [Form association](./demo-form.html) | `textfield-form`, `checkbox-form`, `combobox-form` — `FieldAssociationController` + `button-form` alongside native equivalents |
-| [Platform-Provided Behaviors shim](./demo-form-behaviors.html) | `button-behaviors` using `FormBehaviorsController` — dialog, popover, form commands, and custom `CommandEvent` with cancellation |
+| [Platform-Provided Behaviors shim](./demo-form-behaviors.html) | `button-behaviors` using `ButtonAssociationController` — dialog, popover, form commands, and custom `CommandEvent` with cancellation |
 
 ---
 

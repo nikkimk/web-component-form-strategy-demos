@@ -135,9 +135,9 @@
         <main class="page">
             <p><a href="./index.html">&#8592; All demos</a></p>
 
-            <h1>Button Activation Behaviors &#8212; <code>FormBehaviorsController</code> shim</h1>
+            <h1>Button Activation Behaviors &#8212; <code>ButtonAssociationController</code> shim</h1>
             <p class="lead">
-                Demonstrates <code>FormBehaviorsController</code>, a shim for the
+                Demonstrates <code>ButtonAssociationController</code>, a shim for the
                 <a href="https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/ElementInternalsType/explainer.md"
                    >Custom Elements with Button Activation Behaviors</a
                 > proposal. The <code>&lt;button-behaviors&gt;</code> component declares
@@ -308,7 +308,7 @@
 
         <script type="module">
             import './button-behaviors.js';
-            import { NATIVE_SUPPORT } from './form-behaviors-controller.js';
+            import { NATIVE_SUPPORT } from './button-association-controller.js';
 
             // ── Support badge ──────────────────────────────────────────────────
             const supportMsg = document.getElementById('support-msg');
@@ -320,7 +320,7 @@
                 supportMsg.innerHTML =
                     '<span class="support-badge shim">Shim active</span> ' +
                     'Native <code>buttonActivationBehaviors</code> not detected — ' +
-                    '<code>FormBehaviorsController</code> polyfills keyboard activation, ' +
+                    '<code>ButtonAssociationController</code> polyfills keyboard activation, ' +
                     'ARIA role, focusability, and <code>CommandEvent</code> dispatch.';
             }
 
