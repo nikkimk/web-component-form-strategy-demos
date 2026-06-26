@@ -8,14 +8,10 @@ Live examples and a reference implementation for building accessible, form-assoc
 
 ## Contents
 
-- [TL;DR — quick reference for component authors](#tldr--quick-reference-for-component-authors)
-  - [ElementInternals / form-associated custom elements (FACE)](#elementinternals--form-associated-custom-elements-face)
-  - [Where ARIA roles live](#where-aria-roles-live)
-  - [IDREF strategy](#idref-strategy)
-  - [axe-core policy](#axe-core-policy)
 - [Recommendation: put the role in the shadow DOM](#recommendation-put-the-role-in-the-shadow-dom)
+  - [Where ARIA roles live](#where-aria-roles-live)
   - [Why not on the host?](#why-not-on-the-host)
-- [Labelling strategy](#labelling-strategy)
+- [IDREF Strategy](#idref-strategy)
   - [1. Shadow DOM slots (default)](#1-shadow-dom-slots-default)
   - [2. Light DOM siblings via `labelledby` / `describedby` properties](#2-light-dom-siblings-via-labelledby--describedby-properties)
   - [Combining both sources for description](#combining-both-sources-for-description)
@@ -24,6 +20,7 @@ Live examples and a reference implementation for building accessible, form-assoc
   - [What it does](#what-it-does)
   - [Exports](#exports)
 - [Form association](#form-association)
+  - [ElementInternals / form-associated custom elements (FACE)](#elementinternals--form-associated-custom-elements-face)
   - [The `FieldAssociationController`](#the-fieldassociationcontroller)
   - [Form-associated buttons](#form-associated-buttons)
 - [Platform-Provided Behaviors — `ButtonAssociationController`](#platform-provided-behaviors--buttonassociationcontroller)
@@ -57,20 +54,13 @@ Live examples and a reference implementation for building accessible, form-assoc
 
 ---
 
-## TL;DR — quick reference for component authors
+## Recommendation: put the role in the shadow DOM
 
-### ElementInternals / form-associated custom elements (FACE)
+Place the ARIA role on an **inner shadow DOM element** — not on the custom element host.
 
-**Recommendation: yes, with care.**
+- For **textfield** and **checkbox**, use a native `<input>`. The browser supplies the role, focus behavior, and keyboard semantics automatically.
+- For **progressbar**, **combobox**, and other non-native roles, use a `<div role="...">` inside the shadow root.
 
-Use `static formAssociated = true` and `attachInternals()` for any field component that needs to participate in a `<form>` (text inputs, checkboxes, comboboxes, etc.). This is the only standards-based way to achieve native form participation without wrapping a hidden `<input>`.
-
-| Topic | Guidance |
-|-------|----------|
-| Browser support | Chromium 77+, Safari 16.4+, Firefox 93+. Well-supported in modern targets. |
-| AT exposure | Most screen readers read ARIA set via `ElementInternals` in Chromium and Safari. Firefox AT exposure is less consistent; verify with real devices. |
-| axe-core | Axe-core has gaps — see [axe-core policy](#axe-core-policy-and-elementinternals) below. Several rules produce false positives or blind spots today. |
-| Buttons | Do **not** use FACE for buttons. Use it only for field-like controls that submit values. See [form-associated buttons](#form-associated-buttons) for the correct pattern. |
 
 ### Where ARIA roles live
 
@@ -84,40 +74,6 @@ Use `static formAssociated = true` and `attachInternals()` for any field compone
 | Combobox / listbox | Shadow `<div role="combobox">` + shadow `<ul role="listbox">` |
 
 The host element carries no role. This is intentional — it lets the shadow DOM own the element's semantics, its label/help text, and all associated CSS as a single encapsulated unit.
-
-### IDREF strategy
-
-**Recommendation: hybrid — shadow DOM slots for default label/help, element ref properties for cross-root wiring.**
-
-| Scenario | Mechanism |
-|----------|-----------|
-| Label/help text supplied by the consumer as slotted children | `<slot name="label">` / `<slot name="description">` → same-root `aria-labelledby`/`aria-describedby` attribute on the inner role element |
-| Label/help text lives in the light DOM as siblings (e.g. data grid column header labels a cell's inline field) | `labelledby` / `describedby` properties → `ariaLabelledByElements` / `ariaDescribedByElements` cross-root element refs on the inner role element |
-| Both present simultaneously | Both sources are merged; shadow description span comes first |
-
-Never use `aria-labelledby` attribute to point at a light DOM ID from inside a shadow root — ID references do not cross shadow root boundaries.
-
-### axe-core policy
-
-**Recommendation: document exclusions at the story level with rationale; track upstream.**
-
-Deque has been shipping ElementInternals support in tranches (ARIA from internals, cross-root element refs, extension-related behavior — targeted through 2025). axe-core still produces false positives and blind spots for FACE components in many versions. Check the [elementInternals label](https://github.com/dequelabs/axe-core/issues?q=label%3AelementInternals) for current status and remove exclusions as fixes land. The correct response is:
-
-1. Exclude affected rules per component story with a `// reason:` comment.
-2. Log an upstream issue link alongside each exclusion.
-3. Treat screen reader spot-checks as authoritative for these patterns; axe-core is supplementary only.
-4. Revisit exclusions each quarter as Deque ships fixes.
-
-See [axe-core policy and ElementInternals](#axe-core-policy-and-elementinternals) for the full list of rules and rationale.
-
----
-
-## Recommendation: put the role in the shadow DOM
-
-Place the ARIA role on an **inner shadow DOM element** — not on the custom element host.
-
-- For **textfield** and **checkbox**, use a native `<input>`. The browser supplies the role, focus behavior, and keyboard semantics automatically.
-- For **progressbar**, **combobox**, and other non-native roles, use a `<div role="...">` inside the shadow root.
 
 ### Why not on the host?
 
@@ -148,11 +104,22 @@ this.attachShadow({ mode: 'open', delegatesFocus: true });
 
 ---
 
-## Labelling strategy
+## IDREF Strategy
 
 Two sources of label and description text are supported and can be combined. **We recommend the hybrid approach** — shadow DOM slots for the common case, light DOM element refs for contextual overrides — so that consumers can always use whichever fits their page structure.
 
 A concrete example of why both are needed: a text field used standalone in a form can be labeled with a slotted `<span slot="label">`. The same field component dropped into a data grid cell should be labeled by the column header — an element elsewhere in the light DOM. Both cases must work without the consumer rewriting the component.
+
+
+**Recommendation: hybrid — shadow DOM slots for default label/help, element ref properties for cross-root wiring.**
+
+| Scenario | Mechanism |
+|----------|-----------|
+| Label/help text supplied by the consumer as slotted children | `<slot name="label">` / `<slot name="description">` → same-root `aria-labelledby`/`aria-describedby` attribute on the inner role element |
+| Label/help text lives in the light DOM as siblings (e.g. data grid column header labels a cell's inline field) | `labelledby` / `describedby` properties → `ariaLabelledByElements` / `ariaDescribedByElements` cross-root element refs on the inner role element |
+| Both present simultaneously | Both sources are merged; shadow description span comes first |
+
+Never use `aria-labelledby` attribute to point at a light DOM ID from inside a shadow root — ID references do not cross shadow root boundaries.
 
 ### 1. Shadow DOM slots (default)
 
@@ -327,6 +294,20 @@ This repo provides two controllers that encapsulate these responsibilities — o
 |---|---|---|---|
 | `FieldAssociationController` | Field (textfield, checkbox, combobox) | A future field behavior (not yet proposed) | Use today; no near-term replacement |
 | `ButtonAssociationController` | Button | `HTMLSubmitButtonBehavior` | Use today; [WHATWG Stage 1](#platform-provided-behaviors--buttonassociationcontroller), migrate per-component when broadly available |
+
+
+### ElementInternals / form-associated custom elements (FACE)
+
+**Recommendation: yes, with care.**
+
+Use `static formAssociated = true` and `attachInternals()` for any field component that needs to participate in a `<form>` (text inputs, checkboxes, comboboxes, etc.). This is the only standards-based way to achieve native form participation without wrapping a hidden `<input>`.
+
+| Topic | Guidance |
+|-------|----------|
+| Browser support | Chromium 77+, Safari 16.4+, Firefox 93+. Well-supported in modern targets. |
+| AT exposure | Most screen readers read ARIA set via `ElementInternals` in Chromium and Safari. Firefox AT exposure is less consistent; verify with real devices. |
+| axe-core | Axe-core has gaps — see [axe-core policy](#axe-core-policy-and-elementinternals) below. Several rules produce false positives or blind spots today. |
+| Buttons | Do **not** use FACE for buttons. Use it only for field-like controls that submit values. See [form-associated buttons](#form-associated-buttons) for the correct pattern. |
 
 ### The `FieldAssociationController`
 
@@ -843,6 +824,15 @@ Once `referenceTarget` ships unflagged across your supported browser range, the 
 
 
 ## axe-core policy and ElementInternals
+
+**Recommendation: document exclusions at the story level with rationale; track upstream.**
+
+Deque has been shipping ElementInternals support in tranches (ARIA from internals, cross-root element refs, extension-related behavior — targeted through 2025). axe-core still produces false positives and blind spots for FACE components in many versions. Check the [elementInternals label](https://github.com/dequelabs/axe-core/issues?q=label%3AelementInternals) for current status and remove exclusions as fixes land. The correct response is:
+
+1. Exclude affected rules per component story with a `// reason:` comment.
+2. Log an upstream issue link alongside each exclusion.
+3. Treat screen reader spot-checks as authoritative for these patterns; axe-core is supplementary only.
+4. Revisit exclusions each quarter as Deque ships fixes.
 
 Browsers do not expose a single standard path for axe-core to read accessibility data set via `ElementInternals`. Deque is actively working on this under their [elementInternals-labeled issues](https://github.com/dequelabs/axe-core/issues?q=label%3AelementInternals), but several gaps remain today (mid-2025).
 
