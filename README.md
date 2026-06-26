@@ -180,6 +180,62 @@ When `describedby` is set **and** slotted description content is present, the co
 <p id="global-error" role="alert">This field is required.</p>
 ```
 
+### When `referenceTarget` ships unflagged
+
+[`referenceTarget`](#referencetarget) is currently behind flags in all three major browsers. Once it ships unflagged and reaches your supported browser range, **the light DOM sibling path (Section 2 above) can be deleted** from most field components. Here is a precise accounting of what changes and what does not.
+
+#### What becomes unnecessary
+
+| Current mechanism | Why it exists | Once `referenceTarget` ships |
+|-------------------|---------------|------------------------------|
+| `labelledby` / `describedby` attributes and JS properties | Let consumers wire external label/description IDs cross-root by passing them into the component | Consumers write `aria-labelledby="my-textfield"` directly on the host; `referenceTarget` routes it to the inner role element — no component API needed |
+| `ariaLabelledByElements` / `ariaDescribedByElements` wiring in `LabellingController` | Perform the cross-root element reference the browser cannot do with ID strings | Browser resolves the ID through `referenceTarget` natively |
+| `resolveIds()` utility and `SUPPORTS_ELEMENT_REFS` branch | Polyfill `ariaLabelledByElements` absence; resolve string IDs to elements | No longer called for the external-label path |
+| `attributeChangedCallback` handling for `labelledby` / `describedby` | Sync attribute → property → `ariaLabelledByElements` | Property and attribute can be removed from `observedAttributes` |
+
+For a simple textfield or checkbox, `referenceTarget` set on the shadow root to the inner `<input>` is sufficient: both `aria-labelledby` and `aria-describedby` from external consumers resolve to the `<input>`, which is already the correct labelling target.
+
+Migration for a textfield would look like this:
+
+```js
+// Before: consumer must use the component's custom property
+// <my-textfield labelledby="col-header"></my-textfield>
+
+// After: consumer uses the standard attribute on the host
+// <my-textfield aria-labelledby="col-header"></my-textfield>
+
+connectedCallback() {
+    this.attachShadow({ mode: 'open' });
+    // Declare the inner <input> as the canonical IDREF target
+    this.shadowRoot.referenceTarget = 'role'; // 'role' is the id of the inner <input>
+    this.shadowRoot.innerHTML = `...`;
+    // LabellingController still needed for the slotted label path;
+    // light DOM sibling wiring logic can be removed.
+}
+```
+
+#### What remains necessary
+
+`referenceTarget` resolves IDREFs that *enter* a shadow host from outside. It does not help with ARIA relationship attributes that go *from a shadow element to a light DOM element*, or with native `<label>` interaction. The following areas are unaffected.
+
+**Slotted label and description path.** Same-root `aria-labelledby="label"` / `aria-describedby="description"` inside the shadow, managed by the slots-and-spans structure, already works without any cross-root element refs. `referenceTarget` neither helps nor harms it. The `LabellingController`'s `slotchange` listener, show/hide logic, and same-root ID wiring remain exactly as-is.
+
+**`<label for>` click-to-focus.** `referenceTarget` handles ARIA IDREF resolution but not the native `<label>` click association. Clicking a `<label for="my-textfield">` still does not focus the inner `<input>` — that requires either a hidden native input, a future label behavior (see [Beyond submit: a future label behavior](#beyond-submit-a-future-label-behavior-and-referencetarget)), or `delegatesFocus: true` as a partial mitigation.
+
+**`referenceTargetMap` gap.** `referenceTarget` sets a single canonical inner element for *all* IDREF attributes. For most field components this is fine — both `aria-labelledby` and `aria-describedby` should resolve to the `<input>`. If a future component needs different targets per attribute (e.g., `aria-labelledby` → `<input>`, `aria-describedby` → a separate help span), `referenceTargetMap` would be needed. That spec is still at proposal stage with no browser support.
+
+**Combobox — several wiring paths remain complex.** The combobox is the most involved case because it manages multiple ARIA relationships simultaneously, some of which cross root boundaries in both directions:
+
+| Relationship | Direction | `referenceTarget` helps? | Current approach | Remains after `referenceTarget` |
+|---|---|---|---|---|
+| Label → trigger | External → shadow | ✅ Yes | `labelledby` prop → `ariaLabelledByElements` | Delete property; set `referenceTarget = 'role'` |
+| `aria-controls` (trigger → listbox) | Shadow → shadow | N/A — same root | Same-root attribute | Unchanged |
+| `aria-expanded` | State on trigger | N/A | Managed in JS | Unchanged |
+| `aria-activedescendant` (trigger → active option) | Shadow → light DOM | ❌ No | `ariaActiveDescendantElement` cross-root element ref (with ID fallback) | Still required — `referenceTarget` only affects inbound IDREF resolution, not outbound element relationships |
+| `aria-selected` on slotted options | Light DOM elements | N/A | Set by component JS | Unchanged |
+
+The `aria-activedescendant` / `ariaActiveDescendantElement` wiring — where the shadow-root trigger element must point at the currently-active slotted option in the light DOM — is not addressed by `referenceTarget` at all. The cross-root element reference property remains the right tool there, and the full `ariaActiveDescendantElement`-with-id-fallback pattern documented in [Combobox extras](#4-combobox-extras) stays in place.
+
 ---
 
 ## The `LabellingController`
