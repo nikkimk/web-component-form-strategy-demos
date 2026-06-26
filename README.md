@@ -111,15 +111,21 @@ this.attachShadow({ mode: 'open', delegatesFocus: true });
 
 Two sources of label and description text are supported and can be combined. **We recommend the hybrid approach** — shadow DOM slots for the common case, light DOM element refs for contextual overrides — so that consumers can always use whichever fits their page structure.
 
-A concrete example of why both are needed: a text field used standalone in a form can be labeled with a slotted `<span slot="label">`. The same field component dropped into a data grid cell should be labeled by the column header — an element elsewhere in the light DOM. Both cases must work without the consumer rewriting the component.
+A standalone form field can be labeled with a slotted `<span slot="label">`. That same component dropped into a data grid cell should be labeled by the column and row headers — elements already in the light DOM. A ZIP code field in a multi-address form might share a footnote description with several other fields. In all of these cases the component doesn't change; the consumer chooses which wiring to use.
 
+**Common scenarios that require light DOM labelling:**
+
+- **Data grids** — each cell contains an editable field labeled by the column header (`<th>`) and identified by the row header. Slotting a separate label into every cell would duplicate content already present in the table structure.
+- **Multi-section forms** (e.g. billing + shipping addresses) — fields in each section may be labeled by a shared `<h2>` section heading and described by a single footnote or legal notice at the bottom of the form that applies to several fields at once.
+- **Inline editing** — a field replaces static display text on activation; the surrounding text or heading already describes the field; no separate label element is added.
+- **Shared validation messages** — a `role="alert"` paragraph below a fieldset describes the error state for multiple fields simultaneously.
 
 **Recommendation: hybrid — shadow DOM slots for default label/help, element ref properties for cross-root wiring.**
 
 | Scenario | Mechanism |
 |----------|-----------|
 | Label/help text supplied by the consumer as slotted children | `<slot name="label">` / `<slot name="description">` → same-root `aria-labelledby`/`aria-describedby` attribute on the inner role element |
-| Label/help text lives in the light DOM as siblings (e.g. data grid column header labels a cell's inline field) | `labelledby` / `describedby` properties → `ariaLabelledByElements` / `ariaDescribedByElements` cross-root element refs on the inner role element |
+| Label/help text lives elsewhere in the light DOM (table headers, section headings, shared footnotes) | `labelledby` / `describedby` properties → `ariaLabelledByElements` / `ariaDescribedByElements` cross-root element refs on the inner role element |
 | Both present simultaneously | Both sources are merged; shadow description span comes first |
 
 Never use `aria-labelledby` attribute to point at a light DOM ID from inside a shadow root — ID references do not cross shadow root boundaries.
@@ -169,24 +175,92 @@ For cases where the label and description live as **plain siblings** on the page
 
 These use the [element reference API](https://developer.mozilla.org/en-US/docs/Web/API/Element/ariaLabelledByElements) (`ariaLabelledByElements` / `ariaDescribedByElements`), which works **cross-root** — a shadow element can reference a light DOM element as its label source.
 
-**Consumer usage:**
+**Data grid — labeled by column and row headers:**
 
 ```html
-<!-- Data grid: field labeled by column header and row header -->
-<label id="col-header">Email address</label>
-<my-textfield
-    labelledby="col-header"
-    describedby="col-help"
-></my-textfield>
-<p id="col-help">We'll never share your email.</p>
+<table>
+    <thead>
+        <tr>
+            <th id="name-col">Name</th>
+            <th id="email-col">Email</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <th id="row-1" scope="row">Row 1</th>
+            <td>
+                <my-textfield
+                    labelledby="name-col row-1"
+                ></my-textfield>
+            </td>
+            <td>
+                <my-textfield
+                    labelledby="email-col row-1"
+                    describedby="email-note"
+                ></my-textfield>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p id="email-note">Used for order confirmations only.</p>
 ```
 
-Or set the properties directly in JavaScript:
+The `labelledby="name-col row-1"` value mirrors how native table cells are announced — the field's accessible name is computed from both the column and row header text. No `<span slot="label">` is added to any cell; the table structure already carries the labelling.
+
+**Multi-section form — labeled by section headings, shared footnote description:**
+
+```html
+<section aria-labelledby="billing-heading">
+    <h2 id="billing-heading">Billing address</h2>
+
+    <my-textfield labelledby="billing-heading street-label">
+        <span slot="label" id="street-label">Street</span>
+    </my-textfield>
+
+    <my-textfield
+        labelledby="billing-heading zip-label"
+        describedby="zip-note"
+    >
+        <span slot="label" id="zip-label">ZIP code</span>
+    </my-textfield>
+</section>
+
+<section aria-labelledby="shipping-heading">
+    <h2 id="shipping-heading">Shipping address</h2>
+
+    <my-textfield
+        labelledby="shipping-heading zip-label-2"
+        describedby="zip-note"
+    >
+        <span slot="label" id="zip-label-2">ZIP code</span>
+    </my-textfield>
+</section>
+
+<p id="zip-note">5-digit US ZIP or 9-digit ZIP+4 (e.g. 94105-1804).</p>
+```
+
+Both ZIP fields reference the same `#zip-note` footnote via `describedby`. The `labelledby` value includes both the section heading and the field's own label slot, so a screen reader announces "Billing address — ZIP code" and "Shipping address — ZIP code" respectively, disambiguating identically-named fields in the same form.
+
+**Inline editing — no separate label element:**
+
+```html
+<h2 id="product-name">Acme Widget Pro</h2>
+<button id="edit-btn" aria-controls="name-field">Edit</button>
+
+<!-- Field replaces the heading text on activation -->
+<my-textfield
+    id="name-field"
+    labelledby="product-name"
+    hidden
+></my-textfield>
+```
+
+Or set the properties directly in JavaScript when IDs are generated at runtime:
 
 ```js
 const field = document.querySelector('my-textfield');
-field.labelledby  = 'col-header';
-field.describedby = 'col-help';
+field.labelledby  = columnHeader.id;
+field.describedby = sharedNote.id;
 ```
 
 ### Combining both sources for description
