@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Shadow role &#8212; referenceTarget labelling</title>
+        <link rel="stylesheet" href="./page.css" />
+        <style>
+            .flag-callout {
+                background: #fffbe6;
+                border: 1px solid #f0c040;
+                border-radius: 0.5rem;
+                padding: 0.75rem 1rem;
+                margin-block: 1.5rem;
+            }
+            .flag-callout summary {
+                cursor: pointer;
+                font-weight: 600;
+            }
+            .flag-callout > div {
+                margin-top: 1rem;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+                gap: 1rem;
+            }
+            .flag-browser {
+                background: #fff;
+                border: 1px solid #e0c060;
+                border-radius: 0.4rem;
+                padding: 0.75rem 1rem;
+            }
+            .flag-browser h3 {
+                margin: 0 0 0.5rem;
+                font-size: 0.9rem;
+            }
+            .flag-browser ol {
+                margin: 0;
+                padding-left: 1.25rem;
+                font-size: 0.85rem;
+            }
+            .flag-browser code {
+                font-size: 0.8rem;
+                word-break: break-all;
+            }
+            @media (prefers-color-scheme: dark) {
+                .flag-callout { background: #2a2200; border-color: #8a6d00; }
+                .flag-browser { background: #1e1800; border-color: #6a5000; }
+            }
+            .component-note {
+                font-size: 0.85rem;
+                color: #555;
+                margin-block-start: 0.5rem;
+                font-style: italic;
+            }
+            @media (prefers-color-scheme: dark) {
+                .component-note { color: #aaa; }
+            }
+        </style>
+    </head>
+    <body>
+        <main class="page">
+            <p><a href="./index.html">&#8592; All demos</a></p>
+
+            <h1>Shadow role &#8212; <code>referenceTarget</code> labelling</h1>
+            <p class="lead">
+                Each component sets <code>shadowRoot.referenceTarget&nbsp;=&nbsp;'role'</code> so
+                that <code>aria-labelledby</code> and <code>aria-describedby</code> attributes on
+                the <strong>host element</strong> resolve directly to the inner shadow element with
+                <code>id="role"</code>. No <code>LabellingController</code>, no
+                <code>ariaLabelledByElements</code> JS wiring &#8212; the browser handles
+                cross-root IDREF resolution natively.
+            </p>
+            <p>
+                Compare with the
+                <a href="./demo-hybrid.html">hybrid demo</a>, which achieves the same result
+                today using <code>ariaLabelledByElements</code> and the
+                <code>LabellingController</code>.
+            </p>
+
+            <details class="flag-callout">
+                <summary>&#9888;&#65039; <code>referenceTarget</code> is flag-gated in all browsers &#8212; click to see how to enable it</summary>
+                <div>
+                    <div class="flag-browser">
+                        <h3>Chrome / Edge 133+</h3>
+                        <ol>
+                            <li>Open <code>chrome://flags</code></li>
+                            <li>Search for <strong>Experimental Web Platform Features</strong></li>
+                            <li>Set to <strong>Enabled</strong></li>
+                            <li>Click <strong>Relaunch</strong></li>
+                        </ol>
+                    </div>
+                    <div class="flag-browser">
+                        <h3>Firefox 144+</h3>
+                        <ol>
+                            <li>Open <code>about:config</code></li>
+                            <li>Search for <code>dom.shadowdom.referenceTarget.enabled</code></li>
+                            <li>Set to <strong>true</strong></li>
+                            <li>Restart Firefox</li>
+                        </ol>
+                    </div>
+                    <div class="flag-browser">
+                        <h3>Safari 26+</h3>
+                        <ol>
+                            <li>Open <strong>Safari</strong> &#8594; <strong>Develop</strong> menu</li>
+                            <li>Select <strong>Feature Flags&#8230;</strong></li>
+                            <li>Find and enable <strong>referenceTarget</strong></li>
+                            <li>Reload the page</li>
+                        </ol>
+                    </div>
+                </div>
+            </details>
+
+            <div class="demo-grid">
+
+                <section class="demo-card" aria-labelledby="tf-heading">
+                    <h2 id="tf-heading">Textfield</h2>
+                    <label id="tf-label">Email address</label>
+                    <textfield-reftarget
+                        id="tf"
+                        aria-labelledby="tf-label"
+                        aria-describedby="tf-desc"
+                    ></textfield-reftarget>
+                    <p id="tf-desc" class="field-help-standalone">We&#8217;ll never share your email.</p>
+                    <p class="component-note">
+                        Note: <code>&lt;label for="tf"&gt;</code> click-to-focus does not work &#8212;
+                        <code>referenceTarget</code> resolves IDREF attributes but does not wire the
+                        <code>for</code>&#8202;/&#8202;<code>labels</code> association. A future label
+                        behavior would close this gap.
+                    </p>
+                </section>
+
+                <section class="demo-card" aria-labelledby="cb-heading">
+                    <h2 id="cb-heading">Checkbox</h2>
+                    <span id="cb-label">Subscribe to newsletter</span>
+                    <checkbox-reftarget
+                        id="cb"
+                        aria-labelledby="cb-label"
+                        aria-describedby="cb-desc"
+                    ></checkbox-reftarget>
+                    <p id="cb-desc" class="field-help-standalone">You can unsubscribe at any time.</p>
+                </section>
+
+                <section class="demo-card" aria-labelledby="pb-heading">
+                    <h2 id="pb-heading">Progress bar</h2>
+                    <span id="pb-label">Upload progress</span>
+                    <progressbar-reftarget
+                        id="pb"
+                        aria-labelledby="pb-label"
+                        aria-describedby="pb-desc"
+                    ></progressbar-reftarget>
+                    <p id="pb-desc" class="field-help-standalone">Uploading your files to the server.</p>
+                </section>
+
+                <section class="demo-card" aria-labelledby="cmb-heading">
+                    <h2 id="cmb-heading">Combobox</h2>
+                    <span id="cmb-label">Favorite fruit</span>
+                    <combobox-reftarget
+                        id="cmb"
+                        aria-labelledby="cmb-label"
+                        aria-describedby="cmb-desc"
+                    >
+                        <li slot="options" role="option" aria-selected="false">Apple</li>
+                        <li slot="options" role="option" aria-selected="false">Banana</li>
+                        <li slot="options" role="option" aria-selected="false">Cherry</li>
+                        <li slot="options" role="option" aria-selected="false">Date</li>
+                        <li slot="options" role="option" aria-selected="false">Elderberry</li>
+                    </combobox-reftarget>
+                    <p id="cmb-desc" class="field-help-standalone">Arrow keys navigate, Enter or Space selects.</p>
+                    <p class="component-note">
+                        <code>referenceTarget</code> resolves external <code>aria-labelledby</code>
+                        to the inner combobox trigger. The active option (a light DOM element
+                        referenced from a shadow element) still requires
+                        <code>ariaActiveDescendantElement</code> &#8212; that cross-root direction
+                        is not addressed by <code>referenceTarget</code>.
+                    </p>
+                </section>
+
+            </div>
+        </main>
+
+        <script type="module">
+            import './textfield-reftarget.js';
+            import './checkbox-reftarget.js';
+            import './progressbar-reftarget.js';
+            import './combobox-reftarget.js';
+        </script>
+    </body>
+</html>

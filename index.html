@@ -86,6 +86,23 @@
                 </ul>
             </section>
 
+            <section class="demo-section" aria-labelledby="reftarget-heading">
+                <h2 id="reftarget-heading"><code>referenceTarget</code> labelling</h2>
+                <p>
+                    Components set <code>shadowRoot.referenceTarget&nbsp;=&nbsp;'role'</code> so
+                    that <code>aria-labelledby</code> / <code>aria-describedby</code> on the
+                    <strong>host element</strong> resolve directly to the inner shadow element
+                    &#8212; no <code>LabellingController</code>, no
+                    <code>ariaLabelledByElements</code> wiring. Requires enabling a browser flag
+                    (instructions on the demo page). Compare with the
+                    <a href="./demo-hybrid.html">hybrid demo</a>, which achieves the same result
+                    today using <code>ariaLabelledByElements</code>.
+                </p>
+                <ul class="nav-list">
+                    <li><a href="./demo-reftarget.html">Shadow role &#8212; <code>referenceTarget</code> labelling</a></li>
+                </ul>
+            </section>
+
             <section class="demo-section" aria-labelledby="behaviors-heading">
                 <h2 id="behaviors-heading">Platform-Provided Behaviors shim</h2>
                 <p>

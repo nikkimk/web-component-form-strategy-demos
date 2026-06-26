@@ -303,6 +303,8 @@ When `describedby` is set **and** slotted description content is present, the co
 
 ### When `referenceTarget` ships unflagged
 
+> **Demo:** [Shadow role — `referenceTarget` labelling](./demo-reftarget.html) shows all four components (textfield, checkbox, progressbar, combobox) wired with `shadowRoot.referenceTarget = 'role'` and no `LabellingController`. The page includes per-browser flag-enable instructions. Compare with [demo-hybrid.html](./demo-hybrid.html), which achieves the same result today using `ariaLabelledByElements`.
+
 [`referenceTarget`](#referencetarget) is currently behind flags in all three major browsers. Once it ships unflagged and reaches your supported browser range, **the light DOM sibling path (Section 2 above) can be deleted** from most field components. Here is a precise accounting of what changes and what does not.
 
 #### What becomes unnecessary
@@ -1130,6 +1132,7 @@ field.describedby = 'email-desc';
 | [Shadow DOM label and description](./demo-shadow-role.html) | Named slots — same-root `aria-labelledby`/`aria-describedby` |
 | [Light DOM siblings](./demo-light-siblings.html) | `labelledby` / `describedby` properties — `ariaLabelledByElements` cross-root element refs |
 | [Hybrid with toggle](./demo-hybrid.html) | Both patterns in one component; toggle button switches live between slotted and sibling mode |
+| [`referenceTarget` labelling](./demo-reftarget.html) | Same four components wired with `shadowRoot.referenceTarget = 'role'` — no `LabellingController`, no JS wiring; requires a browser flag (instructions on page) |
 | [Form association](./demo-form.html) | `textfield-form`, `checkbox-form`, `combobox-form` — `FieldAssociationController` + `button-form` alongside native equivalents |
 | [Platform-Provided Behaviors shim](./demo-form-behaviors.html) | `button-behaviors` using `ButtonAssociationController` — dialog, popover, form commands, and custom `CommandEvent` with cancellation |
 
