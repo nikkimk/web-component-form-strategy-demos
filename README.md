@@ -20,12 +20,19 @@ Live examples and a reference implementation for building accessible, form-assoc
   - [What it does](#what-it-does)
   - [Exports](#exports)
 - [Form association](#form-association)
-  - [ElementInternals / form-associated custom elements (FACE)](#elementinternals--form-associated-custom-elements-face)
-  - [The `FieldAssociationController`](#the-fieldassociationcontroller)
-  - [Form-associated buttons](#form-associated-buttons)
-- [Platform-Provided Behaviors — `ButtonAssociationController`](#platform-provided-behaviors--buttonassociationcontroller)
-  - [Background: the proposal](#background-the-proposal)
-  - [The `ButtonAssociationController`](#the-buttonassociationcontroller)
+  - [How form association works today](#how-form-association-works-today)
+  - [Platform-Provided Behaviors](#platform-provided-behaviors)
+    - [What `HTMLSubmitButtonBehavior` provides](#what-htmlsubmitbuttonbehavior-provides)
+    - [Browser signals (mid-2026)](#browser-signals-mid-2026)
+    - [Command invocation — `commandfor` / `command`](#command-invocation--commandfor--command)
+    - [Open design questions](#open-design-questions)
+  - [The controllers: shims until Platform-Provided Behaviors ship](#the-controllers-shims-until-platform-provided-behaviors-ship)
+    - [`FieldAssociationController`](#fieldassociationcontroller)
+    - [`ButtonAssociationController`](#buttonassociationcontroller)
+  - [When controllers are no longer needed](#when-controllers-are-no-longer-needed)
+    - [Migrating from `FieldAssociationController`](#migrating-from-fieldassociationcontroller)
+    - [Migrating from `ButtonAssociationController`](#migrating-from-buttonassociationcontroller)
+  - [Future directions: beyond submit](#future-directions-beyond-submit)
 - [axe-core policy and ElementInternals](#axe-core-policy-and-elementinternals)
   - [Known false positives](#known-false-positives)
   - [Known blind spots (false negatives)](#known-blind-spots-false-negatives)
@@ -281,63 +288,135 @@ The `aria-activedescendant` / `ariaActiveDescendantElement` wiring — where the
 
 ## Form association
 
-Custom elements can participate in `<form>` submission and reset using the [ElementInternals API](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals). The key requirements are:
+Custom elements participate in `<form>` submission and reset through two complementary mechanisms: the `ElementInternals` API available in all modern browsers today, and the Platform-Provided Behaviors proposal working through the standards process. The two controllers in this repo bridge the gap — they encapsulate what must be wired manually today and each has a clear exit path once behaviors ship.
+
+---
+
+### How form association works today
+
+The [ElementInternals API](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals) is the foundation for custom element form participation. The approach differs by component type.
+
+**For field components** (textfields, checkboxes, comboboxes — anything that holds a value):
 
 1. Declare `static formAssociated = true` on the class.
 2. Call `attachInternals()` to get an `ElementInternals` instance.
 3. Call `internals.setFormValue(val)` whenever the field's value changes.
 4. Implement `formResetCallback()` to restore the field to its default state.
 
-This repo provides two controllers that encapsulate these responsibilities — one for field components, one for buttons. Both are **interim patterns**: they wrap what the platform currently requires you to wire manually, and each has a clear exit path once Platform-Provided Behaviors reach broad browser support.
+**For button components:**
 
-| Controller | Component type | Superseded by | Status |
-|---|---|---|---|
-| `FieldAssociationController` | Field (textfield, checkbox, combobox) | A future field behavior (not yet proposed) | Use today; no near-term replacement |
-| `ButtonAssociationController` | Button | `HTMLSubmitButtonBehavior` | Use today; [WHATWG Stage 1](#platform-provided-behaviors--buttonassociationcontroller), migrate per-component when broadly available |
-
-
-### ElementInternals / form-associated custom elements (FACE)
-
-**Recommendation: yes, with care.**
-
-Use `static formAssociated = true` and `attachInternals()` for any field component that needs to participate in a `<form>` (text inputs, checkboxes, comboboxes, etc.). This is the only standards-based way to achieve native form participation without wrapping a hidden `<input>`.
+A shadow DOM `<button type="submit">` does **not** auto-submit the form containing the custom element host — the browser's default submit behavior is scoped to the shadow root. The correct pattern today is to use `static formAssociated = true`, obtain `internals.form`, and call `internals.form.requestSubmit()` / `.reset()` manually on activation.
 
 | Topic | Guidance |
 |-------|----------|
 | Browser support | Chromium 77+, Safari 16.4+, Firefox 93+. Well-supported in modern targets. |
 | AT exposure | Most screen readers read ARIA set via `ElementInternals` in Chromium and Safari. Firefox AT exposure is less consistent; verify with real devices. |
-| axe-core | Axe-core has gaps — see [axe-core policy](#axe-core-policy-and-elementinternals) below. Several rules produce false positives or blind spots today. |
-| Buttons | Do **not** use FACE for buttons. Use it only for field-like controls that submit values. See [form-associated buttons](#form-associated-buttons) for the correct pattern. |
+| axe-core | Axe-core has gaps — see [axe-core policy and ElementInternals](#axe-core-policy-and-elementinternals). Several rules produce false positives or blind spots today. |
+| Field vs. button | Use `formAssociated` for fields that hold values. Buttons use it only to obtain `internals.form` — see [The controllers](#the-controllers-shims-until-platform-provided-behaviors-ship) below. |
 
-### The `FieldAssociationController`
+---
 
-[`field-association-controller.js`](./field-association-controller.js) encapsulates the `ElementInternals` API surface shared by all form-associated **field** components (textfield, checkbox, combobox, etc.) so this logic is not duplicated.
+### Platform-Provided Behaviors
 
-The host element must still declare `static formAssociated = true` and call `attachInternals()` itself — these cannot be delegated. The controller receives the resulting `ElementInternals` object and wraps it.
+> **Tracking:** [WHATWG html#12150](https://github.com/whatwg/html/issues/12150) · Stage 1 (Incubation) · Spec PR [html#12409](https://github.com/whatwg/html/pull/12409)
+> **Origin:** [MSEdge explainer — ElementInternalsType](https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/ElementInternalsType/explainer.md)
+> **Blink-dev intents:** [Intent to Prototype](http://www.mail-archive.com/blink-dev@chromium.org/msg15958.html) · [Intent to Ship](http://www.mail-archive.com/blink-dev@chromium.org/msg16533.html)
+> **W3C public-html thread:** [lists.w3.org/Archives/Public/public-html/2026Jun/0001](https://lists.w3.org/Archives/Public/public-html/2026Jun/0001.html)
 
-#### What it does
+**Platform-Provided Behaviors** introduces a `behaviors` option to `attachInternals()`, allowing custom elements to adopt native browser capabilities without extending native elements or reimplementing complex logic:
+
+```js
+class MyButton extends HTMLElement {
+    #submitBehavior = new HTMLSubmitButtonBehavior();
+    #internals = this.attachInternals({ behaviors: [this.#submitBehavior] });
+}
+```
+
+This is consistent with the web platform's existing constructable-object pattern (e.g. `ResizeObserver`, `IntersectionObserver`) and aligns with W3C design principles.
+
+The initial behavior being standardized is **`HTMLSubmitButtonBehavior`**, which closes two gaps that manual `ElementInternals` wiring cannot fill:
+
+- **Implicit form submission** — pressing Enter in a text field activates the form's default submit button, a platform-level action no JS click handler can intercept.
+- **`:default` CSS pseudo-class** — marks the default submit button in a form; `ElementInternals` has no way to claim it.
+
+#### What `HTMLSubmitButtonBehavior` provides
+
+| Capability | Description |
+|------------|-------------|
+| User activation | Click, Enter, Space, and implicit submission (Enter in a text field) |
+| Default ARIA role | `button` — overridable via `internals.role` or the `role` attribute |
+| Focus participation | Sequential focus navigation; no manual `tabindex` needed |
+| CSS pseudo-classes | `:default`, `:disabled`, `:enabled`, `:focus`, `:focus-visible` |
+| Mirrored properties | `disabled`, `form`, `formAction`, `formEnctype`, `formMethod`, `formNoValidate`, `formTarget`, `labels`, `name`, `value` — identical surface to `HTMLButtonElement` |
+| Form ownership | Full submitter-eligibility integration |
+
+Behaviors are **immutable once attached** but remain internally mutable (e.g. `disabled` state can change). Subclassing is disallowed — `new class extends HTMLSubmitButtonBehavior {}` throws a `TypeError`.
+
+#### Browser signals (mid-2026)
+
+| Browser | Status |
+|---------|--------|
+| Chromium / Edge | Implementing — driving the proposal |
+| WebKit / Safari | Standards position filed; pending |
+| Gecko / Firefox | Standards position filed; pending |
+
+#### Command invocation — `commandfor` / `command`
+
+The same explainer describes a **command invocation** model separate from form submission. Using `commandfor` and `command` attributes, any button-like element can invoke built-in actions on a target element:
+
+```html
+<my-button commandfor="my-dialog" command="show-modal">Open</my-button>
+<my-button commandfor="my-popover" command="toggle-popover">Toggle</my-button>
+```
+
+This involves `ElementInternals.commandForElement`, `ElementInternals.command`, and a `CommandEvent` fired on the target. The WHATWG spec PR covers the `HTMLSubmitButtonBehavior` path; command invocation is a related but distinct surface.
+
+#### Open design questions
+
+- **Behavior identification (keithamus):** Accessing a specific behavior from `ElementInternals` requires `instanceof` checks against the behavior array — awkward and order-dependent. The community has flagged this as an ergonomics gap.
+- **TypeScript experience (trusktr):** Statically typed consumers cannot easily discover which behaviors are attached without runtime checks. The typed surface of `behaviors: [...]` is an open question.
+
+#### Alternatives considered
+
+- **Feature decomposition** — command invocation only, no implicit behaviors
+- **`behavesLike` property** — broader behavior matching (button, label, …)
+- **`elementInternals.type`** — runtime-settable type property
+- **Customized built-ins** — the `extends`/`is` path, closed off by Safari's refusal to ship it
+
+---
+
+### The controllers: shims until Platform-Provided Behaviors ship
+
+This repo provides two controllers that encapsulate what must be wired manually today. Both are interim patterns with clear exit paths.
+
+| Controller | Component type | Superseded by | Status |
+|---|---|---|---|
+| `FieldAssociationController` | Field (textfield, checkbox, combobox) | A future field behavior (not yet proposed) | Use today; no near-term replacement |
+| `ButtonAssociationController` | Button | `HTMLSubmitButtonBehavior` | Use today; WHATWG Stage 1, migrate per-component when broadly available |
+
+#### `FieldAssociationController`
+
+[`field-association-controller.js`](./field-association-controller.js) encapsulates the `ElementInternals` API surface shared by all form-associated **field** components so this logic is not duplicated across textfield, checkbox, combobox, and similar elements.
+
+The host element must still declare `static formAssociated = true` and call `attachInternals()` — these cannot be delegated. The controller receives the resulting `ElementInternals` object and wraps it.
+
+**What it does:**
 
 - **`setValue(val)`** — Calls `internals.setFormValue(val)`. Pass `null` to exclude the field from `FormData` (unchecked checkbox, disabled field, unselected combobox).
 - **`defaultValue`** — Get/set the value the field restores to on `formResetCallback`. Populated from the `value` attribute.
 - **`form`, `validity`, `validationMessage`, `willValidate`** — Pass-through getters.
 - **`checkValidity()` / `reportValidity()`** — Pass-through methods.
 
-#### Usage example
+**Usage example:**
 
 ```js
-import { LabellingController } from './labelling-controller.js';
 import { FieldAssociationController } from './field-association-controller.js';
 
 class MyTextfield extends HTMLElement {
-    // Both declarations stay on the element — they cannot be delegated
     static formAssociated = true;
     #internals  = this.attachInternals();
-
-    // Controllers receive the already-created internals
-    #labelling  = new LabellingController({ onUpdate: () => this.#updateDebug() });
     #fieldAssoc = new FieldAssociationController(this.#internals);
-
-    #inputEl = null;
+    #inputEl    = null;
 
     static get observedAttributes() {
         return ['labelledby', 'describedby', 'value', 'disabled', 'required'];
@@ -351,20 +430,12 @@ class MyTextfield extends HTMLElement {
         if (name === 'required') this.#syncRequired();
     }
 
-    // Labelling — delegate to LabellingController
-    get labelledby()  { return this.#labelling.labelledby; }
-    get describedby() { return this.#labelling.describedby; }
-    set labelledby(val)  { this.#labelling.labelledby  = val; }
-    set describedby(val) { this.#labelling.describedby = val; }
-
-    // Form value
     get value() { return this.#inputEl?.value ?? ''; }
     set value(val) {
         if (this.#inputEl) this.#inputEl.value = val ?? '';
         this.#fieldAssoc.setValue(val ?? '');
     }
 
-    // Form introspection — delegate to FieldAssociationController
     get form()              { return this.#fieldAssoc.form; }
     get validity()          { return this.#fieldAssoc.validity; }
     get validationMessage() { return this.#fieldAssoc.validationMessage; }
@@ -372,26 +443,20 @@ class MyTextfield extends HTMLElement {
     checkValidity()         { return this.#fieldAssoc.checkValidity(); }
     reportValidity()        { return this.#fieldAssoc.reportValidity(); }
 
-    // Reset to default
     formResetCallback() { this.value = this.#fieldAssoc.defaultValue; }
 
     connectedCallback() {
         this.shadowRoot.innerHTML = `/* shadow template */`;
         this.#inputEl = this.shadowRoot.querySelector('#role');
-
-        // Report initial value to the form
         this.#fieldAssoc.setValue(this.#fieldAssoc.defaultValue);
-
         this.#inputEl.addEventListener('input', () => {
             this.#fieldAssoc.setValue(this.#inputEl.value);
         });
-
         this.#labelling.connect(this.shadowRoot);
     }
 
     #syncDisabled() {
         if (this.#inputEl) this.#inputEl.disabled = this.hasAttribute('disabled');
-        // Disabled fields are excluded from FormData — pass null
         this.#fieldAssoc.setValue(
             this.hasAttribute('disabled') ? null : (this.#inputEl?.value ?? '')
         );
@@ -399,23 +464,19 @@ class MyTextfield extends HTMLElement {
 }
 ```
 
-#### Checkbox pattern
-
-Native checkboxes exclude themselves from `FormData` when unchecked. Mirror this:
+**Checkbox pattern** — exclude unchecked and disabled fields from `FormData`, mirroring native behavior:
 
 ```js
 #updateFormValue() {
     this.#fieldAssoc.setValue(
         (this.#inputEl?.checked && !this.hasAttribute('disabled'))
             ? (this.getAttribute('value') ?? 'on')
-            : null   // unchecked or disabled → not included in FormData
+            : null
     );
 }
 ```
 
-#### Combobox pattern
-
-Submit the selected option's `value` attribute, falling back to its text content:
+**Combobox pattern** — submit the selected option's `value` attribute, falling back to its text content:
 
 ```js
 #selectOption(index) {
@@ -428,57 +489,37 @@ Submit the selected option's `value` attribute, falling back to its text content
 formResetCallback() {
     this.#options.forEach(o => o.setAttribute('aria-selected', 'false'));
     this.#valueEl.textContent = 'Select an option';
-    this.#fieldAssoc.setValue(null); // nothing selected → not in FormData
+    this.#fieldAssoc.setValue(null);
 }
 ```
 
-#### When `FieldAssociationController` is no longer needed
+#### `ButtonAssociationController`
 
-No platform-provided field behavior is currently proposed — `FieldAssociationController` is the correct approach for the foreseeable future. The [Platform-Provided Behaviors](#platform-provided-behaviors--buttonassociationcontroller) pattern is explicitly designed to be extensible, so a future `HTMLTextInputBehavior`, `HTMLCheckboxBehavior`, or similar is plausible. If one ships, the migration on a field component would look like this:
+[`button-association-controller.js`](./button-association-controller.js) polyfills the button activation behaviors reachable from JS — keyboard activation, ARIA role, focusability, and `commandfor`/`command` dispatch — while the spec works through the standards process.
 
-**Remove from the element class:**
+**What it polyfills:**
 
-```js
-// Remove: formAssociated declaration
-static formAssociated = true;
+| Behavior | How |
+|----------|-----|
+| Native detection | Checks `'commandForElement' in ElementInternals.prototype`; no-ops entirely when native support is present |
+| Focusability | Sets `tabindex="0"` on `connect()` if the author has not already set one |
+| ARIA role | Sets `ElementInternals.role = 'button'` if not overridden by author |
+| Keyboard activation | `keydown` listener: Enter / Space → `host.click()` |
+| Command dispatch | `click` listener → `CommandEvent` on the `commandfor` target → built-in action if not cancelled |
+| `commandfor` / `command` observation | `MutationObserver` — no `observedAttributes` changes on the host required |
+| `aria-disabled` + tab removal | Synced from `disabled` attribute |
+| `CommandEvent` shim | Installs a minimal `CommandEvent` class on `globalThis` when absent |
 
-// Remove: manual internals creation (replaced by the behavior constructor)
-#internals = this.attachInternals();
+Built-in `command` values: `show-modal`, `close`, `toggle-popover`, `show-popover`, `hide-popover`, `request-submit`, `reset`.
 
-// Remove: controller instantiation
-#fieldAssoc = new FieldAssociationController(this.#internals);
+**What it cannot polyfill** — two behaviors require platform cooperation:
 
-// Remove: all controller delegation
-get form()              { return this.#fieldAssoc.form; }
-get validity()          { return this.#fieldAssoc.validity; }
-get validationMessage() { return this.#fieldAssoc.validationMessage; }
-get willValidate()      { return this.#fieldAssoc.willValidate; }
-checkValidity()         { return this.#fieldAssoc.checkValidity(); }
-reportValidity()        { return this.#fieldAssoc.reportValidity(); }
+| Behavior | Why |
+|----------|-----|
+| **Implicit form submission** | Enter in a text field activates the default submit button before any JS event fires; there is no way to claim that role from script. |
+| **`:default` pseudo-class** | Set by the browser as part of form-control infrastructure; `ElementInternals` does not expose a way to claim it. |
 
-// Remove: formResetCallback (behavior handles reset)
-formResetCallback() { this.value = this.#fieldAssoc.defaultValue; }
-```
-
-**Replace with:**
-
-```js
-// A hypothetical field behavior — exact API TBD by the spec
-#fieldBehavior = new HTMLTextInputBehavior();
-#internals = this.attachInternals({ behaviors: [this.#fieldBehavior] });
-```
-
-**What stays unchanged:** the `input` event listener that reads the inner element's value, the `disabled` / `required` attribute syncing, the shadow DOM structure, and the `LabellingController` wiring. The behavior takes over the `ElementInternals` lifecycle (value reporting, validity, reset) but does not replace the component's own value-reading logic or ARIA management.
-
-The `setValue(null)` pattern for unchecked checkboxes and disabled fields would be replaced by the behavior's own disabled-state handling — but the logic that decides *when* to pass `null` (i.e. the `checked` and `disabled` conditions) would remain in the component.
-
----
-
-### Form-associated buttons
-
-A shadow DOM `<button type="submit">` does **not** auto-submit the form that contains the custom element host — the browser's default submit behavior is scoped to the shadow root, not the host's owning form. The correct pattern today is to use `ButtonAssociationController`, which wires keyboard activation, ARIA role, focusability, and `commandfor`/`command` dispatch as a shim until `HTMLSubmitButtonBehavior` reaches broad support.
-
-See [Platform-Provided Behaviors — `ButtonAssociationController`](#platform-provided-behaviors--buttonassociationcontroller) for the full controller reference and demo. The core usage:
+**Usage example:**
 
 ```js
 import { ButtonAssociationController } from './button-association-controller.js';
@@ -495,9 +536,8 @@ class MyButton extends HTMLElement {
         this.attachShadow({ mode: 'open', delegatesFocus: true });
         this.shadowRoot.innerHTML = `<slot>Button</slot>`;
         this.#button.connect();
-
-        // Form submit/reset — still wired manually today;
-        // HTMLSubmitButtonBehavior will handle this once broadly available.
+        // Form submit/reset — wired manually today; HTMLSubmitButtonBehavior
+        // will handle this once broadly available.
         this.addEventListener('click', () => {
             if (this.hasAttribute('disabled')) return;
             if (this.type === 'submit') this.#internals.form?.requestSubmit();
@@ -506,227 +546,9 @@ class MyButton extends HTMLElement {
     }
 
     disconnectedCallback() { this.#button.disconnect(); }
-}
-customElements.define('my-button', MyButton);
-```
 
-#### When `ButtonAssociationController` is no longer needed
-
-Once `HTMLSubmitButtonBehavior` ships in your supported browser range, three things change:
-
-**1. Replace `attachInternals()` with the behavior constructor:**
-
-```js
-// Before
-static formAssociated = true;
-#internals = this.attachInternals();
-#button    = new ButtonAssociationController(this, this.#internals);
-
-// After
-#submitBehavior = new HTMLSubmitButtonBehavior();
-#internals = this.attachInternals({ behaviors: [this.#submitBehavior] });
-```
-
-**2. Delete the click handler and `ButtonAssociationController` lifecycle calls.** `HTMLSubmitButtonBehavior` wires activation (click, Enter, Space, and implicit form submission) automatically. The `connect()` / `disconnect()` calls and the `addEventListener('click', ...)` block are removed entirely.
-
-**3. Remove `static formAssociated = true`.** Form ownership is provided by the behavior; the declaration is no longer needed.
-
-What stays: the `type` property, any `disabled` attribute syncing, and the shadow DOM template. The behavior mirrors the full `HTMLButtonElement` surface (`form`, `formAction`, `name`, `value`, etc.) so the `get form()` pass-through can also be deleted once you use the behavior's property directly.
-
-Use feature detection to branch during the transition period:
-
-```js
-const HAS_SUBMIT_BEHAVIOR = typeof HTMLSubmitButtonBehavior !== 'undefined';
-
-class MyButton extends HTMLElement {
-    static formAssociated = !HAS_SUBMIT_BEHAVIOR;
-
-    #submitBehavior = HAS_SUBMIT_BEHAVIOR ? new HTMLSubmitButtonBehavior() : null;
-    #internals = HAS_SUBMIT_BEHAVIOR
-        ? this.attachInternals({ behaviors: [this.#submitBehavior] })
-        : this.attachInternals();
-    #button = HAS_SUBMIT_BEHAVIOR ? null : new ButtonAssociationController(this, this.#internals);
-
-    connectedCallback() {
-        this.attachShadow({ mode: 'open', delegatesFocus: true });
-        this.shadowRoot.innerHTML = `<slot>Button</slot>`;
-        this.#button?.connect();
-
-        if (!HAS_SUBMIT_BEHAVIOR) {
-            this.addEventListener('click', () => {
-                if (this.hasAttribute('disabled')) return;
-                if ((this.getAttribute('type') ?? 'submit') === 'submit')
-                    this.#internals.form?.requestSubmit();
-                else
-                    this.#internals.form?.reset();
-            });
-        }
-        // When HAS_SUBMIT_BEHAVIOR is true, activation is wired by the behavior.
-    }
-
-    disconnectedCallback() { this.#button?.disconnect(); }
-}
-```
-
-Once `HAS_SUBMIT_BEHAVIOR` is always `true` in your supported range, delete the entire branch and the `ButtonAssociationController` import.
-
----
-
-## Platform-Provided Behaviors — `ButtonAssociationController`
-
-### Background: the proposal
-
-> **Tracking:** [WHATWG html#12150](https://github.com/whatwg/html/issues/12150) · Stage 1 (Incubation) · Spec PR [html#12409](https://github.com/whatwg/html/pull/12409)  
-> **Origin:** [MSEdge explainer — ElementInternalsType](https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/ElementInternalsType/explainer.md)  
-> **Blink-dev intents:** [Intent to Prototype](http://www.mail-archive.com/blink-dev@chromium.org/msg15958.html) · [Intent to Ship](http://www.mail-archive.com/blink-dev@chromium.org/msg16533.html)  
-> **W3C public-html thread:** [lists.w3.org/Archives/Public/public-html/2026Jun/0001](https://lists.w3.org/Archives/Public/public-html/2026Jun/0001.html)
-
-**Platform-Provided Behaviors** introduces a `behaviors` option to `attachInternals()`, allowing custom elements to adopt native browser capabilities without extending native elements or reimplementing complex logic from scratch.
-
-The initial behavior being standardized is **`HTMLSubmitButtonBehavior`**, which grants a custom element full submit-button semantics:
-
-```js
-class MyButton extends HTMLElement {
-    #submitBehavior = new HTMLSubmitButtonBehavior();
-    #internals = this.attachInternals({ behaviors: [this.#submitBehavior] });
-}
-customElements.define('my-button', MyButton);
-```
-
-This is consistent with the web platform's existing constructable-object pattern (e.g. `ResizeObserver`, `IntersectionObserver`) and aligns with W3C design principles.
-
-#### Problem it solves
-
-There is currently no cross-browser path for a custom element to be a real submit button. The two existing options are both inadequate:
-
-- **Customized built-ins** (`class MyButton extends HTMLButtonElement` + `is="my-button"`) — Safari has declined to implement this and the position is unchanged.
-- **Manual reimplementation** — keyboard events, `tabindex`, ARIA role, `internals.form.requestSubmit()` — covers the common case but cannot reproduce two platform behaviors entirely: **implicit form submission** (pressing Enter in a text field submits the form's default button, which a JS-wired click handler never receives) and the **`:default` CSS pseudo-class** (which marks the default submit button in a form).
-
-`HTMLSubmitButtonBehavior` closes both gaps.
-
-#### What `HTMLSubmitButtonBehavior` provides
-
-| Capability | Description |
-|------------|-------------|
-| User activation | Click, Enter, Space, and implicit submission (Enter in a text field) |
-| Default ARIA role | `button` — overridable via `internals.role` or the `role` attribute |
-| Focus participation | Sequential focus navigation; no manual `tabindex` needed |
-| CSS pseudo-classes | `:default`, `:disabled`, `:enabled`, `:focus`, `:focus-visible` |
-| Mirrored properties | `disabled`, `form`, `formAction`, `formEnctype`, `formMethod`, `formNoValidate`, `formTarget`, `labels`, `name`, `value` — identical surface to `HTMLButtonElement` |
-| Form ownership | Full submitter-eligibility integration |
-
-Behaviors are **immutable once attached** (the array cannot be changed after `attachInternals()`) but remain internally mutable (e.g. `disabled` state can change). Subclassing behavior constructors is explicitly disallowed — `new class extends HTMLSubmitButtonBehavior {}` throws a `TypeError`.
-
-#### Browser signals (mid-2026)
-
-| Browser | Status |
-|---------|--------|
-| Chromium / Edge | Implementing — driving the proposal |
-| WebKit / Safari | Standards position filed; pending |
-| Gecko / Firefox | Standards position filed; pending |
-
-#### Command invocation — `commandfor` / `command`
-
-The same MSEdge explainer also describes a **command invocation** model separate from form submission. Using `commandfor` and `command` attributes, any button-like element can invoke built-in actions on a target element:
-
-```html
-<my-button commandfor="my-dialog" command="show-modal">Open</my-button>
-<my-button commandfor="my-popover" command="toggle-popover">Toggle</my-button>
-```
-
-This involves `ElementInternals.commandForElement`, `ElementInternals.command`, and a `CommandEvent` fired on the target. The WHATWG spec PR covers the `HTMLSubmitButtonBehavior` path; the command-invocation path is a related but distinct surface currently handled via `static buttonActivationBehaviors = true` in the explainer.
-
-#### Open design questions
-
-Two concerns raised in the WHATWG issue thread are worth tracking:
-
-- **Behavior identification (keithamus):** Accessing a specific behavior from `ElementInternals` currently requires `instanceof` checks against the behavior array, which is awkward and creates ordering dependencies. The community has flagged this as an ergonomics gap.
-- **TypeScript experience (trusktr):** Statically typed consumers cannot easily discover which behaviors are attached without runtime checks. The typed surface of `behaviors: [...]` is an open question.
-
-#### Alternatives considered
-
-- **Feature decomposition** — command invocation only, no implicit behaviors
-- **`behavesLike` property** — broader behavior matching (button, label, …)
-- **`elementInternals.type`** — runtime-settable type property
-- **Customized built-ins** — the `extends`/`is` path, closed off by Safari's refusal to ship it
-
----
-
-### The `ButtonAssociationController`
-
-[`button-association-controller.js`](./button-association-controller.js) is a plain-JavaScript shim that polyfills the behaviors reachable from JS while the spec works through the standards process. It covers the command-invocation surface (popover, dialog, form, custom commands) and the activation/ARIA wiring — but explicitly **cannot** reproduce the two things that require platform support.
-
-#### What it polyfills
-
-| Behavior | How |
-|----------|-----|
-| Native detection | Checks `'commandForElement' in ElementInternals.prototype`; no-ops entirely when native support is present |
-| Focusability | Sets `tabindex="0"` on `connect()` if the author has not already set one |
-| ARIA role | Sets `ElementInternals.role = 'button'` if not overridden by author |
-| Keyboard activation | `keydown` listener: Enter / Space → `host.click()` |
-| Command dispatch | `click` listener → `CommandEvent` on the `commandfor` target → built-in action if not cancelled |
-| `commandfor` / `command` observation | `MutationObserver` — no `observedAttributes` changes on the host required |
-| `aria-disabled` + tab removal | Synced from `disabled` attribute |
-| `CommandEvent` shim | Installs a minimal `CommandEvent` class on `globalThis` when absent |
-
-Built-in commands:
-
-| `command` value | Action |
-|-----------------|--------|
-| `show-modal` | `target.showModal()` |
-| `close` | `target.close()` |
-| `toggle-popover` | `target.togglePopover()` |
-| `show-popover` | `target.showPopover()` |
-| `hide-popover` | `target.hidePopover()` |
-| `request-submit` | `target.requestSubmit()` |
-| `reset` | `target.reset()` |
-
-#### What it cannot polyfill
-
-These two behaviors require platform cooperation and are out of reach for a JS shim:
-
-| Behavior | Why |
-|----------|-----|
-| **Implicit form submission** | When a user presses Enter in a text field, the browser activates the form's default submit button — a platform-level action that fires before any JS event the custom element could intercept. There is no way to become that button from script. |
-| **`:default` pseudo-class** | The CSS `:default` selector on the submit button is set by the browser as part of form-control infrastructure. `ElementInternals` does not expose a way to claim it. |
-
-For components that must have these behaviors today, the only workaround is a hidden `<button type="submit">` inside the shadow root, acknowledged as a fallback in this repo's [form-associated buttons](#form-associated-buttons) section.
-
-#### Lifecycle contract
-
-The host element must:
-
-1. Create a `ButtonAssociationController` in the constructor, passing `this` and the result of `this.attachInternals()`.
-2. Call `controller.connect()` from `connectedCallback`.
-3. Call `controller.disconnect()` from `disconnectedCallback`.
-
-`observedAttributes` for `commandfor`, `command`, and `disabled` are not required — the controller installs its own `MutationObserver`.
-
-The `static buttonActivationBehaviors = true` declaration (from the MSEdge explainer) is kept as a code-level signal of intent, but the controller does not gate on it.
-
-#### Usage example
-
-```js
-import { ButtonAssociationController } from './button-association-controller.js';
-
-class MyButton extends HTMLElement {
-    static buttonActivationBehaviors = true; // intent marker
-
-    #internals = this.attachInternals();
-    #behaviors = new ButtonAssociationController(this, this.#internals);
-
-    connectedCallback() {
-        this.shadowRoot ?? this.attachShadow({ mode: 'open' });
-        this.shadowRoot.innerHTML = `<slot>Button</slot>`;
-        this.#behaviors.connect();
-    }
-
-    disconnectedCallback() {
-        this.#behaviors.disconnect();
-    }
-
-    get commandForElement() { return this.#behaviors.commandForElement; }
-    get command()           { return this.#behaviors.command; }
+    get commandForElement() { return this.#button.commandForElement; }
+    get command()           { return this.#button.command; }
 }
 customElements.define('my-button', MyButton);
 ```
@@ -749,76 +571,115 @@ document.getElementById('counter').addEventListener('command', e => {
 </script>
 ```
 
-#### Relationship to `button-form` and the migration path
+---
 
-The [Form-associated buttons](#form-associated-buttons) section notes that a shadow `<button type="submit">` does not auto-submit the form containing the custom element host — the browser's submit behavior is scoped to the shadow root, not the host's owning form. The correct pattern today is to call `internals.form?.requestSubmit()` directly in the click handler, and **that is why there is no `ButtonAssociationController`** — the logic is two lines with no shared state worth abstracting.
+### When controllers are no longer needed
 
-`HTMLSubmitButtonBehavior` directly supersedes those two lines. Once the spec ships:
+#### Migrating from `FieldAssociationController`
+
+No platform-provided field behavior is currently proposed — `FieldAssociationController` is the correct approach for the foreseeable future. The Platform-Provided Behaviors pattern is explicitly designed to be extensible, so a future `HTMLTextInputBehavior`, `HTMLCheckboxBehavior`, or similar is plausible. If one ships, the migration on a field component would look like this:
+
+**Remove from the element class:**
 
 ```js
-// Today — two lines on the class
-this.shadowRoot.querySelector('#role').addEventListener('click', () => {
-    if (this.hasAttribute('disabled')) return;
-    if (this.type === 'submit') this.#internals.form?.requestSubmit();
-    if (this.type === 'reset')  this.#internals.form?.reset();
-});
+static formAssociated = true;                                      // remove
+#internals  = this.attachInternals();                              // replace (see below)
+#fieldAssoc = new FieldAssociationController(this.#internals);     // remove
 
-// With HTMLSubmitButtonBehavior — replace attachInternals() call; delete the handler
-this.#internals = this.attachInternals({ behaviors: [new HTMLSubmitButtonBehavior()] });
+get form()              { return this.#fieldAssoc.form; }          // remove
+get validity()          { return this.#fieldAssoc.validity; }      // remove
+get validationMessage() { return this.#fieldAssoc.validationMessage; } // remove
+get willValidate()      { return this.#fieldAssoc.willValidate; }  // remove
+checkValidity()         { return this.#fieldAssoc.checkValidity(); }   // remove
+reportValidity()        { return this.#fieldAssoc.reportValidity(); }  // remove
+formResetCallback()     { this.value = this.#fieldAssoc.defaultValue; } // remove
 ```
 
-The migration is **per-component and incremental** — there is no cross-component coordination needed. A reasonable feature-detection branch:
+**Replace with:**
+
+```js
+// Hypothetical — exact API TBD by the spec
+#fieldBehavior = new HTMLTextInputBehavior();
+#internals = this.attachInternals({ behaviors: [this.#fieldBehavior] });
+```
+
+**What stays unchanged:** the `input` event listener, `disabled`/`required` attribute syncing, the shadow DOM structure, and the `LabellingController` wiring. The behavior takes over the `ElementInternals` lifecycle (value reporting, validity, reset) but does not replace the component's own value-reading logic or ARIA management. The `setValue(null)` conditions (unchecked, disabled) remain in the component — only the call site goes away.
+
+#### Migrating from `ButtonAssociationController`
+
+Once `HTMLSubmitButtonBehavior` ships in your supported browser range, three things change:
+
+**1. Replace `attachInternals()` with the behavior constructor:**
+
+```js
+// Before
+static formAssociated = true;
+#internals = this.attachInternals();
+#button    = new ButtonAssociationController(this, this.#internals);
+
+// After
+#submitBehavior = new HTMLSubmitButtonBehavior();
+#internals = this.attachInternals({ behaviors: [this.#submitBehavior] });
+```
+
+**2. Delete the click handler and controller lifecycle calls.** `HTMLSubmitButtonBehavior` wires click, Enter, Space, and implicit form submission automatically. Remove `connect()`, `disconnect()`, and the `addEventListener('click', ...)` block.
+
+**3. Remove `static formAssociated = true`.** Form ownership is provided by the behavior. The `get form()` pass-through can also be deleted — use the behavior's mirrored property directly.
+
+Use feature detection to branch during the transition period:
 
 ```js
 const HAS_SUBMIT_BEHAVIOR = typeof HTMLSubmitButtonBehavior !== 'undefined';
 
 class MyButton extends HTMLElement {
-    static formAssociated = !HAS_SUBMIT_BEHAVIOR; // only needed for the fallback path
+    static formAssociated = !HAS_SUBMIT_BEHAVIOR;
 
+    #submitBehavior = HAS_SUBMIT_BEHAVIOR ? new HTMLSubmitButtonBehavior() : null;
     #internals = HAS_SUBMIT_BEHAVIOR
-        ? this.attachInternals({ behaviors: [new HTMLSubmitButtonBehavior()] })
+        ? this.attachInternals({ behaviors: [this.#submitBehavior] })
         : this.attachInternals();
+    #button = HAS_SUBMIT_BEHAVIOR ? null : new ButtonAssociationController(this, this.#internals);
 
     connectedCallback() {
-        // ...
+        this.attachShadow({ mode: 'open', delegatesFocus: true });
+        this.shadowRoot.innerHTML = `<slot>Button</slot>`;
+        this.#button?.connect();
         if (!HAS_SUBMIT_BEHAVIOR) {
-            this.shadowRoot.querySelector('#role').addEventListener('click', () => {
-                if (!this.hasAttribute('disabled')) this.#internals.form?.requestSubmit();
+            this.addEventListener('click', () => {
+                if (this.hasAttribute('disabled')) return;
+                if ((this.getAttribute('type') ?? 'submit') === 'submit')
+                    this.#internals.form?.requestSubmit();
+                else
+                    this.#internals.form?.reset();
             });
         }
-        // When HAS_SUBMIT_BEHAVIOR is true the behavior wires activation automatically.
+        // When HAS_SUBMIT_BEHAVIOR is true, activation is wired by the behavior.
     }
+
+    disconnectedCallback() { this.#button?.disconnect(); }
 }
 ```
 
-The two-lines-on-the-class pattern is the polyfill surface. Once `HTMLSubmitButtonBehavior` reaches your supported browser baseline, the branch collapses and the listener is deleted. There is no case for a `ButtonAssociationController` under either model — the behavior object *is* the controller.
+Once `HAS_SUBMIT_BEHAVIOR` is always `true` in your supported range, delete the entire branch and the `ButtonAssociationController` import.
 
-| | `button-form` (today) | `button-behaviors` shim | `HTMLSubmitButtonBehavior` (spec) |
-|--|--|--|--|
-| Form submit | `internals.form.requestSubmit()` | `command="request-submit"` on `commandfor` | Automatic on activation |
-| Implicit submission | No | No | Yes |
-| `:default` pseudo-class | No | No | Yes |
-| Dialog / popover | Manual | `command="show-modal"` etc. | Separate `commandfor`/`command` surface |
-| Spec basis | `ElementInternals` (shipped) | `buttonActivationBehaviors` explainer | WHATWG Stage 1 / PR #12409 |
+---
 
-#### Beyond submit: a future label behavior and `referenceTarget`
+### Future directions: beyond submit
 
 `HTMLSubmitButtonBehavior` is the first behavior in the proposal, but the pattern is designed to be extensible. The most strategically significant next behavior would be something analogous for **label association** — giving a custom element the ability to claim `<label for="...">` wiring and participate in the platform's label-click-to-focus chain without a hidden native input.
 
-This connects directly to [`referenceTarget`](#referencetarget), documented in the Platform API support section below. `referenceTarget` lets a custom element host declare which inner shadow element is the canonical target for IDREF resolution, so that `aria-labelledby="my-textfield"` on an external element resolves to the inner `<input>` without JS wiring. All three major browsers have implemented it behind a flag; none have shipped it unflagged yet.
+This connects directly to [`referenceTarget`](#referencetarget), documented in the Platform API support section below. `referenceTarget` lets a custom element host declare which inner shadow element is the canonical IDREF target, so that `aria-labelledby="my-textfield"` on an external element resolves to the inner `<input>` without JS wiring. All three major browsers have implemented it behind a flag; none have shipped it unflagged yet.
 
-The relationship between the two is a natural question to raise with the platform team: **once `referenceTarget` ships unflagged, does a future label behavior become redundant, complementary, or is it still needed for the `<label for>` click association that `referenceTarget` alone does not cover?**
-
-A concrete framing of what `referenceTarget` alone cannot close:
+The key question to raise with the platform team: **once `referenceTarget` ships unflagged, does a future label behavior become redundant, complementary, or is it still needed for the `<label for>` click association that `referenceTarget` alone does not cover?**
 
 | Gap | `referenceTarget` | A future label behavior |
 |-----|------------------|------------------------|
 | `aria-labelledby` from external element resolves to inner input | ✅ Closes | — |
 | `<label for="my-element">` click focuses inner input | ❌ Does not help — `for` wiring is separate from IDREF resolution | ✅ Would close |
 | `labels` property returns associated `<label>` elements | ❌ Not addressed | ✅ Would mirror `HTMLInputElement.labels` |
-| `LabellingController` and `labelledby`/`describedby` properties become unnecessary | Partially — for the `aria-labelledby` case | More fully — for the click and introspection cases |
+| `LabellingController` and `labelledby`/`describedby` become unnecessary | Partially — for the `aria-labelledby` case | More fully — for the click and introspection cases |
 
-Once `referenceTarget` ships unflagged across your supported browser range, the `labelledby`/`describedby` properties, element ref wiring, and many of the `LabellingController` fallback paths described in this document become unnecessary for the ARIA labelling case. A label behavior would go further, closing the native `<label>` interaction gap that `referenceTarget` does not address. Tracking both is worthwhile: they are complementary, not competing.
+The two are complementary, not competing. Track both as browsers move toward shipping `referenceTarget` unflagged.
 
 ---
 
