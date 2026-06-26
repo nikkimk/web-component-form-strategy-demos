@@ -9,15 +9,16 @@ Live examples and a reference implementation for building accessible, form-assoc
 ## Contents
 
 - [Component ARIA roles](#component-aria-roles)
+  - [Place roles in the shadow DOM](#place-roles-in-the-shadow-dom)
   - [Why not on the host?](#why-not-on-the-host)
 - [IDREF Strategy](#idref-strategy)
   - [1. Shadow DOM slots (default)](#1-shadow-dom-slots-default)
   - [2. Light DOM siblings via `labelledby` / `describedby` properties](#2-light-dom-siblings-via-labelledby--describedby-properties)
   - [Combining both sources for description](#combining-both-sources-for-description)
+  - [The `LabellingController`](#the-labellingcontroller)
+    - [What it does](#what-it-does)
+    - [Exports](#exports)
   - [When `referenceTarget` ships unflagged](#when-referencetarget-ships-unflagged)
-- [The `LabellingController`](#the-labellingcontroller)
-  - [What it does](#what-it-does)
-  - [Exports](#exports)
 - [Form association](#form-association)
   - [How form association works today](#how-form-association-works-today)
   - [Platform-Provided Behaviors](#platform-provided-behaviors)
@@ -62,6 +63,8 @@ Live examples and a reference implementation for building accessible, form-assoc
 ---
 
 ## Component ARIA roles
+
+### Place roles in the shadow DOM
 
 Place the ARIA role on an **inner shadow DOM element** — not on the custom element host.
 
@@ -275,6 +278,29 @@ When `describedby` is set **and** slotted description content is present, the co
 <p id="global-error" role="alert">This field is required.</p>
 ```
 
+### The `LabellingController`
+
+[`labelling-controller.js`](./labelling-controller.js) is a plain JavaScript controller (no framework required) that encapsulates all labelling logic so it does not have to be duplicated across components.
+
+#### What it does
+
+- **Watches `slot[name="label"]` and `slot[name="description"]`** via `slotchange` and re-wires ARIA whenever content is added or removed.
+- **Shows or hides the shadow label/description spans** depending on whether their slot has content.
+- **Sets `ariaLabelledByElements`** on the inner role element, pointing at the shadow label span when slotted, or at resolved light DOM elements when not.
+- **Sets `ariaDescribedByElements`** combining both shadow and light DOM sources when both are present.
+- **Falls back gracefully** when `ariaLabelledByElements` is not supported: same-root `aria-labelledby` attribute is used for slotted content; `aria-label` / `aria-description` text-mirroring is used for light DOM siblings.
+- **Calls `onUpdate()`** after every re-wire so the host component can refresh its debug panel or any other derived state.
+
+#### Exports
+
+| Export | Purpose |
+|--------|---------|
+| `LabellingController` | The controller class |
+| `LABELLING_DEBUG_HTML` | A `<dt>`/`<dd>` HTML snippet to paste into a shadow debug panel |
+| `applyLabellingDebug(shadowRoot, info)` | Writes `controller.debugInfo` into those debug rows |
+
+---
+
 ### When `referenceTarget` ships unflagged
 
 [`referenceTarget`](#referencetarget) is currently behind flags in all three major browsers. Once it ships unflagged and reaches your supported browser range, **the light DOM sibling path (Section 2 above) can be deleted** from most field components. Here is a precise accounting of what changes and what does not.
@@ -330,29 +356,6 @@ connectedCallback() {
 | `aria-selected` on slotted options | Light DOM elements | N/A | Set by component JS | Unchanged |
 
 The `aria-activedescendant` / `ariaActiveDescendantElement` wiring — where the shadow-root trigger element must point at the currently-active slotted option in the light DOM — is not addressed by `referenceTarget` at all. The cross-root element reference property remains the right tool there, and the full `ariaActiveDescendantElement`-with-id-fallback pattern documented in [Combobox extras](#4-combobox-extras) stays in place.
-
----
-
-## The `LabellingController`
-
-[`labelling-controller.js`](./labelling-controller.js) is a plain JavaScript controller (no framework required) that encapsulates all labelling logic so it does not have to be duplicated across components.
-
-### What it does
-
-- **Watches `slot[name="label"]` and `slot[name="description"]`** via `slotchange` and re-wires ARIA whenever content is added or removed.
-- **Shows or hides the shadow label/description spans** depending on whether their slot has content.
-- **Sets `ariaLabelledByElements`** on the inner role element, pointing at the shadow label span when slotted, or at resolved light DOM elements when not.
-- **Sets `ariaDescribedByElements`** combining both shadow and light DOM sources when both are present.
-- **Falls back gracefully** when `ariaLabelledByElements` is not supported: same-root `aria-labelledby` attribute is used for slotted content; `aria-label` / `aria-description` text-mirroring is used for light DOM siblings.
-- **Calls `onUpdate()`** after every re-wire so the host component can refresh its debug panel or any other derived state.
-
-### Exports
-
-| Export | Purpose |
-|--------|---------|
-| `LabellingController` | The controller class |
-| `LABELLING_DEBUG_HTML` | A `<dt>`/`<dd>` HTML snippet to paste into a shadow debug panel |
-| `applyLabellingDebug(shadowRoot, info)` | Writes `controller.debugInfo` into those debug rows |
 
 ---
 
