@@ -376,7 +376,9 @@ customElements.define('my-button', MyButton);
 ### Background: the proposal
 
 > **Tracking:** [WHATWG html#12150](https://github.com/whatwg/html/issues/12150) · Stage 1 (Incubation) · Spec PR [html#12409](https://github.com/whatwg/html/pull/12409)  
-> **Origin:** [MSEdge explainer — ElementInternalsType](https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/ElementInternalsType/explainer.md)
+> **Origin:** [MSEdge explainer — ElementInternalsType](https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/ElementInternalsType/explainer.md)  
+> **Blink-dev intents:** [Intent to Prototype](http://www.mail-archive.com/blink-dev@chromium.org/msg15958.html) · [Intent to Ship](http://www.mail-archive.com/blink-dev@chromium.org/msg16533.html)  
+> **W3C public-html thread:** [lists.w3.org/Archives/Public/public-html/2026Jun/0001](https://lists.w3.org/Archives/Public/public-html/2026Jun/0001.html)
 
 **Platform-Provided Behaviors** introduces a `behaviors` option to `attachInternals()`, allowing custom elements to adopt native browser capabilities without extending native elements or reimplementing complex logic from scratch.
 
@@ -598,8 +600,24 @@ The two-lines-on-the-class pattern is the polyfill surface. Once `HTMLSubmitButt
 | Dialog / popover | Manual | `command="show-modal"` etc. | Separate `commandfor`/`command` surface |
 | Spec basis | `ElementInternals` (shipped) | `buttonActivationBehaviors` explainer | WHATWG Stage 1 / PR #12409 |
 
----
+#### Beyond submit: a future label behavior and `referenceTarget`
 
+`HTMLSubmitButtonBehavior` is the first behavior in the proposal, but the pattern is designed to be extensible. The most strategically significant next behavior would be something analogous for **label association** — giving a custom element the ability to claim `<label for="...">` wiring and participate in the platform's label-click-to-focus chain without a hidden native input.
+
+This connects directly to [`referenceTarget`](#referencetarget), documented in the Platform API support section below. `referenceTarget` lets a custom element host declare which inner shadow element is the canonical target for IDREF resolution, so that `aria-labelledby="my-textfield"` on an external element resolves to the inner `<input>` without JS wiring. All three major browsers have implemented it behind a flag; none have shipped it unflagged yet.
+
+The relationship between the two is a natural question to raise with the platform team: **once `referenceTarget` ships unflagged, does a future label behavior become redundant, complementary, or is it still needed for the `<label for>` click association that `referenceTarget` alone does not cover?**
+
+A concrete framing of what `referenceTarget` alone cannot close:
+
+| Gap | `referenceTarget` | A future label behavior |
+|-----|------------------|------------------------|
+| `aria-labelledby` from external element resolves to inner input | ✅ Closes | — |
+| `<label for="my-element">` click focuses inner input | ❌ Does not help — `for` wiring is separate from IDREF resolution | ✅ Would close |
+| `labels` property returns associated `<label>` elements | ❌ Not addressed | ✅ Would mirror `HTMLInputElement.labels` |
+| `LabellingController` and `labelledby`/`describedby` properties become unnecessary | Partially — for the `aria-labelledby` case | More fully — for the click and introspection cases |
+
+Once `referenceTarget` ships unflagged across your supported browser range, the `labelledby`/`describedby` properties, element ref wiring, and many of the `LabellingController` fallback paths described in this document become unnecessary for the ARIA labelling case. A label behavior would go further, closing the native `<label>` interaction gap that `referenceTarget` does not address. Tracking both is worthwhile: they are complementary, not competing.
 
 ---
 
