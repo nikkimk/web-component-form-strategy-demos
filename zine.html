@@ -20,11 +20,7 @@
       overflow-x: hidden;
     }
 
-    .magazine {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+    .magazine { max-width: 800px; margin: 0 auto; padding: 20px; }
 
     .cover {
       background: #FF006E;
@@ -38,101 +34,33 @@
     }
     .cover::before {
       content: '★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★';
-      position: absolute;
-      top: 8px;
-      left: 0;
-      right: 0;
-      color: #FFE000;
-      font-size: 12px;
-      letter-spacing: 4px;
+      position: absolute; top: 8px; left: 0; right: 0;
+      color: #FFE000; font-size: 12px; letter-spacing: 4px;
     }
     .cover::after {
       content: '★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★';
-      position: absolute;
-      bottom: 8px;
-      left: 0;
-      right: 0;
-      color: #FFE000;
-      font-size: 12px;
-      letter-spacing: 4px;
+      position: absolute; bottom: 8px; left: 0; right: 0;
+      color: #FFE000; font-size: 12px; letter-spacing: 4px;
     }
+    .mag-name { font-family: 'Pacifico', cursive; font-size: 16px; color: #FFE000; letter-spacing: 8px; text-transform: uppercase; margin-bottom: 10px; }
+    .cover-title { font-family: 'Fredoka One', cursive; font-size: 52px; line-height: 1.1; color: #FFE000; text-shadow: 4px 4px 0 #1a0033; margin-bottom: 10px; }
+    .cover-sub { font-family: 'Patrick Hand', cursive; font-size: 20px; color: white; background: #1a0033; display: inline-block; padding: 4px 16px; transform: rotate(-2deg); margin-bottom: 10px; }
+    .cover-date { font-family: 'Nunito', sans-serif; font-size: 13px; color: #FFE000; letter-spacing: 2px; }
 
-    .mag-name {
-      font-family: 'Pacifico', cursive;
-      font-size: 16px;
-      color: #FFE000;
-      letter-spacing: 8px;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-    }
-    .cover-title {
-      font-family: 'Fredoka One', cursive;
-      font-size: 52px;
-      line-height: 1.1;
-      color: #FFE000;
-      text-shadow: 4px 4px 0 #1a0033;
-      margin-bottom: 10px;
-    }
-    .cover-sub {
-      font-family: 'Patrick Hand', cursive;
-      font-size: 20px;
-      color: white;
-      background: #1a0033;
-      display: inline-block;
-      padding: 4px 16px;
-      transform: rotate(-2deg);
-      margin-bottom: 10px;
-    }
-    .cover-date {
-      font-family: 'Nunito', sans-serif;
-      font-size: 13px;
-      color: #FFE000;
-      letter-spacing: 2px;
-    }
-
-    .starburst {
-      position: absolute;
-      width: 90px;
-      height: 90px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
+    .starburst { position: absolute; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; text-align: center; }
     .starburst svg { position: absolute; width: 100%; height: 100%; }
-    .starburst-text {
-      position: relative;
-      font-family: 'Fredoka One', cursive;
-      font-size: 11px;
-      color: #1a0033;
-      line-height: 1.2;
-      z-index: 1;
-    }
+    .starburst-text { position: relative; font-family: 'Fredoka One', cursive; font-size: 11px; color: #1a0033; line-height: 1.2; z-index: 1; }
     .starburst-1 { top: 20px; right: 20px; }
     .starburst-2 { top: 20px; left: 20px; transform: rotate(-15deg); }
 
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-    .three-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 
     .section-header {
-      font-family: 'Fredoka One', cursive;
-      font-size: 36px;
-      background: #00C8FF;
-      border: 4px solid #1a0033;
-      padding: 8px 20px;
-      display: inline-block;
-      transform: rotate(-1.5deg);
-      margin-bottom: 16px;
+      font-family: 'Fredoka One', cursive; font-size: 36px;
+      background: #00C8FF; border: 4px solid #1a0033;
+      padding: 8px 20px; display: inline-block;
+      transform: rotate(-1.5deg); margin-bottom: 16px;
       box-shadow: 4px 4px 0 #1a0033;
     }
     .section-header.pink { background: #FF006E; color: white; }
@@ -140,258 +68,92 @@
     .section-header.purple { background: #7B00FF; color: white; }
     .section-header.green { background: #00CC77; }
     .section-header.orange { background: #FF6B00; color: white; }
+    .section-header.teal { background: #00B8A9; color: white; }
 
-    .card {
-      background: white;
-      border: 3px solid #1a0033;
-      padding: 20px;
-      margin-bottom: 16px;
-      position: relative;
-      box-shadow: 5px 5px 0 #1a0033;
-    }
+    .card { background: white; border: 3px solid #1a0033; padding: 20px; margin-bottom: 16px; position: relative; box-shadow: 5px 5px 0 #1a0033; }
     .card.pink-bg { background: #FFE4F3; }
     .card.blue-bg { background: #DDF6FF; }
     .card.yellow-bg { background: #FFFACC; }
     .card.green-bg { background: #CCFFE8; }
     .card.purple-bg { background: #F0E5FF; }
     .card.orange-bg { background: #FFE8D6; }
+    .card.teal-bg { background: #D6F5F2; }
 
-    .card-title {
-      font-family: 'Fredoka One', cursive;
-      font-size: 24px;
-      margin-bottom: 10px;
-      line-height: 1.2;
-    }
+    .card-title { font-family: 'Fredoka One', cursive; font-size: 24px; margin-bottom: 10px; line-height: 1.2; }
 
-    .pull-quote {
-      border-left: 6px solid #FF006E;
-      padding: 10px 16px;
-      font-family: 'Patrick Hand', cursive;
-      font-size: 20px;
-      font-style: italic;
-      background: #FFE4F3;
-      margin: 16px 0;
-    }
+    .pull-quote { border-left: 6px solid #FF006E; padding: 10px 16px; font-family: 'Patrick Hand', cursive; font-size: 20px; font-style: italic; background: #FFE4F3; margin: 16px 0; }
 
-    .sticky {
-      background: #FFE000;
-      border: 2px solid #1a0033;
-      padding: 14px;
-      font-family: 'Patrick Hand', cursive;
-      font-size: 15px;
-      transform: rotate(2deg);
-      box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
-      margin-bottom: 16px;
-    }
+    .sticky { background: #FFE000; border: 2px solid #1a0033; padding: 14px; font-family: 'Patrick Hand', cursive; font-size: 15px; transform: rotate(2deg); box-shadow: 3px 3px 0 rgba(0,0,0,0.2); margin-bottom: 16px; }
     .sticky.blue { background: #CCEFFF; transform: rotate(-1.5deg); }
     .sticky.pink { background: #FFD6EC; transform: rotate(1deg); }
     .sticky.green { background: #CCFFE8; transform: rotate(-2deg); }
 
     .checklist { list-style: none; padding: 0; }
-    .checklist li {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 8px 0;
-      border-bottom: 1px dashed #ccc;
-      font-size: 15px;
-    }
+    .checklist li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #ccc; font-size: 15px; }
     .checklist li:last-child { border-bottom: none; }
-    .check-num {
-      background: #FF006E;
-      color: white;
-      font-family: 'Fredoka One', cursive;
-      font-size: 16px;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: 2px solid #1a0033;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
+    .check-num { background: #FF006E; color: white; font-family: 'Fredoka One', cursive; font-size: 16px; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #1a0033; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .check-num.blue { background: #00C8FF; color: #1a0033; }
     .check-num.yellow { background: #FFE000; color: #1a0033; }
     .check-num.purple { background: #7B00FF; }
     .check-num.green { background: #00CC77; }
+    .check-num.teal { background: #00B8A9; }
+    .check-num.orange { background: #FF6B00; }
 
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th {
-      background: #1a0033;
-      color: #FFE000;
-      font-family: 'Fredoka One', cursive;
-      font-size: 16px;
-      padding: 10px 12px;
-      text-align: center;
-    }
-    td {
-      border: 2px solid #1a0033;
-      padding: 10px 12px;
-      text-align: center;
-      background: white;
-    }
+    th { background: #1a0033; color: #FFE000; font-family: 'Fredoka One', cursive; font-size: 16px; padding: 10px 12px; text-align: center; }
+    td { border: 2px solid #1a0033; padding: 10px 12px; text-align: center; background: white; }
     tr:nth-child(even) td { background: #FFF0F9; }
-    td:first-child {
-      text-align: left;
-      font-weight: 700;
-      font-family: 'Patrick Hand', cursive;
-      font-size: 15px;
-    }
+    td:first-child { text-align: left; font-weight: 700; font-family: 'Patrick Hand', cursive; font-size: 15px; }
     .status-yes { color: #00832d; font-size: 18px; }
     .status-flag { color: #FF6B00; font-size: 16px; }
     .status-no { color: #CC0000; font-size: 18px; }
     .status-wip { color: #7B00FF; font-size: 16px; }
 
-    .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-family: 'Fredoka One', cursive;
-      font-size: 13px;
-      border: 2px solid #1a0033;
-    }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-family: 'Fredoka One', cursive; font-size: 13px; border: 2px solid #1a0033; }
     .badge.hot { background: #FF006E; color: white; }
     .badge.new { background: #FFE000; color: #1a0033; }
     .badge.coming { background: #7B00FF; color: white; }
     .badge.cool { background: #00C8FF; color: #1a0033; }
+    .badge.baseline { background: #00CC77; color: #1a0033; }
 
-    .speech-bubble {
-      position: relative;
-      background: white;
-      border: 3px solid #1a0033;
-      border-radius: 16px;
-      padding: 14px 18px;
-      font-family: 'Patrick Hand', cursive;
-      font-size: 16px;
-      margin-bottom: 20px;
-    }
-    .speech-bubble::after {
-      content: '';
-      position: absolute;
-      bottom: -16px;
-      left: 30px;
-      border: 8px solid transparent;
-      border-top-color: #1a0033;
-    }
-    .speech-bubble::before {
-      content: '';
-      position: absolute;
-      bottom: -11px;
-      left: 32px;
-      border: 6px solid transparent;
-      border-top-color: white;
-      z-index: 1;
-    }
+    .speech-bubble { position: relative; background: white; border: 3px solid #1a0033; border-radius: 16px; padding: 14px 18px; font-family: 'Patrick Hand', cursive; font-size: 16px; margin-bottom: 20px; }
+    .speech-bubble::after { content: ''; position: absolute; bottom: -16px; left: 30px; border: 8px solid transparent; border-top-color: #1a0033; }
+    .speech-bubble::before { content: ''; position: absolute; bottom: -11px; left: 32px; border: 6px solid transparent; border-top-color: white; z-index: 1; }
 
-    .demo-card {
-      background: white;
-      border: 3px solid #1a0033;
-      padding: 16px;
-      box-shadow: 4px 4px 0 #1a0033;
-    }
-    .demo-num {
-      font-family: 'Fredoka One', cursive;
-      font-size: 48px;
-      line-height: 1;
-      color: #FF006E;
-      text-shadow: 2px 2px 0 #1a0033;
-    }
-    .demo-title {
-      font-family: 'Fredoka One', cursive;
-      font-size: 18px;
-      margin-bottom: 6px;
-    }
+    .demo-card { background: white; border: 3px solid #1a0033; padding: 16px; box-shadow: 4px 4px 0 #1a0033; }
+    .demo-num { font-family: 'Fredoka One', cursive; font-size: 48px; line-height: 1; color: #FF006E; text-shadow: 2px 2px 0 #1a0033; }
+    .demo-title { font-family: 'Fredoka One', cursive; font-size: 18px; margin-bottom: 6px; }
 
-    .footer {
-      background: #1a0033;
-      color: #FFE000;
-      text-align: center;
-      padding: 20px;
-      font-family: 'Pacifico', cursive;
-      font-size: 14px;
-      border: 4px solid #FF006E;
-      margin-top: 20px;
-    }
+    .code-block { background: #1a0033; color: #00FF9F; font-family: 'Courier New', monospace; font-size: 13px; padding: 14px 16px; border-radius: 4px; line-height: 1.8; margin: 10px 0; overflow-x: auto; border: 2px solid #FF006E; }
+    .code-block .attr { color: #FFE000; }
+    .code-block .tag { color: #00C8FF; }
+    .code-block .val { color: #FF9EDA; }
+    .code-block .comment { color: #888; font-style: italic; }
 
-    .squiggle-divider {
-      text-align: center;
-      font-size: 24px;
-      letter-spacing: 8px;
-      color: #FF006E;
-      margin: 20px 0;
-    }
+    .footer { background: #1a0033; color: #FFE000; text-align: center; padding: 20px; font-family: 'Pacifico', cursive; font-size: 14px; border: 4px solid #FF006E; margin-top: 20px; }
 
-    code {
-      background: #1a0033;
-      color: #00FF9F;
-      font-family: 'Courier New', monospace;
-      font-size: 13px;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
+    .squiggle-divider { text-align: center; font-size: 24px; letter-spacing: 8px; color: #FF006E; margin: 20px 0; }
+
+    code { background: #1a0033; color: #00FF9F; font-family: 'Courier New', monospace; font-size: 13px; padding: 2px 6px; border-radius: 4px; }
 
     p { line-height: 1.6; margin-bottom: 10px; }
 
     .rotated-card { transform: rotate(-1deg); }
     .rotated-card-pos { transform: rotate(1.5deg); }
 
-    .shadow-dom-viz {
-      border: 3px dashed #7B00FF;
-      background: #F0E5FF;
-      padding: 12px;
-      margin: 8px 0;
-      position: relative;
-    }
-    .shadow-dom-viz::before {
-      content: '🌑 Shadow Root';
-      font-family: 'Fredoka One', cursive;
-      font-size: 13px;
-      color: #7B00FF;
-      position: absolute;
-      top: -12px;
-      left: 10px;
-      background: #F0E5FF;
-      padding: 0 6px;
-    }
-    .light-dom-viz {
-      border: 3px solid #00C8FF;
-      background: #DDF6FF;
-      padding: 12px;
-      margin: 8px 0;
-      position: relative;
-      font-family: 'Courier New', monospace;
-      font-size: 13px;
-      line-height: 1.8;
-    }
-    .light-dom-viz::before {
-      content: '☀️ Light DOM';
-      font-family: 'Fredoka One', cursive;
-      font-size: 13px;
-      color: #0088AA;
-      position: absolute;
-      top: -12px;
-      left: 10px;
-      background: #DDF6FF;
-      padding: 0 6px;
-    }
+    .shadow-dom-viz { border: 3px dashed #7B00FF; background: #F0E5FF; padding: 12px; margin: 8px 0; position: relative; }
+    .shadow-dom-viz::before { content: '🌑 Shadow Root'; font-family: 'Fredoka One', cursive; font-size: 13px; color: #7B00FF; position: absolute; top: -12px; left: 10px; background: #F0E5FF; padding: 0 6px; }
 
-    .tearout {
-      border: 3px dashed #1a0033;
-      padding: 20px 16px 16px;
-      margin: 16px 0 0;
-      background: #FFFACC;
-      position: relative;
-    }
-    .tearout::before {
-      content: '✂ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─';
-      position: absolute;
-      top: -12px;
-      left: 0;
-      right: 0;
-      font-size: 13px;
-      color: #888;
-    }
+    .light-dom-viz { border: 3px solid #00C8FF; background: #DDF6FF; padding: 12px; margin: 8px 0; position: relative; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.8; }
+    .light-dom-viz::before { content: '☀️ Light DOM'; font-family: 'Fredoka One', cursive; font-size: 13px; color: #0088AA; position: absolute; top: -12px; left: 10px; background: #DDF6FF; padding: 0 6px; }
+
+    .tearout { border: 3px dashed #1a0033; padding: 20px 16px 16px; margin: 16px 0 0; background: #FFFACC; position: relative; }
+    .tearout::before { content: '✂ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─'; position: absolute; top: -12px; left: 0; right: 0; font-size: 13px; color: #888; }
+
+    .false-box { border: 3px solid; padding: 12px 14px; margin-bottom: 12px; }
+    .false-pos { border-color: #FF6B00; background: #FFF3E0; }
+    .false-neg { border-color: #CC0000; background: #FDECEA; }
+    .false-label { font-family: 'Fredoka One', cursive; font-size: 15px; margin-bottom: 6px; }
 
     @media (max-width: 600px) {
       .two-col, .three-col { grid-template-columns: 1fr; }
@@ -426,7 +188,7 @@
     <div class="card-title">OMG, What Even IS This?! 😱</div>
     <p>Okay bestie, gather 'round because we're about to spill the <em>ultimate tea</em> on <strong>form-associated web components</strong>. You know how forms are like, the backbone of every website ever? Well, imagine if you could build your OWN custom form fields that are just as smart and accessible as the native ones — but with your own style. That's exactly what we're talking about!</p>
     <div class="pull-quote">"CSS encapsulation means the shadow DOM label, help text, input, and all focus/hover/error states can be styled with ordinary shadow-root CSS." — literally the dream 💅</div>
-    <p>The secret? Placing your ARIA roles on elements <em>inside</em> the Shadow DOM instead of on the custom element host itself. Trust us, this glow-up is MAJOR.</p>
+    <p>The approach is built on three principles: place ARIA roles on inner shadow elements, use named slots for label and description content, and support cross-root element references via properties like <code>ariaLabelledByElements</code>. Let's get into it!</p>
   </div>
 
   <div class="squiggle-divider">~ 💖 ~ 💖 ~ 💖 ~</div>
@@ -455,6 +217,7 @@
         <div class="card-title" style="font-size:18px;color:#0088AA;">Two Types of Roles, Babe!</div>
         <p style="font-size:14px;"><strong>Native roles</strong> (textfield, checkbox): use an actual <code>&lt;input&gt;</code> element inside shadow DOM. Let the platform do its thing!</p>
         <p style="font-size:14px;"><strong>Explicit roles</strong> (progressbar, combobox): use a <code>&lt;div role="combobox"&gt;</code> inside shadow DOM. You're in control!</p>
+        <p style="font-size:14px;">Combobox tip: keep the listbox in shadow DOM too, with same-root <code>aria-controls</code> and <code>ariaActiveDescendantElement</code> for the active option. 🎯</p>
       </div>
       <div class="sticky green">
         💡 <strong>Hot Tip:</strong> Always attach your shadow root with <code>delegatesFocus: true</code> so focus management just WORKS. No extra effort required!
@@ -464,9 +227,9 @@
 
   <div class="squiggle-divider">~ ✦ ~ ✦ ~ ✦ ~</div>
 
-  <!-- LABELLING -->
+  <!-- IDREF STRATEGY -->
   <div style="margin-bottom: 16px;">
-    <div class="section-header yellow">Your Labelling Glow-Up 💅</div>
+    <div class="section-header yellow">IDREF Strategy: Your Labelling Glow-Up 💅</div>
   </div>
 
   <div class="card yellow-bg">
@@ -475,29 +238,32 @@
       <div style="border:3px solid #1a0033; padding:16px; background:white;">
         <div style="font-family:'Fredoka One',cursive; font-size:20px; color:#FF006E; margin-bottom:8px;">✨ Method 1: Slots</div>
         <div class="light-dom-viz">
-          &lt;my-input&gt;<br>
+          &lt;my-textfield&gt;<br>
           &nbsp;&nbsp;<strong>&lt;span slot="label"&gt;</strong><br>
-          &nbsp;&nbsp;&nbsp;&nbsp;Your Name<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;Email<br>
           &nbsp;&nbsp;&lt;/span&gt;<br>
-          &lt;/my-input&gt;
+          &nbsp;&nbsp;&lt;span slot="description"&gt;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;Never shared.<br>
+          &nbsp;&nbsp;&lt;/span&gt;<br>
+          &lt;/my-textfield&gt;
         </div>
-        <p style="font-size:13px;">You project label content right into the component using <code>&lt;slot name="label"&gt;</code>. Same-root ARIA wiring handles the rest automatically. So clean! 🧼</p>
+        <p style="font-size:13px;">Project label and description content right into the component using named slots. Same-root ARIA wiring handles the rest automatically. Ideal for standalone fields! 🧼</p>
         <div class="badge hot">DEFAULT ★</div>
       </div>
       <div style="border:3px solid #1a0033; padding:16px; background:white;">
         <div style="font-family:'Fredoka One',cursive; font-size:20px; color:#00C8FF; margin-bottom:8px;">💫 Method 2: Properties</div>
         <div class="light-dom-viz">
-          &lt;label id="nm"&gt;Your Name&lt;/label&gt;<br>
-          &lt;my-input<br>
-          &nbsp;&nbsp;<strong>labelledby="nm"</strong><br>
-          &gt;&lt;/my-input&gt;
+          &lt;my-textfield<br>
+          &nbsp;&nbsp;<strong>labelledby="col-header"</strong><br>
+          &nbsp;&nbsp;<strong>describedby="note"</strong><br>
+          &gt;&lt;/my-textfield&gt;
         </div>
-        <p style="font-size:13px;">Pass IDs via properties and <code>ariaLabelledByElements</code> does the cross-root magic. Perfect for data grids and complex layouts! 🎯</p>
+        <p style="font-size:13px;">Pass IDs via properties and <code>ariaLabelledByElements</code> does the cross-root magic. Perfect for data grids reusing existing table headers, multi-section forms with shared headings, or inline-editing! 🎯</p>
         <div class="badge cool">FLEXIBLE ✦</div>
       </div>
     </div>
     <div class="speech-bubble" style="margin-top:20px;">
-      🤩 The BEST part? <code>LabellingController</code> merges BOTH sources automatically! You don't have to choose — use slots AND property references at the same time. Yes, really!
+      🤩 The BEST part? <code>LabellingController</code> merges BOTH sources automatically! Mix slots AND property references — like a <code>describedby</code> for a live error alert alongside a slotted default description. Yes, really!
     </div>
     <br>
   </div>
@@ -513,19 +279,19 @@
     <div class="card pink-bg rotated-card">
       <div style="font-size:36px;text-align:center;">🎀</div>
       <div class="card-title" style="font-size:18px;color:#FF006E;text-align:center;">Labelling<br>Controller</div>
-      <p style="font-size:13px;">The OG. Watches slot changes, wires ARIA relationships, merges both labelling sources, and gracefully falls back when APIs aren't available. She does it ALL.</p>
+      <p style="font-size:13px;">The OG. Watches <code>slotchange</code> events, shows/hides label and description spans, wires ARIA relationships, merges both labelling sources, provides <code>debugInfo</code> for dev inspection, and calls an <code>onUpdate()</code> callback after re-wiring. She does it ALL.</p>
       <div style="text-align:center;margin-top:8px;"><span class="badge hot">HEAD QUEEN</span></div>
     </div>
     <div class="card blue-bg">
       <div style="font-size:36px;text-align:center;">⚡</div>
       <div class="card-title" style="font-size:18px;color:#0088AA;text-align:center;">FieldAssociation<br>Controller</div>
-      <p style="font-size:13px;">Handles all the form participation drama. Manages value reporting through <code>setFormValue()</code>. Keeps your field in sync with its form parent. Low-key essential!</p>
+      <p style="font-size:13px;">Wraps the <code>ElementInternals</code> object and provides <code>setValue()</code> for value reporting, default value tracking, and pass-through access to form properties. Call <code>setValue(null)</code> for disabled or unchecked fields to exclude them from <code>FormData</code>!</p>
       <div style="text-align:center;margin-top:8px;"><span class="badge cool">ESSENTIAL</span></div>
     </div>
     <div class="card purple-bg rotated-card-pos">
       <div style="font-size:36px;text-align:center;">🔮</div>
       <div class="card-title" style="font-size:18px;color:#7B00FF;text-align:center;">ButtonAssociation<br>Controller</div>
-      <p style="font-size:13px;">The interim queen! Handles keyboard activation and <code>commandfor</code>/<code>command</code> dispatch for buttons. Just until native platform behaviors arrive. She knows her moment!</p>
+      <p style="font-size:13px;">The interim queen! Handles keyboard activation, ARIA role defaults, focusability, and <code>commandfor</code>/<code>command</code> dispatch. Wire form submit/reset in a click listener alongside her. Just until native platform behaviors arrive!</p>
       <div style="text-align:center;margin-top:8px;"><span class="badge coming">INTERIM ✨</span></div>
     </div>
   </div>
@@ -542,7 +308,7 @@
   </div>
 
   <div class="card blue-bg">
-    <div class="card-title">Browser Compatibility: Rate Your Friends!</div>
+    <div class="card-title">Cross-Root Labeling APIs: Rate Your Friends!</div>
     <p style="font-size:14px;margin-bottom:14px;">Not all browsers are created equal, bestie. Here's the tea on who's actually supporting the good stuff right now:</p>
     <table>
       <thead>
@@ -555,28 +321,28 @@
       </thead>
       <tbody>
         <tr>
-          <td><code>ariaLabelledByElements</code><br><span style="font-size:11px;color:#555;">Cross-root labelling magic</span></td>
+          <td><code>ariaLabelledByElements</code><br><code>ariaDescribedByElements</code><br><span style="font-size:11px;color:#555;">Cross-root element arrays</span> <span class="badge baseline" style="font-size:11px;">Baseline 2025</span></td>
           <td><span class="status-yes">✅</span><br><span style="font-size:11px;">v135+</span></td>
           <td><span class="status-yes">✅</span><br><span style="font-size:11px;">v16.4+</span></td>
           <td><span class="status-yes">✅</span><br><span style="font-size:11px;">v136+</span></td>
         </tr>
         <tr>
-          <td><code>ariaActiveDescendantElement</code><br><span style="font-size:11px;color:#555;">Focus management vibes</span></td>
+          <td><code>ariaActiveDescendantElement</code><br><span style="font-size:11px;color:#555;">Active descendant magic</span> <span class="badge baseline" style="font-size:11px;">Baseline 2025</span></td>
           <td><span class="status-yes">✅</span><br><span style="font-size:11px;">v135+</span></td>
           <td><span class="status-yes">✅</span><br><span style="font-size:11px;">v16.4+</span></td>
           <td><span class="status-yes">✅</span><br><span style="font-size:11px;">v136+</span></td>
         </tr>
         <tr>
-          <td><code>referenceTarget</code><br><span style="font-size:11px;color:#555;">The next-gen approach</span></td>
+          <td><code>referenceTarget</code><br><span style="font-size:11px;color:#555;">Shadow-declared canonical IDREF target</span></td>
           <td><span class="status-flag">🚩</span><br><span style="font-size:11px;">Flag in v133+</span></td>
           <td><span class="status-flag">🚩</span><br><span style="font-size:11px;">Flag in v26+</span></td>
           <td><span class="status-flag">🚩</span><br><span style="font-size:11px;">Flag in v144+</span></td>
         </tr>
         <tr>
-          <td><code>HTMLSubmitButtonBehavior</code><br><span style="font-size:11px;color:#555;">The future is now (almost)</span></td>
+          <td><code>HTMLSubmitButtonBehavior</code><br><span style="font-size:11px;color:#555;">Native button behavior for custom elements</span></td>
           <td><span class="status-wip">🚧</span><br><span style="font-size:11px;">Implementing!</span></td>
-          <td><span class="status-no">❌</span><br><span style="font-size:11px;">Pending</span></td>
-          <td><span class="status-no">❌</span><br><span style="font-size:11px;">Pending</span></td>
+          <td><span class="status-no">❌</span><br><span style="font-size:11px;">Position filed</span></td>
+          <td><span class="status-no">❌</span><br><span style="font-size:11px;">Position filed</span></td>
         </tr>
       </tbody>
     </table>
@@ -584,31 +350,35 @@
       <span>✅ = Shipped &amp; ready to party!</span>
       <span>🚩 = Behind a flag (experimental)</span>
       <span>🚧 = Coming soon!</span>
-      <span>❌ = Not yet bestie</span>
+      <span>❌ = Not yet, but positions filed!</span>
     </div>
   </div>
 
   <div class="squiggle-divider">~ 💛 ~ 💛 ~ 💛 ~</div>
 
-  <!-- 10 RULES -->
+  <!-- 14 RULES -->
   <div style="margin-bottom: 16px;">
-    <div class="section-header orange">10 Rules to Live By 📖</div>
+    <div class="section-header orange">14 Rules to Live By 📖</div>
   </div>
 
   <div class="card orange-bg">
     <div class="card-title">The Component Authoring Commandments ✦</div>
     <p style="font-size:14px;margin-bottom:14px;">Memorize these, print them out, put them on your wall. Your component's reputation DEPENDS on it:</p>
     <ul class="checklist">
-      <li><span class="check-num">1</span><span><strong>Shadow role NEVER on host</strong> — Put your ARIA role on inner elements, not the custom element itself. This is non-negotiable!</span></li>
-      <li><span class="check-num blue">2</span><span><strong>delegatesFocus: true always</strong> — Attach your shadow root with focus delegation. No exceptions. Your keyboard users will thank you.</span></li>
+      <li><span class="check-num">1</span><span><strong>Shadow role NEVER on host</strong> — Put your ARIA role on inner shadow elements, not the custom element itself. Non-negotiable!</span></li>
+      <li><span class="check-num blue">2</span><span><strong>delegatesFocus: true always</strong> — Attach your shadow root with focus delegation. Your keyboard users will thank you.</span></li>
       <li><span class="check-num yellow">3</span><span><strong>Required IDs are sacred</strong> — Use exactly <code>id="role"</code>, <code>id="label"</code>, and <code>id="description"</code>. Don't get creative here!</span></li>
-      <li><span class="check-num purple">4</span><span><strong>Labels hidden by default</strong> — Keep your label/description spans <code>hidden</code> until content is projected into them. Clean!</span></li>
+      <li><span class="check-num purple">4</span><span><strong>Labels hidden by default</strong> — Keep your label/description spans <code>hidden</code>; the controller reveals them when slot content exists.</span></li>
       <li><span class="check-num green">5</span><span><strong>Exact slot names only</strong> — Use <code>"label"</code> and <code>"description"</code>. Not "Label", not "lbl". Exact match or it breaks!</span></li>
       <li><span class="check-num">6</span><span><strong>LabellingController in class body</strong> — Instantiate it there, call <code>connect()</code> in <code>connectedCallback</code>. Order matters!</span></li>
       <li><span class="check-num blue">7</span><span><strong>Proxy your properties</strong> — Forward <code>labelledby</code> and <code>describedby</code> to the controller. Let it do the heavy lifting!</span></li>
-      <li><span class="check-num yellow">8</span><span><strong>NO ID refs from shadow to light</strong> — Never use ID attributes to cross the boundary. Use element reference properties instead. Pinky promise! 🤙</span></li>
-      <li><span class="check-num purple">9</span><span><strong>formAssociated on the class</strong> — Keep <code>static formAssociated = true</code> and <code>attachInternals()</code> on the element class itself.</span></li>
-      <li><span class="check-num green">10</span><span><strong>ButtonAssociationController for buttons</strong> — Until <code>HTMLSubmitButtonBehavior</code> ships unflagged, this is your button BFF!</span></li>
+      <li><span class="check-num yellow">8</span><span><strong>NO ID refs from shadow to light</strong> — Never use ID attributes to cross the boundary. Use <code>ariaLabelledByElements</code> instead. Pinky promise! 🤙</span></li>
+      <li><span class="check-num purple">9</span><span><strong>ElementInternals wiring on the element class</strong> — Keep <code>static formAssociated = true</code> and <code>attachInternals()</code> on the class; controllers receive the internals object.</span></li>
+      <li><span class="check-num green">10</span><span><strong>setValue(null) for disabled/unchecked fields</strong> — Call <code>fieldAssoc.setValue(null)</code> to exclude the field from <code>FormData</code> when disabled or unchecked. Don't forget!</span></li>
+      <li><span class="check-num teal">11</span><span><strong>Wire form submit/reset in a click listener</strong> — Buttons need manual click handlers for submit/reset wiring. Use <code>ButtonAssociationController</code> for activation alongside it.</span></li>
+      <li><span class="check-num orange">12</span><span><strong>Support both labeling modes &amp; merge them</strong> — Your component should handle slotted content AND external property-based refs, merging them when both are present.</span></li>
+      <li><span class="check-num">13</span><span><strong>Combobox: keep listbox in shadow DOM</strong> — Use same-root <code>aria-controls</code> and <code>ariaActiveDescendantElement</code> for the active option. No cross-root drama needed!</span></li>
+      <li><span class="check-num blue">14</span><span><strong>Test with screen readers</strong> — axe-core has known gaps with <code>ElementInternals</code> patterns. Screen reader testing is the true authority!</span></li>
     </ul>
   </div>
 
@@ -616,23 +386,33 @@
 
   <!-- AXE CORE -->
   <div style="margin-bottom: 16px;">
-    <div class="section-header green">axe-core Drama: The Receipts 🧾</div>
+    <div class="section-header green">axe-core Drama: The Full Receipts 🧾</div>
   </div>
 
-  <div class="two-col">
-    <div class="card green-bg rotated-card">
-      <div class="card-title" style="font-size:18px;">Known axe-core Issues 😤</div>
-      <p style="font-size:14px;">axe-core has some blind spots when it comes to shadow DOM. False positives on:</p>
-      <ul style="margin:10px 0;padding-left:20px;font-size:14px;line-height:2;">
-        <li><strong>label rules</strong> — doesn't inspect shadow DOM element references</li>
-        <li><strong>aria-required-children</strong> — doesn't follow slots</li>
-      </ul>
+  <div class="card green-bg">
+    <div class="card-title">False Positives AND False Negatives — Sis Has Range 😤</div>
+    <div class="two-col">
+      <div>
+        <div class="false-box false-pos">
+          <div class="false-label" style="color:#FF6B00;">🚨 False Positives (axe yells when it shouldn't)</div>
+          <ul style="padding-left:18px;font-size:14px;line-height:2;">
+            <li><strong>label rule</strong> — inspects the host but doesn't traverse to shadow role elements</li>
+            <li><strong>aria-required-children</strong> — doesn't follow slotted content into light DOM</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <div class="false-box false-neg">
+          <div class="false-label" style="color:#CC0000;">🔇 False Negatives (axe stays quiet when it shouldn't)</div>
+          <ul style="padding-left:18px;font-size:14px;line-height:2;">
+            <li><strong>Unlabeled inner elements</strong> when cross-root references fail silently</li>
+            <li><strong>Stale element references</strong> when targets are removed from the DOM</li>
+          </ul>
+        </div>
+      </div>
     </div>
-    <div class="card yellow-bg rotated-card-pos">
-      <div class="card-title" style="font-size:18px;">The Fix? Exclude &amp; Document! ✍️</div>
-      <p style="font-size:14px;">Exclude affected rules <em>per component</em> with rationale comments and upstream issue links. And remember:</p>
-      <div class="pull-quote" style="font-size:16px;">Screen reader testing is the TRUE authority. axe-core is a helper, not the final word!</div>
-    </div>
+    <div class="pull-quote" style="margin-top:10px;">Screen reader testing is the TRUE authority. axe-core is a helper, not the final word! Revisit quarterly as Deque ships fixes. 📅</div>
+    <p style="font-size:14px;">Strategy: exclude affected rules <em>per component</em> with rationale comments and upstream issue links.</p>
   </div>
 
   <div class="squiggle-divider">~ 🔮 ~ 🔮 ~ 🔮 ~</div>
@@ -648,25 +428,81 @@
       <div style="border:3px solid #7B00FF;padding:16px;background:white;position:relative;">
         <div class="badge coming" style="position:absolute;top:-14px;left:12px;">WHATWG STAGE 1</div>
         <div style="font-family:'Fredoka One',cursive;font-size:20px;margin-top:10px;margin-bottom:8px;">HTMLSubmitButton­Behavior</div>
-        <p style="font-size:13px;">Implicit form submission + <code>:default</code> CSS pseudo-class support, just by passing a behavior to <code>attachInternals()</code>. Chromium is already on it! Replace <code>ButtonAssociationController</code> when it ships. 🎉</p>
+        <p style="font-size:13px;">Unlocks all of this just by passing a behavior to <code>attachInternals()</code>:</p>
+        <ul style="font-size:13px;padding-left:18px;line-height:2;margin-bottom:8px;">
+          <li>Implicit form submission (Enter in a text field)</li>
+          <li>The <code>:default</code> CSS pseudo-class</li>
+          <li>Native keyboard activation (Enter, Space)</li>
+          <li>Mirrored properties identical to <code>HTMLButtonElement</code></li>
+        </ul>
+        <p style="font-size:13px;">All three browsers have filed standards positions. Chromium/Edge is implementing! 🎉</p>
       </div>
       <div style="border:3px solid #7B00FF;padding:16px;background:white;position:relative;">
-        <div class="badge coming" style="position:absolute;top:-14px;left:12px;">COMING SOON</div>
+        <div class="badge coming" style="position:absolute;top:-14px;left:12px;">FLAG-GATED</div>
         <div style="font-family:'Fredoka One',cursive;font-size:20px;margin-top:10px;margin-bottom:8px;">referenceTarget</div>
-        <p style="font-size:13px;">When this ships unflagged, consumers can use standard <code>aria-labelledby</code> attributes on custom element hosts — no component-specific properties needed. The dream! ✨</p>
+        <p style="font-size:13px;">Lets the shadow root declare an inner element as the canonical IDREF target. Once shipped unflagged:</p>
+        <ul style="font-size:13px;padding-left:18px;line-height:2;">
+          <li>Consumers use standard <code>aria-labelledby</code> on the host</li>
+          <li>No <code>labelledby</code>/<code>describedby</code> component properties needed</li>
+          <li>No cross-root element reference JS wiring</li>
+        </ul>
+        <p style="font-size:13px;margin-top:8px;">The dream! ✨ <code>LabellingController</code> still needed for slotted content.</p>
       </div>
     </div>
     <div class="tearout">
       <strong style="font-family:'Fredoka One',cursive;font-size:18px;">🌟 Your Migration Glow-Up Path:</strong><br><br>
-      <span style="font-family:'Patrick Hand',cursive;font-size:15px;line-height:2;">
-        1️⃣ <strong>Now:</strong> Use controllers as interim patterns — they're solid and production-ready!<br>
-        2️⃣ <strong>When referenceTarget ships:</strong> Consumers switch to standard <code>aria-labelledby</code> attributes. No component changes needed!<br>
-        3️⃣ <strong>When HTMLSubmitButtonBehavior ships:</strong> Replace <code>ButtonAssociationController</code> with native behavior. One line change!
+      <span style="font-family:'Patrick Hand',cursive;font-size:15px;line-height:2.2;">
+        1️⃣ <strong>Now:</strong> Use controllers as interim patterns — solid and production-ready!<br>
+        2️⃣ <strong>When referenceTarget ships:</strong> Consumers switch to standard <code>aria-labelledby</code>. No component changes needed!<br>
+        3️⃣ <strong>When HTMLSubmitButtonBehavior ships:</strong> Replace <code>ButtonAssociationController</code> with <code>attachInternals({ behaviors: [new HTMLSubmitButtonBehavior()] })</code> and remove manual click handlers. One surgery!
       </span>
     </div>
   </div>
 
   <div class="squiggle-divider">~ 💚 ~ 💚 ~ 💚 ~</div>
+
+  <!-- CONSUMER USAGE EXAMPLES -->
+  <div style="margin-bottom: 16px;">
+    <div class="section-header teal">How To Use It: Real Code Examples! 💻</div>
+  </div>
+
+  <div class="card teal-bg">
+    <div class="card-title">Copy-Paste These Into Your Life ✂️</div>
+    <p style="font-size:14px;margin-bottom:16px;">Three flavors — pick what fits your layout and go!</p>
+
+    <div style="margin-bottom:20px;">
+      <div style="font-family:'Fredoka One',cursive;font-size:20px;margin-bottom:6px;">✨ Slotted Content <span class="badge hot">CLEANEST</span></div>
+      <p style="font-size:13px;margin-bottom:6px;">You own all the label text inside the component. Perfect for standard forms!</p>
+      <div class="code-block">
+<span class="tag">&lt;my-textfield&gt;</span><br>
+&nbsp;&nbsp;<span class="tag">&lt;span</span> <span class="attr">slot</span>=<span class="val">"label"</span><span class="tag">&gt;</span>Email<span class="tag">&lt;/span&gt;</span><br>
+&nbsp;&nbsp;<span class="tag">&lt;span</span> <span class="attr">slot</span>=<span class="val">"description"</span><span class="tag">&gt;</span>Never shared.<span class="tag">&lt;/span&gt;</span><br>
+<span class="tag">&lt;/my-textfield&gt;</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <div style="font-family:'Fredoka One',cursive;font-size:20px;margin-bottom:6px;">💫 Property-Based <span class="badge cool">DATA GRIDS</span></div>
+      <p style="font-size:13px;margin-bottom:6px;">Point to existing labels on the page — no duplicate text!</p>
+      <div class="code-block">
+<span class="tag">&lt;my-textfield</span> <span class="attr">labelledby</span>=<span class="val">"col-header"</span> <span class="attr">describedby</span>=<span class="val">"note"</span><span class="tag">&gt;&lt;/my-textfield&gt;</span>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-family:'Fredoka One',cursive;font-size:20px;margin-bottom:6px;">🔥 Hybrid Mode <span class="badge new">MOST FLEXIBLE</span></div>
+      <p style="font-size:13px;margin-bottom:6px;">Mix slotted content with an external error reference. Both merge together!</p>
+      <div class="code-block">
+<span class="tag">&lt;my-textfield</span> <span class="attr">describedby</span>=<span class="val">"error"</span><span class="tag">&gt;</span><br>
+&nbsp;&nbsp;<span class="tag">&lt;span</span> <span class="attr">slot</span>=<span class="val">"label"</span><span class="tag">&gt;</span>Email<span class="tag">&lt;/span&gt;</span><br>
+&nbsp;&nbsp;<span class="tag">&lt;span</span> <span class="attr">slot</span>=<span class="val">"description"</span><span class="tag">&gt;</span>Default help text.<span class="tag">&lt;/span&gt;</span><br>
+<span class="tag">&lt;/my-textfield&gt;</span><br>
+<span class="tag">&lt;p</span> <span class="attr">id</span>=<span class="val">"error"</span> <span class="attr">role</span>=<span class="val">"alert"</span><span class="tag">&gt;</span>This field is required.<span class="tag">&lt;/p&gt;</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="squiggle-divider">~ 😍 ~ 😍 ~ 😍 ~</div>
 
   <!-- DEMOS -->
   <div style="margin-bottom: 16px;">
@@ -685,27 +521,27 @@
       <div class="demo-card" style="background:#FFF0F9;">
         <div class="demo-num" style="color:#7B00FF;">02</div>
         <div class="demo-title">Light DOM References</div>
-        <p style="font-size:13px;">Using <code>labelledby</code>/<code>describedby</code> properties to wire up external labels. Perfect for complex page layouts!</p>
+        <p style="font-size:13px;">Using <code>labelledby</code>/<code>describedby</code> properties to wire up sibling elements as labels. Perfect for complex page layouts and data grids!</p>
       </div>
       <div class="demo-card" style="background:#FFFACC;">
         <div class="demo-num" style="color:#FF6B00;">03</div>
         <div class="demo-title">Hybrid Mode</div>
-        <p style="font-size:13px;">Best of both worlds! Slots AND property references working together. The LabellingController handles the merge seamlessly.</p>
+        <p style="font-size:13px;">Best of both worlds! Slots AND property references working together, with a toggle to switch between patterns. The LabellingController handles the merge.</p>
       </div>
       <div class="demo-card" style="background:#DDF6FF;">
         <div class="demo-num" style="color:#0088AA;">04</div>
         <div class="demo-title">referenceTarget Wiring</div>
-        <p style="font-size:13px;">The next-gen approach using the <code>referenceTarget</code> API (currently behind flags). A peek at the future!</p>
+        <p style="font-size:13px;">The next-gen approach using the <code>referenceTarget</code> API (currently behind browser flags). Requires enabling a flag to try it!</p>
       </div>
       <div class="demo-card" style="background:#CCFFE8;">
         <div class="demo-num" style="color:#00832d;">05</div>
         <div class="demo-title">Form Association</div>
-        <p style="font-size:13px;">See <code>ElementInternals</code> in action! Form participation, value reporting, and validation working like native elements.</p>
+        <p style="font-size:13px;">See <code>ElementInternals</code> in action with field AND button components! Form participation, value reporting, and validation working like native elements.</p>
       </div>
       <div class="demo-card" style="background:#F0E5FF;">
         <div class="demo-num" style="color:#7B00FF;">06</div>
         <div class="demo-title">Platform-Provided Behaviors</div>
-        <p style="font-size:13px;">Command invocation with <code>HTMLSubmitButtonBehavior</code>. This is what the future looks like, and it's gorgeous! 🚀</p>
+        <p style="font-size:13px;"><code>HTMLSubmitButtonBehavior</code> shim with dialog and popover command invocation. This is what the future looks like — and it's gorgeous! 🚀</p>
       </div>
     </div>
   </div>
@@ -735,12 +571,17 @@
         <tr>
           <td><code>ariaLabelledByElements</code></td>
           <td>Cross-root ARIA element references — the real magic!</td>
-          <td><span class="badge hot">ALL BROWSERS</span></td>
+          <td><span class="badge baseline">BASELINE 2025</span></td>
+        </tr>
+        <tr>
+          <td><code>ariaActiveDescendantElement</code></td>
+          <td>Cross-root active descendant for combobox/listbox</td>
+          <td><span class="badge baseline">BASELINE 2025</span></td>
         </tr>
         <tr>
           <td><code>referenceTarget</code></td>
-          <td>Simpler cross-root refs via standard HTML attribute</td>
-          <td><span class="badge coming">FLAGGED</span></td>
+          <td>Shadow-declared canonical IDREF — no JS wiring needed</td>
+          <td><span class="badge coming">FLAG-GATED</span></td>
         </tr>
         <tr>
           <td><code>HTMLSubmitButtonBehavior</code></td>
@@ -749,13 +590,18 @@
         </tr>
         <tr>
           <td><code>LabellingController</code></td>
-          <td>Reusable controller that wires all labelling sources</td>
+          <td>Reusable controller that wires all labelling sources + debugInfo</td>
           <td><span class="badge hot">USE NOW</span></td>
         </tr>
         <tr>
-          <td><code>static formAssociated = true</code></td>
-          <td>Opts your element into form participation</td>
+          <td><code>FieldAssociationController</code></td>
+          <td>Wraps ElementInternals; use setValue(null) for disabled fields</td>
           <td><span class="badge hot">USE NOW</span></td>
+        </tr>
+        <tr>
+          <td><code>ButtonAssociationController</code></td>
+          <td>Interim shim for button activation + commandfor/command</td>
+          <td><span class="badge coming">INTERIM</span></td>
         </tr>
       </tbody>
     </table>
