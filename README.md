@@ -8,8 +8,7 @@ Live examples and a reference implementation for building accessible, form-assoc
 
 ## Contents
 
-- [Recommendation: put the role in the shadow DOM](#recommendation-put-the-role-in-the-shadow-dom)
-  - [Where ARIA roles live](#where-aria-roles-live)
+- [Component ARIA roles](#component-aria-roles)
   - [Why not on the host?](#why-not-on-the-host)
 - [IDREF Strategy](#idref-strategy)
   - [1. Shadow DOM slots (default)](#1-shadow-dom-slots-default)
@@ -43,17 +42,18 @@ Live examples and a reference implementation for building accessible, form-assoc
   - [`ariaActiveDescendantElement`](#ariaactivedescendantelement)
   - [`referenceTarget`](#referencetarget)
   - [`referenceTargetMap`](#referencetargetmap)
-- [Implementing a new component](#implementing-a-new-component)
+  - [Platform-Provided Behaviors (`HTMLSubmitButtonBehavior`)](#platform-provided-behaviors-htmlsubmitbuttonbehavior)
+- [Component authoring](#component-authoring)
   - [1. Shadow DOM structure](#1-shadow-dom-structure)
   - [2. Component class](#2-component-class)
   - [3. Adding form association](#3-adding-form-association)
   - [4. Combobox extras](#4-combobox-extras)
+  - [Rules for component authors](#rules-for-component-authors)
 - [Consumer usage examples](#consumer-usage-examples)
   - [Slotted label and description](#slotted-label-and-description)
   - [Light DOM siblings via `labelledby` / `describedby`](#light-dom-siblings-via-labelledby--describedby)
   - [Setting properties in JavaScript](#setting-properties-in-javascript)
   - [Both sources together](#both-sources-together)
-- [Rules for component authors](#rules-for-component-authors)
 - [Demos](#demos)
 - [Run locally](#run-locally)
 - [Further reading](#further-reading)
@@ -61,17 +61,13 @@ Live examples and a reference implementation for building accessible, form-assoc
 
 ---
 
-## Recommendation: put the role in the shadow DOM
+## Component ARIA roles
 
 Place the ARIA role on an **inner shadow DOM element** — not on the custom element host.
 
 - For **textfield** and **checkbox**, use a native `<input>`. The browser supplies the role, focus behavior, and keyboard semantics automatically.
 - For **progressbar**, **combobox**, and other non-native roles, use a `<div role="...">` inside the shadow root.
 
-
-### Where ARIA roles live
-
-**Recommendation: inner shadow DOM element, never the host.**
 
 | Control class | Role placement |
 |---------------|---------------|
@@ -811,9 +807,22 @@ No Can I use page yet — this is a proposal / explainer stage.
 
 **`referenceTarget` is implemented in all major browsers but is flag-gated everywhere — it is not yet on by default in any stable release.** Once browsers enable it by default and it reaches your supported browser range, it should become the primary cross-root labelling mechanism: consumers would be able to use a plain `aria-labelledby` attribute pointing at the custom element host, and the browser would resolve it to the inner role element automatically. At that point the `labelledby`/`describedby` properties, element ref wiring, and many of the fallback paths described in this document become unnecessary. Track the flags above and revisit this approach as browsers ship it unflagged.
 
+### Platform-Provided Behaviors (`HTMLSubmitButtonBehavior`)
+
+[WHATWG html#12150](https://github.com/whatwg/html/issues/12150) · [MSEdge explainer](https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/ElementInternalsType/explainer.md)
+
+| Browser | Support |
+|---------|---------|
+| Chrome / Edge | 🚧 Implementing — no stable release yet |
+| Safari | ❌ Standards position filed; pending |
+| Firefox | ❌ Standards position filed; pending |
+
+`HTMLSubmitButtonBehavior` is passed via `attachInternals({ behaviors: [...] })` and provides the two capabilities that `ElementInternals` alone cannot: **implicit form submission** (Enter in a text field claims the default submit button at the platform level) and the **`:default` CSS pseudo-class**. Until all target browsers ship it, use `ButtonAssociationController` as a shim — see [Platform-Provided Behaviors](#platform-provided-behaviors) for the full API surface and [Migrating from `ButtonAssociationController`](#migrating-from-buttonassociationcontroller) for the feature-detection branch pattern.
+
+
 ---
 
-## Implementing a new component
+## Component authoring
 
 ### 1. Shadow DOM structure
 
@@ -942,6 +951,38 @@ const SUPPORTS_ACTIVE_DESCENDANT = 'ariaActiveDescendantElement' in Element.prot
 }
 ```
 
+### Rules for component authors
+
+1. **Role on the inner shadow element, never the host.** Use a native `<input>` for textfield and checkbox; use `<div role="...">` for progressbar, combobox, etc.
+
+2. **Attach shadow with `delegatesFocus: true`.** This makes the custom element a single tab stop that delegates focus to the first focusable shadow element.
+
+3. **Use the required IDs.** The controller expects `id="role"`, `id="label"`, and `id="description"` in the shadow DOM. Do not rename them.
+
+4. **Start label and description spans `hidden`.** The controller reveals them only when their slot has content. Never show them unconditionally.
+
+5. **Name slots exactly `"label"` and `"description"`.** The controller watches those exact slot names via `slotchange`.
+
+6. **Instantiate `LabellingController` in the class body**, not in `connectedCallback`. Call `controller.connect(this.shadowRoot)` from `connectedCallback` after `innerHTML` is set.
+
+7. **Delegate `labelledby` and `describedby` to the controller.** Getters and setters should proxy to `this.#labelling.labelledby` / `this.#labelling.describedby`. Reflect them as observed attributes so the properties work declaratively in HTML.
+
+8. **Do not use `aria-labelledby` / `aria-describedby` ID attributes to reference light DOM elements from a shadow element.** ID references do not cross shadow root boundaries. Use `ariaLabelledByElements` / `ariaDescribedByElements` instead — the `LabellingController` does this for you.
+
+9. **Do not wire labelling through `ElementInternals`.** Same-root ID attributes and `ariaLabelledByElements` on the inner role element are sufficient. `ElementInternals` is only needed for form participation (`setFormValue`, `setValidity`).
+
+10. **For form-associated fields, keep `static formAssociated = true` and `attachInternals()` on the element class.** Pass the resulting `ElementInternals` to `FieldAssociationController`. Call `fieldAssoc.setValue(null)` for disabled fields and unchecked checkboxes so they are excluded from `FormData`.
+
+11. **For form-associated buttons, skip the controller.** Call `internals.form?.requestSubmit()` / `internals.form?.reset()` directly in the click handler.
+
+12. **For combobox:** put `role="listbox"` in the shadow DOM and reference it with `aria-controls` by same-root ID attribute. For the active option — which lives in the light DOM — use `ariaActiveDescendantElement` (cross-root element ref). Fall back to assigning a stable `id` and using `aria-activedescendant` attribute if the property is unavailable.
+
+13. **Re-check `describedby` + slot interactions.** The controller automatically merges both when both are present. If your component has custom re-wiring logic, ensure it follows the same merge pattern rather than treating the two sources as mutually exclusive.
+
+14. **Exclude known axe-core false positives at the story level** — not globally. Include a `// reason:` comment and upstream issue link. Remove exclusions as Deque ships fixes.
+
+15. **Test with a screen reader.** Verify that the accessible name and description appear in the accessibility tree for every labelling mode the component supports. Axe-core is supplementary for these patterns; screen reader testing is authoritative.
+
 ---
 
 ## Consumer usage examples
@@ -1000,39 +1041,6 @@ field.describedby = 'email-desc';
 <p id="global-error" role="alert">This field is required.</p>
 ```
 
----
-
-## Rules for component authors
-
-1. **Role on the inner shadow element, never the host.** Use a native `<input>` for textfield and checkbox; use `<div role="...">` for progressbar, combobox, etc.
-
-2. **Attach shadow with `delegatesFocus: true`.** This makes the custom element a single tab stop that delegates focus to the first focusable shadow element.
-
-3. **Use the required IDs.** The controller expects `id="role"`, `id="label"`, and `id="description"` in the shadow DOM. Do not rename them.
-
-4. **Start label and description spans `hidden`.** The controller reveals them only when their slot has content. Never show them unconditionally.
-
-5. **Name slots exactly `"label"` and `"description"`.** The controller watches those exact slot names via `slotchange`.
-
-6. **Instantiate `LabellingController` in the class body**, not in `connectedCallback`. Call `controller.connect(this.shadowRoot)` from `connectedCallback` after `innerHTML` is set.
-
-7. **Delegate `labelledby` and `describedby` to the controller.** Getters and setters should proxy to `this.#labelling.labelledby` / `this.#labelling.describedby`. Reflect them as observed attributes so the properties work declaratively in HTML.
-
-8. **Do not use `aria-labelledby` / `aria-describedby` ID attributes to reference light DOM elements from a shadow element.** ID references do not cross shadow root boundaries. Use `ariaLabelledByElements` / `ariaDescribedByElements` instead — the `LabellingController` does this for you.
-
-9. **Do not wire labelling through `ElementInternals`.** Same-root ID attributes and `ariaLabelledByElements` on the inner role element are sufficient. `ElementInternals` is only needed for form participation (`setFormValue`, `setValidity`).
-
-10. **For form-associated fields, keep `static formAssociated = true` and `attachInternals()` on the element class.** Pass the resulting `ElementInternals` to `FieldAssociationController`. Call `fieldAssoc.setValue(null)` for disabled fields and unchecked checkboxes so they are excluded from `FormData`.
-
-11. **For form-associated buttons, skip the controller.** Call `internals.form?.requestSubmit()` / `internals.form?.reset()` directly in the click handler.
-
-12. **For combobox:** put `role="listbox"` in the shadow DOM and reference it with `aria-controls` by same-root ID attribute. For the active option — which lives in the light DOM — use `ariaActiveDescendantElement` (cross-root element ref). Fall back to assigning a stable `id` and using `aria-activedescendant` attribute if the property is unavailable.
-
-13. **Re-check `describedby` + slot interactions.** The controller automatically merges both when both are present. If your component has custom re-wiring logic, ensure it follows the same merge pattern rather than treating the two sources as mutually exclusive.
-
-14. **Exclude known axe-core false positives at the story level** — not globally. Include a `// reason:` comment and upstream issue link. Remove exclusions as Deque ships fixes.
-
-15. **Test with a screen reader.** Verify that the accessible name and description appear in the accessibility tree for every labelling mode the component supports. Axe-core is supplementary for these patterns; screen reader testing is authoritative.
 
 ---
 
