@@ -1050,15 +1050,17 @@ const SUPPORTS_ACTIVE_DESCENDANT = 'ariaActiveDescendantElement' in Element.prot
 
 10. **For form-associated fields, keep `static formAssociated = true` and `attachInternals()` on the element class.** Pass the resulting `ElementInternals` to `FieldAssociationController`. Call `fieldAssoc.setValue(null)` for disabled fields and unchecked checkboxes so they are excluded from `FormData`.
 
-11. **For form-associated buttons, skip the controller.** Call `internals.form?.requestSubmit()` / `internals.form?.reset()` directly in the click handler.
+11. **For form-associated buttons, use `ButtonAssociationController`.** It wires keyboard activation, ARIA role, focusability, and `commandfor`/`command` dispatch as a shim until `HTMLSubmitButtonBehavior` ships broadly. Keep the form submit/reset logic in a `click` listener on the host (`internals.form?.requestSubmit()` / `internals.form?.reset()`) — the controller does not own that path.
 
-12. **For combobox:** put `role="listbox"` in the shadow DOM and reference it with `aria-controls` by same-root ID attribute. For the active option — which lives in the light DOM — use `ariaActiveDescendantElement` (cross-root element ref). Fall back to assigning a stable `id` and using `aria-activedescendant` attribute if the property is unavailable.
+12. **Prefer slotted labels for standalone components; use `labelledby`/`describedby` properties for contextual placement.** If a field will appear inside a data grid, a multi-section form, or anywhere the surrounding structure already provides a label (table headers, section headings, shared footnotes), wire it through the `labelledby`/`describedby` properties rather than requiring consumers to duplicate that text in a slot. Both sources can be active simultaneously — the controller merges them.
 
-13. **Re-check `describedby` + slot interactions.** The controller automatically merges both when both are present. If your component has custom re-wiring logic, ensure it follows the same merge pattern rather than treating the two sources as mutually exclusive.
+13. **For combobox:** put `role="listbox"` in the shadow DOM and reference it with `aria-controls` by same-root ID attribute. For the active option — which lives in the light DOM — use `ariaActiveDescendantElement` (cross-root element ref). Fall back to assigning a stable `id` and using `aria-activedescendant` attribute if the property is unavailable.
 
-14. **Exclude known axe-core false positives at the story level** — not globally. Include a `// reason:` comment and upstream issue link. Remove exclusions as Deque ships fixes.
+14. **Re-check `describedby` + slot interactions.** The controller automatically merges both when both are present. If your component has custom re-wiring logic, ensure it follows the same merge pattern rather than treating the two sources as mutually exclusive.
 
-15. **Test with a screen reader.** Verify that the accessible name and description appear in the accessibility tree for every labelling mode the component supports. Axe-core is supplementary for these patterns; screen reader testing is authoritative.
+15. **Exclude known axe-core false positives at the story level** — not globally. Include a `// reason:` comment and upstream issue link. Remove exclusions as Deque ships fixes.
+
+16. **Test with a screen reader.** Verify that the accessible name and description appear in the accessibility tree for every labelling mode the component supports. Axe-core is supplementary for these patterns; screen reader testing is authoritative.
 
 ---
 
