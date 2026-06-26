@@ -6,6 +6,26 @@ Live examples and a reference implementation for building accessible, form-assoc
 
 ---
 
+## Contents
+
+- [TL;DR — quick reference for component authors](#tldr--quick-reference-for-component-authors)
+- [Recommendation: put the role in the shadow DOM](#recommendation-put-the-role-in-the-shadow-dom)
+- [Labelling strategy](#labelling-strategy)
+- [The `LabellingController`](#the-labellingcontroller)
+- [Form association](#form-association)
+- [Platform-Provided Behaviors — `ButtonAssociationController`](#platform-provided-behaviors--buttonassociationcontroller)
+- [axe-core policy and ElementInternals](#axe-core-policy-and-elementinternals)
+- [Platform API support](#platform-api-support)
+- [Implementing a new component](#implementing-a-new-component)
+- [Consumer usage examples](#consumer-usage-examples)
+- [Rules for component authors](#rules-for-component-authors)
+- [Demos](#demos)
+- [Run locally](#run-locally)
+- [Further reading](#further-reading)
+- [References](#references)
+
+---
+
 ## TL;DR — quick reference for component authors
 
 ### ElementInternals / form-associated custom elements (FACE)
