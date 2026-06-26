@@ -2,7 +2,7 @@
 
 Live examples and a reference implementation for building accessible, form-associated web components where the **ARIA role lives inside the shadow DOM**.
 
-**[Open in StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos)** · **[All demos](./index.html)**
+**[Open in StackBlitz](https://stackblitz.com/github/nikkimk/web-component-form-strategy-demos)** · **[All demos](https://nikkimk.github.io/web-component-form-strategy-demos/)**
 
 ---
 
