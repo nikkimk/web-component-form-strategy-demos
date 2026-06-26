@@ -677,6 +677,7 @@ Once `referenceTarget` ships unflagged across your supported browser range, the 
 
 ---
 
+
 ## axe-core policy and ElementInternals
 
 Browsers do not expose a single standard path for axe-core to read accessibility data set via `ElementInternals`. Deque is actively working on this under their [elementInternals-labeled issues](https://github.com/dequelabs/axe-core/issues?q=label%3AelementInternals), but several gaps remain today (mid-2025).
